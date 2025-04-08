@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle } from "lucide-react";
@@ -42,7 +43,7 @@ const LessonLearning = () => {
     },
     {
       title: "Practice Exercise",
-      content: "Transitions = Engagement\n\nNow, let's use the 3 elements to creating dynamic transitions that keep your audience engaged. Click the button below to record yourself reading the following passage, focusing on varying your rate of speech, volume, and pitch to create smooth transitions between ideas: 'The way we communicate shapes how others perceive us. By consciously controlling our vocal elements, we can highlight key ideas and maintain audience interest throughout our delivery.'",
+      content: "Transitions = Engagement\n\nNow, let's use the 3 elements to creating dynamic transitions that keep your audience engaged. Click the button below to record yourself reading the following passage, focusing on varying your rate of speech, volume, and pitch to create smooth transitions between ideas: 'The way we communicate shapes how others perceive us. By consciously controlling our vocal elements, we can highlight key ideas and maintain audience interest throughout our delivery.'\n\nBy varying your pace—slowing down for emphasis and speeding up for excitement—you can add dynamic variety to your speech and keep your audience engaged.",
       hasExercise: true,
     },
     {
