@@ -1,17 +1,28 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import VocalExercise from "@/components/VocalExercise";
+import { AudioRecorder, createAudioUrl } from "@/utils/audioRecorder";
 
 const LessonLearning = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [showExercise, setShowExercise] = useState(false);
+  const [showPracticeDialog, setShowPracticeDialog] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<number | null>(null);
   
   const vocalFoundationSteps = [
     {
@@ -29,6 +40,11 @@ const LessonLearning = () => {
     {
       title: "Pitch",
       content: "Pitch refers to how high or low your voice sounds. A monotone voice can be boring to listen to, so varying your pitch helps keep your audience engaged. Try to find your natural pitch range and practice moving comfortably within it.",
+    },
+    {
+      title: "Practice Exercise",
+      content: "Now, let's practice what you've learned about pitch. Click the button below to record yourself reading the following passage, focusing specifically on varying your pitch to emphasize important points: 'The way we communicate shapes how others perceive us. By consciously varying our pitch, we can highlight key ideas and maintain audience interest throughout our delivery.'",
+      hasExercise: true,
     },
     {
       title: "Tonality",
@@ -62,6 +78,76 @@ const LessonLearning = () => {
       navigate(-1);
     }
   };
+
+  const startTimer = () => {
+    if (timerRef.current) return;
+    
+    timerRef.current = window.setInterval(() => {
+      setRecordingTime((prev) => prev + 1);
+    }, 1000);
+  };
+  
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+  
+  const startRecording = async () => {
+    try {
+      await audioRecorder.current.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      setAudioUrl(null);
+      startTimer();
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+  
+  const stopRecording = async () => {
+    if (!audioRecorder.current.isRecording()) return;
+    
+    try {
+      const audioBlob = await audioRecorder.current.stop();
+      const url = createAudioUrl(audioBlob);
+      setAudioUrl(url);
+      setIsRecording(false);
+      stopTimer();
+    } catch (error) {
+      console.error("Error stopping recording:", error);
+      setIsRecording(false);
+      stopTimer();
+    }
+  };
+  
+  const togglePlayback = () => {
+    if (!audioRef.current || !audioUrl) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    
+    setIsPlaying(!isPlaying);
+  };
+  
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  useEffect(() => {
+    return () => {
+      stopTimer();
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
   
   if (showExercise) {
     return <VocalExercise lessonId={lessonId} onComplete={() => navigate("/progress")} />;
@@ -80,6 +166,15 @@ const LessonLearning = () => {
         <div className="flex-1">
           <h1 className="text-xl font-bold mb-4">{vocalFoundationSteps[currentStep].title}</h1>
           <p className="text-gray-700 leading-relaxed">{vocalFoundationSteps[currentStep].content}</p>
+          
+          {vocalFoundationSteps[currentStep].hasExercise && (
+            <Button 
+              className="mt-6"
+              onClick={() => setShowPracticeDialog(true)}
+            >
+              Practice Pitch Variation
+            </Button>
+          )}
         </div>
         
         <div className="flex justify-between pt-4 border-t mt-6">
@@ -98,6 +193,71 @@ const LessonLearning = () => {
             <ArrowRight size={16} className="ml-2" />
           </Button>
         </div>
+
+        <Dialog open={showPracticeDialog} onOpenChange={setShowPracticeDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Practice Pitch Variation</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic">
+                "The way we communicate shapes how others perceive us. By consciously varying our pitch, we can highlight key ideas and maintain audience interest throughout our delivery."
+              </p>
+              
+              <div className="flex-1 flex flex-col items-center justify-center py-6">
+                {!isRecording && !audioUrl && (
+                  <div className="text-center space-y-4">
+                    <div className="record-button mx-auto" onClick={startRecording}>
+                      <Mic size={32} />
+                    </div>
+                    <p className="text-sm">Tap to start recording</p>
+                  </div>
+                )}
+                
+                {isRecording && (
+                  <div className="text-center space-y-4">
+                    <div className="text-xl font-semibold">{formatTime(recordingTime)}</div>
+                    <div className="animate-pulse">
+                      <div className="record-button mx-auto bg-red-500" onClick={stopRecording}>
+                        <StopCircle size={32} />
+                      </div>
+                    </div>
+                    <p className="text-sm">Recording... Tap to stop</p>
+                  </div>
+                )}
+                
+                {audioUrl && (
+                  <div className="w-full space-y-4">
+                    <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />
+                    
+                    <div className="flex items-center justify-center space-x-4">
+                      <Button 
+                        variant="outline" 
+                        className="w-12 h-12 rounded-full p-0"
+                        onClick={togglePlayback}
+                      >
+                        {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                      </Button>
+                    </div>
+                    
+                    <div className="flex justify-center space-x-4">
+                      <Button variant="outline" onClick={() => {
+                        setAudioUrl(null);
+                        setRecordingTime(0);
+                      }}>
+                        Record again
+                      </Button>
+                      
+                      <Button onClick={() => setShowPracticeDialog(false)}>
+                        Done
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
