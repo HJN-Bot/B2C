@@ -30,6 +30,21 @@ const LessonLearning = () => {
   
   const isPublicSpeakingIntro = lessonId === "public-speaking-intro";
   
+  // Handler for when vocal exercise is completed
+  const handleExerciseComplete = () => {
+    if (isPublicSpeakingIntro && part === "1") {
+      if (step === "1") {
+        navigate(`/lessons/${lessonId}/learn?part=1&step=2`);
+      } else if (step === "2") {
+        navigate(`/lessons/${lessonId}/learn?part=1&step=3`);
+      } else {
+        navigate(`/lessons/${lessonId}`);
+      }
+    } else {
+      navigate(`/lessons/${lessonId}`);
+    }
+  };
+  
   // Content based on part and step
   let content;
   
@@ -49,7 +64,7 @@ const LessonLearning = () => {
           </blockquote>
         </div>
         
-        <VocalExercise />
+        <VocalExercise onComplete={handleExerciseComplete} />
       </div>
     );
   } else if (isPublicSpeakingIntro && part === "1" && step === "2") {
@@ -68,7 +83,7 @@ const LessonLearning = () => {
           </blockquote>
         </div>
         
-        <VocalExercise />
+        <VocalExercise onComplete={handleExerciseComplete} />
       </div>
     );
   } else if (isPublicSpeakingIntro && part === "1" && step === "3") {
@@ -89,7 +104,7 @@ const LessonLearning = () => {
           </ul>
         </div>
         
-        <VocalExercise />
+        <VocalExercise onComplete={handleExerciseComplete} />
       </div>
     );
   } else {
