@@ -12,28 +12,31 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import LessonDetail from "./pages/LessonDetail";
 import LessonLearning from "./pages/LessonLearning";
+import React from "react";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/lessons" element={<Lessons />} />
-          <Route path="/lessons/:lessonId" element={<LessonDetail />} />
-          <Route path="/lessons/:lessonId/learn" element={<LessonLearning />} />
-          <Route path="/practice" element={<Practice />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/lessons" element={<Lessons />} />
+            <Route path="/lessons/:lessonId" element={<LessonDetail />} />
+            <Route path="/lessons/:lessonId/learn" element={<LessonLearning />} />
+            <Route path="/practice" element={<Practice />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </React.StrictMode>
 );
 
 export default App;
