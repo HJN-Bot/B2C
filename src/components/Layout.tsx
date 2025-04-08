@@ -2,6 +2,7 @@
 import { ReactNode } from "react";
 import Navigation from "./Navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface LayoutProps {
   children: ReactNode;
