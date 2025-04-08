@@ -1,12 +1,14 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle, BookOpen } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import VocalExercise from "@/components/VocalExercise";
 import { AudioRecorder, createAudioUrl } from "@/utils/audioRecorder";
+import { Card, CardContent } from "@/components/ui/card";
 
 const LessonLearning = () => {
   const {
@@ -159,81 +161,122 @@ const LessonLearning = () => {
   }
 
   return <Layout hideNavigation>
-      <div className="p-4 min-h-screen flex flex-col">
+      <div className="p-4 min-h-screen flex flex-col bg-gradient-to-br from-white to-blue-50">
         <div className="mb-6">
-          <Progress value={progress} className="h-2" />
-          <div className="text-xs text-gray-500 mt-1 text-right">
-            {currentStep + 1}/{totalSteps}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-medium text-blue-700">
+              Step {currentStep + 1} of {totalSteps}
+            </div>
+            <div className="text-sm text-gray-500">
+              Part {part}
+            </div>
           </div>
+          <Progress value={progress} className="h-2.5 bg-blue-100" />
         </div>
         
-        <div className="flex-1 text-blue-600">
-          <h1 className="text-xl font-bold mb-4">{activeSteps[currentStep].title}</h1>
-          <p className="text-gray-700 leading-relaxed whitespace-pre-line">{activeSteps[currentStep].content}</p>
-          
-          {activeSteps[currentStep].hasExercise && <Button className="mt-6" onClick={() => setShowPracticeDialog(true)}>
-              Practice Vocal Elements
-            </Button>}
-        </div>
+        <Card className="flex-1 border-none shadow-md bg-white/90 backdrop-blur-sm mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <BookOpen className="h-5 w-5 text-blue-600" />
+              </div>
+              <h1 className="text-xl font-bold text-blue-700">{activeSteps[currentStep].title}</h1>
+            </div>
+            
+            <div className="prose prose-blue max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
+              {activeSteps[currentStep].content.split('\n\n').map((paragraph, index) => (
+                <p key={index} className={index === 0 ? "text-lg font-medium" : "text-base"}>
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+            
+            {activeSteps[currentStep].hasExercise && 
+              <div className="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => setShowPracticeDialog(true)}>
+                  Practice Vocal Elements
+                </Button>
+              </div>
+            }
+          </CardContent>
+        </Card>
         
-        <div className="flex justify-between pt-4 border-t mt-6">
-          <Button variant="outline" onClick={handlePrevious}>
+        <div className="flex justify-between pt-4 border-t mt-auto">
+          <Button 
+            variant="outline" 
+            onClick={handlePrevious}
+            className="border-blue-200 hover:bg-blue-50 text-blue-700"
+          >
             <ArrowLeft size={16} className="mr-2" />
             Previous
           </Button>
           
-          <Button onClick={handleNext}>
+          <Button 
+            onClick={handleNext}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             {currentStep === totalSteps - 1 ? "Start Exercise" : "Next"}
             <ArrowRight size={16} className="ml-2" />
           </Button>
         </div>
 
         <Dialog open={showPracticeDialog} onOpenChange={setShowPracticeDialog}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md bg-white">
             <DialogHeader>
-              <DialogTitle>Practice Vocal Elements</DialogTitle>
+              <DialogTitle className="text-blue-700">Practice Vocal Elements</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic">
+              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic border-l-4 border-blue-300">
                 {part === "2" ? "Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade, and to connect. By mastering these vocal elements, you're not just becoming a better speaker – you're becoming a more effective communicator in every aspect of your life." : "In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly. Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life."}
               </p>
               
               <div className="flex-1 flex flex-col items-center justify-center py-6">
                 {!isRecording && !audioUrl && <div className="text-center space-y-4">
-                    <div className="record-button mx-auto" onClick={startRecording}>
+                    <div className="record-button mx-auto bg-blue-500 hover:bg-blue-600 transition-colors" onClick={startRecording}>
                       <Mic size={32} />
                     </div>
-                    <p className="text-sm">Tap to start recording</p>
+                    <p className="text-sm text-gray-600">Tap to start recording</p>
                   </div>}
                 
                 {isRecording && <div className="text-center space-y-4">
                     <div className="text-xl font-semibold">{formatTime(recordingTime)}</div>
                     <div className="animate-pulse">
-                      <div className="record-button mx-auto bg-red-500" onClick={stopRecording}>
+                      <div className="record-button mx-auto bg-red-500 hover:bg-red-600 transition-colors" onClick={stopRecording}>
                         <StopCircle size={32} />
                       </div>
                     </div>
-                    <p className="text-sm">Recording... Tap to stop</p>
+                    <p className="text-sm text-gray-600">Recording... Tap to stop</p>
                   </div>}
                 
                 {audioUrl && <div className="w-full space-y-4">
                     <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />
                     
                     <div className="flex items-center justify-center space-x-4">
-                      <Button variant="outline" className="w-12 h-12 rounded-full p-0" onClick={togglePlayback}>
-                        {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                      <Button 
+                        variant="outline" 
+                        className="w-12 h-12 rounded-full p-0 border-blue-200 hover:bg-blue-50" 
+                        onClick={togglePlayback}
+                      >
+                        {isPlaying ? <Pause size={24} className="text-blue-700" /> : <Play size={24} className="text-blue-700" />}
                       </Button>
                     </div>
                     
                     <div className="flex justify-center space-x-4">
-                      <Button variant="outline" onClick={() => {
-                    setAudioUrl(null);
-                    setRecordingTime(0);
-                  }}>
+                      <Button 
+                        variant="outline" 
+                        className="border-blue-200 hover:bg-blue-50 text-blue-700"
+                        onClick={() => {
+                          setAudioUrl(null);
+                          setRecordingTime(0);
+                        }}
+                      >
                         Record again
                       </Button>
                       
-                      <Button onClick={() => setShowPracticeDialog(false)}>
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => setShowPracticeDialog(false)}
+                      >
                         Done
                       </Button>
                     </div>
