@@ -67,12 +67,10 @@ const LessonDetail = () => {
   const isVocalFoundations = lesson.title === "Vocal Foundations";
   const isPublicSpeakingIntro = lesson.id === "public-speaking-intro";
 
-  const handleStartLessonPart = (part: string, specificTopic?: string) => {
+  const handleStartLessonPart = (part: string) => {
     toast({
-      title: specificTopic ? `Starting: ${specificTopic}` : `Lesson Started`,
-      description: specificTopic 
-        ? `You're now learning about ${specificTopic}, a key component of vocal delivery.` 
-        : `You've started Part ${part} of the lesson.`,
+      title: "Lesson Started",
+      description: `You've started Part ${part} of the lesson.`,
     });
     // Directly navigate to progress instead of the lesson learning page
     navigate("/progress");
@@ -134,7 +132,7 @@ const LessonDetail = () => {
                     </ul>
                     <Button 
                       className="w-full mt-4 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                      onClick={() => handleStartLessonPart("1", "Rate of Speech")}
+                      onClick={() => handleStartLessonPart("1")}
                     >
                       Start Part 1
                     </Button>
@@ -161,7 +159,7 @@ const LessonDetail = () => {
                     </ul>
                     <Button 
                       className="w-full mt-4 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                      onClick={() => handleStartLessonPart("2", "Tonality")}
+                      onClick={() => handleStartLessonPart("2")}
                     >
                       Start Part 2
                     </Button>
