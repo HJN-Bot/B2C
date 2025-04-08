@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import VocalExercise from "@/components/VocalExercise";
 import { AudioRecorder, createAudioUrl } from "@/utils/audioRecorder";
+
 const LessonLearning = () => {
   const {
     lessonId
@@ -27,15 +28,16 @@ const LessonLearning = () => {
   const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
+
   const vocalFoundationsPart1 = [{
     title: "Introduction to Vocal Foundations",
     content: "Your voice is your most powerful communication tool. The way you speak can significantly impact how your message is received. In this lesson, we'll explore the key components of effective vocal delivery."
   }, {
     title: "Rate of Speech",
-    content: "Speaking too quickly can make you difficult to understand, while speaking too slowly can cause listeners to lose interest. The ideal rate is typically 150-160 words per minute, but this can vary depending on the context and content of your speech."
+    content: "Speaking with one pace can dull your message and confuse listeners. Adjust your speaking pace — speed up to excite, slow down to emphasize. Keep it varied to hold attention and clarify your message!"
   }, {
     title: "Volume",
-    content: "Your volume should be appropriate for the setting and audience. It's important to project your voice without shouting, and to vary your volume to emphasize important points. Practice breath control to maintain consistent volume throughout your speech."
+    content: "Volume = The lifeblood of your voice\n\nRule of thumb: Ensure your voice is as big as the room. This requires adjusting your energy and presentation style to suit the scale and dynamics of your audience.\n\nFor instance, a high-energy approach might overwhelm a single conversation partner but could be ideal for a large audience."
   }, {
     title: "Pitch",
     content: "Pitch refers to how high or low your voice sounds. A monotone voice can be boring to listen to, so varying your pitch helps keep your audience engaged. Try to find your natural pitch range and practice moving comfortably within it."
@@ -47,6 +49,7 @@ const LessonLearning = () => {
     content: "Transitions = Engagement\n\nNow, let's use these elements to create dynamic transitions that keep your audience engaged. Click the button below to record yourself reading the following passage, focusing on varying your rate of speech, volume, and pitch to create smooth transitions between ideas: 'In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly. Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life.'\n\nBy varying your pace—slowing down for emphasis and speeding up for excitement—you can add dynamic variety to your speech and keep your audience engaged.",
     hasExercise: true
   }];
+
   const vocalFoundationsPart2 = [{
     title: "Tonality",
     content: "Tonality is the emotional quality of your voice. It conveys how you feel about what you're saying. Be mindful of whether your tone matches your message. Practice conveying different emotions through your voice such as enthusiasm, concern, or confidence."
@@ -64,9 +67,11 @@ const LessonLearning = () => {
     content: "Let's practice putting all these elements together. Click the button below to record yourself reading this passage, focusing on incorporating all the vocal elements we've discussed: 'Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade, and to connect. By mastering these vocal elements, you're not just becoming a better speaker – you're becoming a more effective communicator in every aspect of your life.'\n\nPay special attention to your tonality and use strategic pauses for emphasis.",
     hasExercise: true
   }];
+
   const activeSteps = part === "2" ? vocalFoundationsPart2 : vocalFoundationsPart1;
   const totalSteps = activeSteps.length;
   const progress = (currentStep + 1) / totalSteps * 100;
+
   const handleNext = () => {
     if (currentStep === totalSteps - 1) {
       setShowExercise(true);
@@ -74,6 +79,7 @@ const LessonLearning = () => {
       setCurrentStep(prev => prev + 1);
     }
   };
+
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
@@ -81,18 +87,21 @@ const LessonLearning = () => {
       navigate(-1);
     }
   };
+
   const startTimer = () => {
     if (timerRef.current) return;
     timerRef.current = window.setInterval(() => {
       setRecordingTime(prev => prev + 1);
     }, 1000);
   };
+
   const stopTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
   };
+
   const startRecording = async () => {
     try {
       await audioRecorder.current.start();
@@ -104,6 +113,7 @@ const LessonLearning = () => {
       console.error("Error starting recording:", error);
     }
   };
+
   const stopRecording = async () => {
     if (!audioRecorder.current.isRecording()) return;
     try {
@@ -118,6 +128,7 @@ const LessonLearning = () => {
       stopTimer();
     }
   };
+
   const togglePlayback = () => {
     if (!audioRef.current || !audioUrl) return;
     if (isPlaying) {
@@ -127,11 +138,13 @@ const LessonLearning = () => {
     }
     setIsPlaying(!isPlaying);
   };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
   useEffect(() => {
     return () => {
       stopTimer();
@@ -140,9 +153,11 @@ const LessonLearning = () => {
       }
     };
   }, [audioUrl]);
+
   if (showExercise) {
     return <VocalExercise lessonId={lessonId} onComplete={() => navigate("/progress")} />;
   }
+
   return <Layout hideNavigation>
       <div className="p-4 min-h-screen flex flex-col">
         <div className="mb-6">
@@ -230,4 +245,5 @@ const LessonLearning = () => {
       </div>
     </Layout>;
 };
+
 export default LessonLearning;
