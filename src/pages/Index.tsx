@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Star, Mic, BookOpen, Award } from "lucide-react";
+import { ChevronRight, Star, Mic, BookOpen, Award, VolumeUp } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +23,24 @@ const Index = () => {
     else setGreeting("Good evening");
   }, []);
   
-  const recommendedLessons = MOCK_LESSONS.slice(0, 2);
+  // Add the vocal foundations module to the recommended lessons
+  const allLessons = [
+    ...MOCK_LESSONS,
+    {
+      id: "vocal-foundations",
+      title: "Vocal Foundations",
+      description: "Creating a strong and versatile speaking voice.",
+      category: "articulation",
+      level: "beginner",
+      duration: 15,
+      slides: [],
+      exercises: [],
+      completed: false,
+      progress: 0
+    }
+  ];
+  
+  const recommendedLessons = allLessons.slice(0, 3);
   
   return (
     <Layout>
@@ -108,11 +125,13 @@ const Index = () => {
                   lesson.category === "public_speaking" ? "bg-communi-primary/20" :
                   lesson.category === "active_listening" ? "bg-communi-tertiary/20" :
                   lesson.category === "storytelling" ? "bg-communi-quaternary/20" :
+                  lesson.category === "articulation" ? "bg-communi-secondary/20" :
                   "bg-communi-secondary/20"
                 )}>
                   {lesson.category === "public_speaking" && <Mic size={24} className="text-communi-primary" />}
                   {lesson.category === "active_listening" && <BookOpen size={24} className="text-communi-tertiary" />}
                   {lesson.category === "storytelling" && <Star size={24} className="text-communi-quaternary" />}
+                  {lesson.category === "articulation" && <VolumeUp size={24} className="text-communi-secondary" />}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium">{lesson.title}</h3>
