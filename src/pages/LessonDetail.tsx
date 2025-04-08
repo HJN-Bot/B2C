@@ -7,7 +7,6 @@ import { MOCK_LESSONS } from "@/models/lesson";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/components/ui/use-toast";
 
 const LessonDetail = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
@@ -66,15 +65,6 @@ const LessonDetail = () => {
   
   const isVocalFoundations = lesson.title === "Vocal Foundations";
   const isPublicSpeakingIntro = lesson.id === "public-speaking-intro";
-
-  const handleStartLessonPart = (part: string) => {
-    toast({
-      title: "Lesson Started",
-      description: `You've started Part ${part} of the lesson.`,
-    });
-    // Directly navigate to progress instead of the lesson learning page
-    navigate("/progress");
-  };
   
   return (
     <Layout>
@@ -132,7 +122,7 @@ const LessonDetail = () => {
                     </ul>
                     <Button 
                       className="w-full mt-4 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                      onClick={() => handleStartLessonPart("1")}
+                      onClick={() => navigate(`/lessons/${lessonId}/learn?part=1&step=1`)}
                     >
                       Start Part 1
                     </Button>
@@ -159,7 +149,7 @@ const LessonDetail = () => {
                     </ul>
                     <Button 
                       className="w-full mt-4 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                      onClick={() => handleStartLessonPart("2")}
+                      onClick={() => navigate(`/lessons/${lessonId}/learn?part=2`)}
                     >
                       Start Part 2
                     </Button>
@@ -192,7 +182,7 @@ const LessonDetail = () => {
           <div className="mt-6 pt-4 border-t">
             <Button 
               className="w-full bg-blue-100 text-blue-700 hover:bg-blue-200"
-              onClick={() => handleStartLessonPart("all")}
+              onClick={() => navigate(`/lessons/${lessonId}/learn`)}
             >
               Start
             </Button>
