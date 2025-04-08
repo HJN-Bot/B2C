@@ -84,7 +84,11 @@ const LessonDetail = () => {
           </h1>
         </div>
         
-        <p className="text-gray-600">{lesson.description}</p>
+        <p className="text-gray-600">
+          {isPublicSpeakingIntro 
+            ? "Your voice is your most powerful communication tool. The way you speak can significantly impact how your message is received. In this lesson, we'll explore the key components of effective vocal delivery." 
+            : lesson.description}
+        </p>
         
         <div className="text-sm text-gray-500 flex space-x-4">
           <span>{lesson.duration} minutes</span>
@@ -118,7 +122,7 @@ const LessonDetail = () => {
                     </ul>
                     <Button 
                       className="w-full mt-4 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                      onClick={() => navigate(`/lessons/${lessonId}/learn?part=1`)}
+                      onClick={() => navigate(`/lessons/${lessonId}/learn?part=1&step=1`)}
                     >
                       Start Part 1
                     </Button>

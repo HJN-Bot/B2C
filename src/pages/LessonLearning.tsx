@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle } from "lucide-react";
@@ -12,8 +13,9 @@ const LessonLearning = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
   const [searchParams] = useSearchParams();
   const part = searchParams.get('part') || "1";
+  const stepParam = searchParams.get('step');
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(stepParam ? parseInt(stepParam, 10) - 1 : 0);
   const [showExercise, setShowExercise] = useState(false);
   const [showPracticeDialog, setShowPracticeDialog] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
