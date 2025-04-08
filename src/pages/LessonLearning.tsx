@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle } from "lucide-react";
@@ -43,7 +42,7 @@ const LessonLearning = () => {
     },
     {
       title: "Practice Exercise",
-      content: "Transitions = Engagement\n\nNow, let's use the 3 elements to creating dynamic transitions that keep your audience engaged. Click the button below to record yourself reading the following passage, focusing on varying your rate of speech, volume, and pitch to create smooth transitions between ideas: 'The way we communicate shapes how others perceive us. By consciously controlling our vocal elements, we can highlight key ideas and maintain audience interest throughout our delivery.'\n\nBy varying your pace—slowing down for emphasis and speeding up for excitement—you can add dynamic variety to your speech and keep your audience engaged.",
+      content: "Transitions = Engagement\n\nNow, let's use the 3 elements to creating dynamic transitions that keep your audience engaged. Click the button below to record yourself reading the following passage, focusing on varying your rate of speech, volume, and pitch to create smooth transitions between ideas: 'In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly. Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life.'\n\nBy varying your pace—slowing down for emphasis and speeding up for excitement—you can add dynamic variety to your speech and keep your audience engaged.",
       hasExercise: true,
     },
     {
@@ -201,7 +200,7 @@ const LessonLearning = () => {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic">
-                "The way we communicate shapes how others perceive us. By consciously controlling our vocal elements, we can highlight key ideas and maintain audience interest throughout our delivery."
+                "In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly. Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life."
               </p>
               
               <div className="flex-1 flex flex-col items-center justify-center py-6">
