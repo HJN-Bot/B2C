@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, Volume2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { MOCK_LESSONS } from "@/models/lesson";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const LessonDetail = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
@@ -12,7 +13,7 @@ const LessonDetail = () => {
   // Find the lesson or create a new one for vocal foundations
   let lesson = MOCK_LESSONS.find((l) => l.id === lessonId);
   
-  if (lessonId === "vocal-foundations") {
+  if (lessonId === "vocal-foundations" || (lesson && lesson.title === "Vocal Foundations")) {
     lesson = {
       id: "vocal-foundations",
       title: "Vocal Foundations",
@@ -55,6 +56,8 @@ const LessonDetail = () => {
     "Pause"
   ];
   
+  const isVocalFoundations = lesson.title === "Vocal Foundations";
+  
   return (
     <Layout>
       <div className="p-4 space-y-5">
@@ -66,7 +69,9 @@ const LessonDetail = () => {
           >
             <ArrowLeft size={24} />
           </Button>
-          <h1 className="text-2xl font-bold">{lesson.title}</h1>
+          <h1 className="text-2xl font-bold">
+            {isVocalFoundations ? "Introduction to Vocal Foundations" : lesson.title}
+          </h1>
         </div>
         
         <p className="text-gray-600">{lesson.description}</p>
@@ -76,16 +81,18 @@ const LessonDetail = () => {
           <span className="capitalize">{lesson.level}</span>
         </div>
         
-        {lessonId === "vocal-foundations" && (
-          <div className="space-y-3 mt-6">
+        {isVocalFoundations && (
+          <div className="space-y-4 mt-6 bg-gray-50 p-4 rounded-lg">
             <h2 className="text-lg font-semibold">What you'll learn:</h2>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {vocalFoundationTopics.map((topic, index) => (
-                <li key={index} className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center">
-                    <CheckCircle size={16} className="text-gray-300" />
+                <li key={index} className="flex items-center space-x-3">
+                  <div className="flex h-5 items-center">
+                    <Checkbox id={`topic-${index}`} disabled checked={false} />
                   </div>
-                  <span>{topic}</span>
+                  <label htmlFor={`topic-${index}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    {topic}
+                  </label>
                 </li>
               ))}
             </ul>
@@ -94,7 +101,7 @@ const LessonDetail = () => {
         
         <div className="mt-6 pt-4 border-t">
           <Button 
-            className="w-full"
+            className="w-full bg-blue-100 text-blue-700 hover:bg-blue-200"
             onClick={() => navigate(`/lessons/${lessonId}/learn`)}
           >
             Start
