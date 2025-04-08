@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mic, StopCircle, Play, Pause, ArrowLeft, CheckCircle } from "lucide-react";
@@ -15,6 +14,26 @@ interface VocalExerciseProps {
   onComplete: () => void;
 }
 
+interface DetailedAnalysis extends AnalysisResult {
+  detailedFeedback: {
+    rateOfSpeech: {
+      score: number;
+      analysis: string;
+      suggestions: string[];
+    };
+    volume: {
+      score: number;
+      analysis: string;
+      suggestions: string[];
+    };
+    pitch: {
+      score: number;
+      analysis: string;
+      suggestions: string[];
+    };
+  };
+}
+
 const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
   const navigate = useNavigate();
   const [step, setStep] = useState<"instructions" | "recording" | "analysis">("instructions");
@@ -22,7 +41,7 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [analysis, setAnalysis] = useState<DetailedAnalysis | null>(null);
   const [analyzingAudio, setAnalyzingAudio] = useState(false);
   
   const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
@@ -69,10 +88,43 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
       setIsRecording(false);
       stopTimer();
       
-      // Simulate AI analysis
       setAnalyzingAudio(true);
-      const result = await mockAnalyzeAudio(recordingTime);
-      setAnalysis(result);
+      const basicResult = await mockAnalyzeAudio(recordingTime);
+      
+      const detailedResult: DetailedAnalysis = {
+        ...basicResult,
+        detailedFeedback: {
+          rateOfSpeech: {
+            score: Math.floor(Math.random() * 30) + 70,
+            analysis: "Your speaking rate averaged 165 words per minute, which is within the ideal range for clear comprehension. There were moments where you accelerated during complex phrases.",
+            suggestions: [
+              "Try marking your script with pauses to remind yourself to slow down at key points.",
+              "Practice with a metronome set to 150 beats per minute for a consistent pace.",
+              "Record yourself reading the same passage at different speeds to find your optimal rate."
+            ]
+          },
+          volume: {
+            score: Math.floor(Math.random() * 30) + 70,
+            analysis: "Your volume was well-projected and consistent throughout most of the recording. There was a slight drop in volume toward the end of longer sentences.",
+            suggestions: [
+              "Practice diaphragmatic breathing to maintain consistent airflow for longer phrases.",
+              "Try the 'countdown technique': start a sentence loudly and gradually decrease volume while maintaining clarity.",
+              "Record yourself in different environments to develop adaptability in your projection."
+            ]
+          },
+          pitch: {
+            score: Math.floor(Math.random() * 30) + 70,
+            analysis: "You demonstrated some pitch variation, particularly when emphasizing key points. However, your pitch range could be expanded for greater expressiveness.",
+            suggestions: [
+              "Try reading dialogue from a play, exaggerating the emotional differences between characters.",
+              "Practice sliding from your lowest comfortable note to your highest in a controlled manner.",
+              "Identify 3-4 key words in each sentence and deliberately vary your pitch when speaking them."
+            ]
+          }
+        }
+      };
+      
+      setAnalysis(detailedResult);
       setAnalyzingAudio(false);
     } catch (error) {
       console.error("Error stopping recording:", error);
@@ -231,7 +283,6 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
     );
   }
   
-  // Analysis step
   return (
     <Layout hideNavigation>
       <div className="p-4 min-h-screen flex flex-col">
@@ -255,80 +306,102 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
           </div>
         )}
         
-        {!analyzingAudio && (
+        {!analyzingAudio && analysis && (
           <div className="space-y-5 flex-1">
             <Card>
               <CardContent className="pt-6">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium">Overall Score</span>
-                  <span className="text-lg font-bold text-communi-primary">82/100</span>
+                  <span className="text-lg font-bold text-communi-primary">{analysis.overallScore}/100</span>
                 </div>
-                <Progress value={82} className="h-3" />
+                <Progress value={analysis.overallScore} className="h-3" />
               </CardContent>
             </Card>
             
-            <Tabs defaultValue="scores">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="scores">Detailed Scores</TabsTrigger>
-                <TabsTrigger value="feedback">Feedback</TabsTrigger>
+            <Tabs defaultValue="detailed">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="detailed">Detailed Analysis</TabsTrigger>
+                <TabsTrigger value="scores">Basic Scores</TabsTrigger>
+                <TabsTrigger value="suggestions">Improvement Plan</TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="detailed" className="space-y-4 pt-4">
+                <DetailedFeedbackCard 
+                  title="Rate of Speech" 
+                  score={analysis.detailedFeedback.rateOfSpeech.score}
+                  analysis={analysis.detailedFeedback.rateOfSpeech.analysis}
+                />
+                
+                <DetailedFeedbackCard 
+                  title="Volume" 
+                  score={analysis.detailedFeedback.volume.score}
+                  analysis={analysis.detailedFeedback.volume.analysis}
+                />
+                
+                <DetailedFeedbackCard 
+                  title="Pitch Variation" 
+                  score={analysis.detailedFeedback.pitch.score}
+                  analysis={analysis.detailedFeedback.pitch.analysis}
+                />
+              </TabsContent>
               
               <TabsContent value="scores" className="space-y-4 pt-4">
                 <ScoreItem 
                   label="Rate of Speech" 
-                  score={78} 
-                  description="Your speaking pace was generally good but occasionally too fast"
+                  score={analysis.detailedFeedback.rateOfSpeech.score} 
+                  description="Optimal speaking pace for comprehension"
                 />
                 <ScoreItem 
                   label="Volume" 
-                  score={85} 
-                  description="Good projection and consistent volume throughout"
+                  score={analysis.detailedFeedback.volume.score} 
+                  description="Projection and consistency"
                 />
                 <ScoreItem 
                   label="Pitch" 
-                  score={72} 
-                  description="Some variation in pitch, but could use more range"
+                  score={analysis.detailedFeedback.pitch.score} 
+                  description="Variation and expressiveness"
                 />
                 <ScoreItem 
                   label="Tonality" 
-                  score={88} 
-                  description="Excellent emotional expression in your voice"
+                  score={analysis.tonalityScore} 
+                  description="Emotional expression in voice"
                 />
                 <ScoreItem 
                   label="Pauses" 
-                  score={75} 
-                  description="Good use of pauses, but some opportunities missed"
+                  score={analysis.pausesScore} 
+                  description="Strategic use of silence"
                 />
               </TabsContent>
               
-              <TabsContent value="feedback" className="pt-4">
-                <div className="space-y-3">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm">Your rate of speech was appropriate for most of the passage, averaging about 160 words per minute. However, you tended to accelerate during complex sentences. Try slowing down when explaining complicated ideas.</p>
-                  </div>
+              <TabsContent value="suggestions" className="pt-4">
+                <div className="space-y-4">
+                  <ImprovementSection 
+                    title="Rate of Speech"
+                    suggestions={analysis.detailedFeedback.rateOfSpeech.suggestions}
+                  />
                   
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm">Your volume was consistently strong and well-projected. You maintained good breath control throughout the exercise.</p>
-                  </div>
+                  <ImprovementSection 
+                    title="Volume"
+                    suggestions={analysis.detailedFeedback.volume.suggestions}
+                  />
                   
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm">Your pitch variation was present but limited. Try expanding your range to emphasize key points and add interest to your delivery.</p>
-                  </div>
-                  
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm">Your tonality was excellent! You conveyed conviction and enthusiasm appropriately, particularly when discussing the importance of communication.</p>
-                  </div>
-                  
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm">You used pauses effectively after major points, but missed some opportunities for emphasis. Remember that a well-placed pause can be more powerful than words.</p>
-                  </div>
+                  <ImprovementSection 
+                    title="Pitch Variation"
+                    suggestions={analysis.detailedFeedback.pitch.suggestions}
+                  />
                 </div>
               </TabsContent>
             </Tabs>
             
             <div className="mt-6 pt-4 border-t">
               <p className="text-sm text-gray-700 mb-4">
-                Based on your performance, we recommend focusing on improving your pitch variation and strategic pauses in your next practice session.
+                Based on your performance, we recommend focusing on improving 
+                {analysis.detailedFeedback.pitch.score < analysis.detailedFeedback.rateOfSpeech.score && 
+                 analysis.detailedFeedback.pitch.score < analysis.detailedFeedback.volume.score ? 
+                  ' pitch variation' : 
+                  analysis.detailedFeedback.rateOfSpeech.score < analysis.detailedFeedback.volume.score ? 
+                    ' rate of speech' : ' volume control'} 
+                in your next practice session.
               </p>
               
               <Button 
@@ -343,6 +416,46 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
         )}
       </div>
     </Layout>
+  );
+};
+
+const DetailedFeedbackCard = ({ title, score, analysis }: { title: string; score: number; analysis: string }) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
+  
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="font-semibold">{title}</h3>
+          <span className={cn("font-bold", getScoreColor(score))}>
+            {score}/100
+          </span>
+        </div>
+        <Progress value={score} className="h-2 mb-3" />
+        <p className="text-sm text-gray-700">{analysis}</p>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ImprovementSection = ({ title, suggestions }: { title: string; suggestions: string[] }) => {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <h3 className="font-semibold mb-2">{title} Improvement Plan</h3>
+        <ul className="space-y-2">
+          {suggestions.map((suggestion, index) => (
+            <li key={index} className="text-sm bg-gray-50 p-2 rounded-md">
+              {suggestion}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 };
 
