@@ -70,7 +70,7 @@ const LessonDetail = () => {
             <ArrowLeft size={24} />
           </Button>
           <h1 className="text-2xl font-bold">
-            {isVocalFoundations ? "Introduction to Vocal Foundations" : lesson.title}
+            {isVocalFoundations ? "Introduction to vocal foundations" : lesson.title}
           </h1>
         </div>
         
