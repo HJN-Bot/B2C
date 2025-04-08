@@ -11,7 +11,6 @@ import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import LessonDetail from "./pages/LessonDetail";
-import LessonLearning from "./pages/LessonLearning";
 import React from "react";
 
 // Create a fresh query client instance
@@ -30,7 +29,6 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/lessons" element={<Lessons />} />
               <Route path="/lessons/:lessonId" element={<LessonDetail />} />
-              <Route path="/lessons/:lessonId/learn" element={<LessonLearning />} />
               <Route path="/practice" element={<Practice />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/profile" element={<Profile />} />
