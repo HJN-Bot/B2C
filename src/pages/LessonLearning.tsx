@@ -42,7 +42,7 @@ const LessonLearning = () => {
     },
     {
       title: "Practice Exercise",
-      content: "Now, let's practice what you've learned about rate of speech, volume, and pitch. Click the button below to record yourself reading the following passage, focusing on varying your rate of speech for clarity, adjusting your volume for emphasis, and changing your pitch to highlight important points: 'The way we communicate shapes how others perceive us. By consciously controlling our vocal elements, we can highlight key ideas and maintain audience interest throughout our delivery.'",
+      content: "Transitions = Engagement\n\nNow, let's use the 3 elements to creating dynamic transitions that keep your audience engaged. Click the button below to record yourself reading the following passage, focusing on varying your rate of speech, volume, and pitch to create smooth transitions between ideas: 'The way we communicate shapes how others perceive us. By consciously controlling our vocal elements, we can highlight key ideas and maintain audience interest throughout our delivery.'",
       hasExercise: true,
     },
     {
@@ -171,7 +171,7 @@ const LessonLearning = () => {
               className="mt-6"
               onClick={() => setShowPracticeDialog(true)}
             >
-              Practice Vocal Techniques
+              Practice Vocal Transitions
             </Button>
           )}
         </div>
@@ -196,7 +196,7 @@ const LessonLearning = () => {
         <Dialog open={showPracticeDialog} onOpenChange={setShowPracticeDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Practice Vocal Techniques</DialogTitle>
+              <DialogTitle>Practice Vocal Transitions</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic">
