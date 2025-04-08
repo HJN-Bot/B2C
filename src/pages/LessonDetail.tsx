@@ -57,6 +57,7 @@ const LessonDetail = () => {
   ];
   
   const isVocalFoundations = lesson.title === "Vocal Foundations";
+  const isPublicSpeakingIntro = lesson.id === "public-speaking-intro";
   
   return (
     <Layout>
@@ -70,7 +71,9 @@ const LessonDetail = () => {
             <ArrowLeft size={24} />
           </Button>
           <h1 className="text-2xl font-bold">
-            {isVocalFoundations ? "Introduction to vocal foundations" : lesson.title}
+            {isVocalFoundations ? "Introduction to vocal foundations" : 
+             isPublicSpeakingIntro ? "6 factors of vocal foundations" : 
+             lesson.title}
           </h1>
         </div>
         
