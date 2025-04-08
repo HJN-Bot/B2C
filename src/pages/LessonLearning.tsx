@@ -84,7 +84,7 @@ const LessonLearning = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
     } else {
-      navigate(-1);
+      navigate(`/lessons/${lessonId}`);
     }
   };
 
@@ -154,6 +154,12 @@ const LessonLearning = () => {
     };
   }, [audioUrl]);
 
+  useEffect(() => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('step', (currentStep + 1).toString());
+    navigate(`/lessons/${lessonId}/learn?${newSearchParams.toString()}`, { replace: true });
+  }, [currentStep, lessonId, navigate, searchParams]);
+
   if (showExercise) {
     return <VocalExercise lessonId={lessonId} onComplete={() => navigate("/progress")} />;
   }
@@ -177,7 +183,10 @@ const LessonLearning = () => {
         </div>
         
         <div className="flex justify-between pt-4 border-t mt-6">
-          <Button variant="outline" onClick={handlePrevious}>
+          <Button 
+            variant="outline" 
+            onClick={handlePrevious}
+          >
             <ArrowLeft size={16} className="mr-2" />
             Previous
           </Button>
