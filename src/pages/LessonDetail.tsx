@@ -53,8 +53,7 @@ const LessonDetail = () => {
   const vocalFoundationsPart1 = [
     "Rate of Speech",
     "Volume",
-    "Pitch",
-    "Melody"
+    "Pitch"
   ];
 
   const vocalFoundationsPart2 = [
@@ -105,7 +104,7 @@ const LessonDetail = () => {
               <TabsContent value="part1">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Rate, Volume, Pitch & Melody</CardTitle>
+                    <CardTitle className="text-base">Rate, Volume & Pitch</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-3">
