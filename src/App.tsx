@@ -12,14 +12,15 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import LessonDetail from "./pages/LessonDetail";
 import LessonLearning from "./pages/LessonLearning";
-import React from "react";
 
+// Create a fresh query client instance
 const queryClient = new QueryClient();
 
-const App = () => (
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+// Create a functional component to wrap our app
+function App() {
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -34,9 +35,9 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  </React.StrictMode>
-);
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+}
 
 export default App;
