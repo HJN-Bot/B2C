@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle } from "lucide-react";
@@ -29,9 +30,10 @@ const LessonLearning = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
 
+  // Part 1: Rate of Speech and Volume
   const vocalFoundationsPart1 = [{
     title: "Introduction to Vocal Foundations",
-    content: "Your voice is your most powerful communication tool. The way you speak can significantly impact how your message is received. In this lesson, we'll explore the key components of effective vocal delivery."
+    content: "Your voice is your most powerful communication tool. The way you speak can significantly impact how your message is received. In this lesson, we'll explore the key components of effective vocal delivery, focusing on the rate of speech and volume."
   }, {
     title: "Rate of Speech",
     content: "Speaking with one pace can dull your message and confuse listeners. Adjust your speaking pace — speed up to excite, slow down to emphasize. Keep it varied to hold attention and clarify your message!"
@@ -39,20 +41,31 @@ const LessonLearning = () => {
     title: "Volume",
     content: "Volume = The lifeblood of your voice\n\nRule of thumb: Ensure your voice is as big as the room. This requires adjusting your energy and presentation style to suit the scale and dynamics of your audience.\n\nFor instance, a high-energy approach might overwhelm a single conversation partner but could be ideal for a large audience."
   }, {
-    title: "Pitch",
-    content: "Pitch refers to how high or low your voice sounds. A monotone voice can be boring to listen to, so varying your pitch helps keep your audience engaged. Try to find your natural pitch range and practice moving comfortably within it."
-  }, {
-    title: "Melody",
-    content: "Melody is the rise and fall of your voice as you speak. It adds interest and emotion to your message. Practice creating a melodic pattern by slightly raising your pitch at the beginning of important phrases and lowering it at the end of sentences."
-  }, {
-    title: "Practice Exercise",
-    content: "Transitions = Engagement\n\nNow, let's use these elements to create dynamic transitions that keep your audience engaged. Click the button below to record yourself reading the following passage, focusing on varying your rate of speech, volume, and pitch to create smooth transitions between ideas: 'In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly. Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life.'\n\nBy varying your pace—slowing down for emphasis and speeding up for excitement—you can add dynamic variety to your speech and keep your audience engaged.",
+    title: "Practice Exercise - Rate and Volume",
+    content: "Now, let's practice adjusting your rate of speech and volume. Click the button below to record yourself reading the following passage: 'In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly.'",
     hasExercise: true
   }];
 
+  // Part 2: Pitch and Tonality
   const vocalFoundationsPart2 = [{
+    title: "Introduction to Pitch and Tonality",
+    content: "In this section, we focus on the energizers of communication: pitch and tonality. These elements add life and emotion to your words, helping you connect with your audience on a deeper level."
+  }, {
+    title: "Pitch",
+    content: "Pitch refers to how high or low your voice sounds. A monotone voice can be boring to listen to, so varying your pitch helps keep your audience engaged. Try to find your natural pitch range and practice moving comfortably within it."
+  }, {
     title: "Tonality",
     content: "Tonality is the emotional quality of your voice. It conveys how you feel about what you're saying. Be mindful of whether your tone matches your message. Practice conveying different emotions through your voice such as enthusiasm, concern, or confidence."
+  }, {
+    title: "Practice Exercise - Pitch and Tonality",
+    content: "Let's practice varying your pitch and tonality. Click the button below to record yourself reading this passage: 'Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life. Through tonality, you can express joy, concern, confidence, or curiosity - bringing your words to life.'",
+    hasExercise: true
+  }];
+
+  // Part 3: Pause and Filler Words
+  const vocalFoundationsPart3 = [{
+    title: "Introduction to Pauses and Filler Words",
+    content: "In this section, we explore the breathers of talking: strategic pauses and the elimination of filler words. Mastering these elements can dramatically improve the clarity and impact of your communication."
   }, {
     title: "Pause",
     content: "Strategic pauses can be powerful. They give your audience time to process information, create emphasis, and help you control the pace of your delivery. Don't be afraid of silence – it can be one of your most effective tools."
@@ -60,17 +73,36 @@ const LessonLearning = () => {
     title: "Filler Words",
     content: "Filler words like 'um,' 'uh,' 'like,' and 'you know' can distract from your message and make you sound less confident. Practice speaking slowly and pausing instead of using fillers. Record yourself speaking and note when you use fillers to become more aware of this habit."
   }, {
-    title: "Putting It All Together",
-    content: "Effective vocal delivery combines all these elements: appropriate rate, volume, pitch, melody, tonality, strategic pauses, and minimal filler words. When used well, they create a dynamic and engaging speaking style that helps you connect with your audience and deliver your message with impact."
-  }, {
-    title: "Practice Exercise",
-    content: "Let's practice putting all these elements together. Click the button below to record yourself reading this passage, focusing on incorporating all the vocal elements we've discussed: 'Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade, and to connect. By mastering these vocal elements, you're not just becoming a better speaker – you're becoming a more effective communicator in every aspect of your life.'\n\nPay special attention to your tonality and use strategic pauses for emphasis.",
+    title: "Practice Exercise - Pauses and Fillers",
+    content: "Let's practice using strategic pauses and reducing filler words. Click the button below to record yourself reading this passage: 'Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade, and to connect. By mastering these vocal elements, you're not just becoming a better speaker – you're becoming a more effective communicator in every aspect of your life.'",
     hasExercise: true
   }];
 
-  const activeSteps = part === "2" ? vocalFoundationsPart2 : vocalFoundationsPart1;
+  let activeSteps;
+  switch (part) {
+    case "2":
+      activeSteps = vocalFoundationsPart2;
+      break;
+    case "3":
+      activeSteps = vocalFoundationsPart3;
+      break;
+    default:
+      activeSteps = vocalFoundationsPart1;
+  }
+  
   const totalSteps = activeSteps.length;
   const progress = (currentStep + 1) / totalSteps * 100;
+
+  const getExerciseText = () => {
+    switch (part) {
+      case "2":
+        return "Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life. Through tonality, you can express joy, concern, confidence, or curiosity - bringing your words to life.";
+      case "3":
+        return "Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade, and to connect. By mastering these vocal elements, you're not just becoming a better speaker – you're becoming a more effective communicator in every aspect of your life.";
+      default:
+        return "In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly.";
+    }
+  };
 
   const handleNext = () => {
     if (currentStep === totalSteps - 1) {
@@ -204,7 +236,7 @@ const LessonLearning = () => {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic">
-                {part === "2" ? "Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade, and to connect. By mastering these vocal elements, you're not just becoming a better speaker – you're becoming a more effective communicator in every aspect of your life." : "In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly. Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life."}
+                {getExerciseText()}
               </p>
               
               <div className="flex-1 flex flex-col items-center justify-center py-6">
