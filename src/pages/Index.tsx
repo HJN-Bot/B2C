@@ -1,13 +1,152 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ChevronRight, Star, Mic, BookOpen, Award } from "lucide-react";
+import Layout from "@/components/Layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { MOCK_USER } from "@/models/user";
+import { MOCK_LESSONS } from "@/models/lesson";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(MOCK_USER);
+  const [greeting, setGreeting] = useState("");
+  
+  // Get the current time to display an appropriate greeting
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
+  
+  const recommendedLessons = MOCK_LESSONS.slice(0, 2);
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <Layout>
+      <div className="p-4 space-y-6">
+        {/* Header with greeting and profile */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{greeting}, {user.name}</h1>
+            <p className="text-gray-500">Level {user.level} • {user.streak} day streak 🔥</p>
+          </div>
+          <div 
+            className="w-12 h-12 rounded-full bg-gray-200 cursor-pointer"
+            onClick={() => navigate("/profile")}
+          >
+            {/* Profile Avatar placeholder */}
+          </div>
+        </div>
+        
+        {/* XP Progress */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium">XP Progress</span>
+              <span className="text-sm text-gray-500">{user.xp}/{user.xpToNextLevel} XP</span>
+            </div>
+            <Progress value={(user.xp / user.xpToNextLevel) * 100} className="h-2" />
+          </CardContent>
+        </Card>
+        
+        {/* Quick Actions */}
+        <div className="grid grid-cols-3 gap-4">
+          <Button 
+            variant="outline" 
+            className="h-auto flex flex-col items-center py-4 space-y-2"
+            onClick={() => navigate("/lessons")}
+          >
+            <BookOpen size={24} className="text-communi-primary" />
+            <span className="text-xs">Lessons</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="h-auto flex flex-col items-center py-4 space-y-2"
+            onClick={() => navigate("/practice")}
+          >
+            <Mic size={24} className="text-communi-secondary" />
+            <span className="text-xs">Practice</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="h-auto flex flex-col items-center py-4 space-y-2"
+            onClick={() => navigate("/progress")}
+          >
+            <Award size={24} className="text-communi-tertiary" />
+            <span className="text-xs">Progress</span>
+          </Button>
+        </div>
+        
+        {/* Continue Learning */}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold">Continue Learning</h2>
+            <Button 
+              variant="ghost" 
+              className="p-0 h-auto text-sm text-communi-primary flex items-center"
+              onClick={() => navigate("/lessons")}
+            >
+              See all <ChevronRight size={16} />
+            </Button>
+          </div>
+          
+          <div className="space-y-3">
+            {recommendedLessons.map((lesson) => (
+              <div 
+                key={lesson.id}
+                className="module-card flex items-center cursor-pointer"
+                onClick={() => navigate(`/lessons/${lesson.id}`)}
+              >
+                <div className={cn(
+                  "w-12 h-12 rounded-lg flex items-center justify-center mr-4",
+                  lesson.category === "public_speaking" ? "bg-communi-primary/20" :
+                  lesson.category === "active_listening" ? "bg-communi-tertiary/20" :
+                  lesson.category === "storytelling" ? "bg-communi-quaternary/20" :
+                  "bg-communi-secondary/20"
+                )}>
+                  {lesson.category === "public_speaking" && <Mic size={24} className="text-communi-primary" />}
+                  {lesson.category === "active_listening" && <BookOpen size={24} className="text-communi-tertiary" />}
+                  {lesson.category === "storytelling" && <Star size={24} className="text-communi-quaternary" />}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium">{lesson.title}</h3>
+                  <p className="text-xs text-gray-500">{lesson.duration} min • {lesson.level}</p>
+                  <div className="progress-bar mt-1">
+                    <div 
+                      className="progress-value" 
+                      style={{ width: `${lesson.progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Daily Challenge */}
+        <div>
+          <h2 className="text-lg font-semibold mb-3">Daily Challenge</h2>
+          <Card className="bg-gradient-to-r from-communi-primary/20 to-communi-tertiary/20 border-none">
+            <CardContent className="p-4">
+              <h3 className="font-medium">Practice Active Listening</h3>
+              <p className="text-sm mt-1 mb-3">Have a 2-minute conversation where you practice rephrasing what the other person said.</p>
+              <Button 
+                className="bg-white text-communi-primary hover:bg-gray-100"
+                onClick={() => navigate("/practice")}
+              >
+                Start Challenge
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 
