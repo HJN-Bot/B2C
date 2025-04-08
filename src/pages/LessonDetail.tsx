@@ -85,7 +85,7 @@ const LessonDetail = () => {
         
         <p className="text-gray-600">
           {isPublicSpeakingIntro 
-            ? "Your voice is your most powerful communication tool. The way you speak can significantly impact how your message is received. In this lesson, we'll explore the key components of effective vocal delivery." 
+            ? "Sticking to one pace can dull your message and confuse listeners. Adjust your speaking pace — speed up to excite, slow down to emphasize. Keep it varied to hold attention and clarify your message!" 
             : lesson.description}
         </p>
         
