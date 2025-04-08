@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import VocalExercise from "@/components/VocalExercise";
-import { AudioRecorder, createAudioUrl } from "@/utils/audioRecorder";
+import { 
+  AudioRecorder, 
+  createAudioUrl, 
+  analyzeAudio, 
+  DetailedAnalysisResult 
+} from "@/utils/audioRecorder";
+import { useToast } from "@/hooks/use-toast";
 
 const LessonLearning = () => {
   const {
@@ -26,9 +32,13 @@ const LessonLearning = () => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<DetailedAnalysisResult | null>(null);
+  
   const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
+  const { toast } = useToast();
 
   // Part 1: Rate of Speech and Volume
   const vocalFoundationsPart1 = [{
@@ -79,15 +89,20 @@ const LessonLearning = () => {
   }];
 
   let activeSteps;
+  let focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all';
+  
   switch (part) {
     case "2":
       activeSteps = vocalFoundationsPart2;
+      focusArea = 'pitch-tonality';
       break;
     case "3":
       activeSteps = vocalFoundationsPart3;
+      focusArea = 'pause-fillers';
       break;
     default:
       activeSteps = vocalFoundationsPart1;
+      focusArea = 'rate-volume';
   }
   
   const totalSteps = activeSteps.length;
@@ -140,9 +155,19 @@ const LessonLearning = () => {
       setIsRecording(true);
       setRecordingTime(0);
       setAudioUrl(null);
+      setAnalysis(null);
       startTimer();
+      toast({
+        title: "Recording started",
+        description: "Read the passage with attention to vocal elements"
+      });
     } catch (error) {
       console.error("Error starting recording:", error);
+      toast({
+        title: "Recording failed",
+        description: "Microphone access denied or not available",
+        variant: "destructive"
+      });
     }
   };
 
@@ -154,10 +179,26 @@ const LessonLearning = () => {
       setAudioUrl(url);
       setIsRecording(false);
       stopTimer();
+      
+      // AI analysis based on the focus area of the current lesson part
+      setAnalyzing(true);
+      const result = await analyzeAudio(audioBlob, focusArea);
+      setAnalysis(result);
+      setAnalyzing(false);
+      
+      toast({
+        title: "Analysis complete",
+        description: `Focus area: ${focusArea.replace('-', ' ')}` 
+      });
     } catch (error) {
       console.error("Error stopping recording:", error);
       setIsRecording(false);
       stopTimer();
+      toast({
+        title: "Recording error",
+        description: "There was a problem processing your recording",
+        variant: "destructive"
+      });
     }
   };
 
@@ -193,7 +234,11 @@ const LessonLearning = () => {
   }, [currentStep, lessonId, navigate, searchParams]);
 
   if (showExercise) {
-    return <VocalExercise lessonId={lessonId} onComplete={() => navigate("/progress")} />;
+    return <VocalExercise 
+      lessonId={lessonId} 
+      focusArea={focusArea} 
+      onComplete={() => navigate("/progress")} 
+    />;
   }
 
   return <Layout hideNavigation>
@@ -266,10 +311,43 @@ const LessonLearning = () => {
                       </Button>
                     </div>
                     
+                    {analyzing && (
+                      <div className="text-center py-3">
+                        <div className="inline-block">
+                          <div className="h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin mx-auto"></div>
+                        </div>
+                        <p className="text-xs mt-2">Analyzing your vocal performance...</p>
+                      </div>
+                    )}
+                    
+                    {analysis && (
+                      <div className="bg-gray-50 p-3 rounded-lg mb-4 text-sm">
+                        <h4 className="font-semibold mb-2">Quick Analysis:</h4>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Focus Area Score:</span>
+                          <span className="font-medium">
+                            {focusArea === 'rate-volume' ? analysis.paceScore :
+                             focusArea === 'pitch-tonality' ? analysis.tonalityScore :
+                             focusArea === 'pause-fillers' ? analysis.pausesScore :
+                             analysis.overallScore}/100
+                          </span>
+                        </div>
+                        <Progress value={focusArea === 'rate-volume' ? analysis.paceScore :
+                                         focusArea === 'pitch-tonality' ? analysis.tonalityScore :
+                                         focusArea === 'pause-fillers' ? analysis.pausesScore :
+                                         analysis.overallScore} 
+                                  className="h-2 mb-3" />
+                        <p className="text-xs">
+                          {analysis.feedback[0]}
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-center space-x-4">
                       <Button variant="outline" onClick={() => {
                     setAudioUrl(null);
                     setRecordingTime(0);
+                    setAnalysis(null);
                   }}>
                         Record again
                       </Button>

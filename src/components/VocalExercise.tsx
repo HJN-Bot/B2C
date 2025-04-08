@@ -1,54 +1,52 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mic, StopCircle, Play, Pause, ArrowLeft, CheckCircle } from "lucide-react";
+import { Mic, StopCircle, Play, Pause, ArrowLeft, CheckCircle, BarChart, Headphones, Volume2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AudioRecorder, createAudioUrl, mockAnalyzeAudio, AnalysisResult } from "@/utils/audioRecorder";
+import { AudioRecorder, createAudioUrl, analyzeAudio, DetailedAnalysisResult } from "@/utils/audioRecorder";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface VocalExerciseProps {
   lessonId?: string;
+  focusArea?: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all';
   onComplete: () => void;
 }
 
-interface DetailedAnalysis extends AnalysisResult {
-  detailedFeedback: {
-    rateOfSpeech: {
-      score: number;
-      analysis: string;
-      suggestions: string[];
-    };
-    volume: {
-      score: number;
-      analysis: string;
-      suggestions: string[];
-    };
-    pitch: {
-      score: number;
-      analysis: string;
-      suggestions: string[];
-    };
-  };
-}
-
-const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
+const VocalExercise = ({ lessonId, focusArea = 'all', onComplete }: VocalExerciseProps) => {
   const navigate = useNavigate();
   const [step, setStep] = useState<"instructions" | "recording" | "analysis">("instructions");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [analysis, setAnalysis] = useState<DetailedAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<DetailedAnalysisResult | null>(null);
   const [analyzingAudio, setAnalyzingAudio] = useState(false);
   
   const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
+  const { toast } = useToast();
   
   const passageText = "The art of communication is the language of leadership. It bridges the gap between confusion and clarity, between apathy and action. When we speak, our words carry not just information, but intention and emotion. The best communicators know that it's not just what you say, but how you say it that matters. They use their voice as an instrument—adjusting volume, pace, and tone to convey meaning beyond mere words. Practice this passage aloud, focusing on the vocal techniques we've discussed.";
+  
+  const getFocusAreaDisplay = () => {
+    switch (focusArea) {
+      case 'rate-volume':
+        return "Rate of Speech & Volume";
+      case 'pitch-tonality':
+        return "Pitch & Tonality";
+      case 'pause-fillers':
+        return "Pauses & Filler Words";
+      default:
+        return "All Vocal Elements";
+    }
+  };
   
   const startTimer = () => {
     if (timerRef.current) return;
@@ -71,10 +69,21 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
       setIsRecording(true);
       setRecordingTime(0);
       setAudioUrl(null);
+      setAudioBlob(null);
       setAnalysis(null);
       startTimer();
+      
+      toast({
+        title: "Recording started",
+        description: `Focus on ${focusArea.replace('-', ' ')}`
+      });
     } catch (error) {
       console.error("Error starting recording:", error);
+      toast({
+        title: "Recording failed",
+        description: "Microphone access denied or not available",
+        variant: "destructive"
+      });
     }
   };
   
@@ -82,54 +91,49 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
     if (!audioRecorder.current.isRecording()) return;
     
     try {
-      const audioBlob = await audioRecorder.current.stop();
-      const url = createAudioUrl(audioBlob);
+      const blob = await audioRecorder.current.stop();
+      setAudioBlob(blob);
+      const url = createAudioUrl(blob);
       setAudioUrl(url);
       setIsRecording(false);
       stopTimer();
-      
-      setAnalyzingAudio(true);
-      const basicResult = await mockAnalyzeAudio(recordingTime);
-      
-      const detailedResult: DetailedAnalysis = {
-        ...basicResult,
-        detailedFeedback: {
-          rateOfSpeech: {
-            score: Math.floor(Math.random() * 30) + 70,
-            analysis: "Your speaking rate averaged 165 words per minute, which is within the ideal range for clear comprehension. There were moments where you accelerated during complex phrases.",
-            suggestions: [
-              "Try marking your script with pauses to remind yourself to slow down at key points.",
-              "Practice with a metronome set to 150 beats per minute for a consistent pace.",
-              "Record yourself reading the same passage at different speeds to find your optimal rate."
-            ]
-          },
-          volume: {
-            score: Math.floor(Math.random() * 30) + 70,
-            analysis: "Your volume was well-projected and consistent throughout most of the recording. There was a slight drop in volume toward the end of longer sentences.",
-            suggestions: [
-              "Practice diaphragmatic breathing to maintain consistent airflow for longer phrases.",
-              "Try the 'countdown technique': start a sentence loudly and gradually decrease volume while maintaining clarity.",
-              "Record yourself in different environments to develop adaptability in your projection."
-            ]
-          },
-          pitch: {
-            score: Math.floor(Math.random() * 30) + 70,
-            analysis: "You demonstrated some pitch variation, particularly when emphasizing key points. However, your pitch range could be expanded for greater expressiveness.",
-            suggestions: [
-              "Try reading dialogue from a play, exaggerating the emotional differences between characters.",
-              "Practice sliding from your lowest comfortable note to your highest in a controlled manner.",
-              "Identify 3-4 key words in each sentence and deliberately vary your pitch when speaking them."
-            ]
-          }
-        }
-      };
-      
-      setAnalysis(detailedResult);
-      setAnalyzingAudio(false);
+      toast({
+        title: "Recording complete",
+        description: "Analyzing your vocal performance..."
+      });
     } catch (error) {
       console.error("Error stopping recording:", error);
       setIsRecording(false);
       stopTimer();
+      toast({
+        title: "Recording error",
+        description: "There was a problem processing your recording",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const analyzeRecording = async () => {
+    if (!audioBlob) return;
+    
+    setAnalyzingAudio(true);
+    try {
+      const result = await analyzeAudio(audioBlob, focusArea);
+      setAnalysis(result);
+      setStep("analysis");
+      toast({
+        title: "Analysis complete",
+        description: `Overall score: ${result.overallScore}/100`
+      });
+    } catch (error) {
+      console.error("Error analyzing audio:", error);
+      toast({
+        title: "Analysis failed",
+        description: "Unable to analyze your recording",
+        variant: "destructive"
+      });
+    } finally {
+      setAnalyzingAudio(false);
     }
   };
   
@@ -177,9 +181,20 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
           
           <Card>
             <CardContent className="p-4">
-              <h2 className="text-lg font-semibold mb-3">Instructions</h2>
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Volume2 size={18} />
+                Exercise: {getFocusAreaDisplay()}
+              </h2>
               <p className="text-sm text-gray-700 mb-6">
-                Read the following passage aloud, focusing on the vocal techniques we've discussed: rate of speech, volume, pitch, tonality, and strategic pauses.
+                Read the following passage aloud, focusing on 
+                {focusArea === 'rate-volume' 
+                  ? " maintaining an appropriate speaking rate and projecting your voice with proper volume."
+                  : focusArea === 'pitch-tonality'
+                    ? " varying your pitch and using tonality to express emotion and emphasis."
+                    : focusArea === 'pause-fillers'
+                      ? " using strategic pauses for emphasis and avoiding filler words."
+                      : " all aspects of vocal delivery including rate, volume, pitch, tonality, and strategic pauses."
+                }
               </p>
               
               <div className="bg-gray-50 p-4 rounded-md mb-6">
@@ -187,7 +202,16 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
               </div>
               
               <p className="text-sm text-gray-700 mb-6">
-                After recording, our AI will analyze your vocal delivery and provide personalized feedback on each aspect of your performance.
+                After recording, our AI will analyze your vocal delivery with special focus on 
+                {focusArea === 'rate-volume' 
+                  ? " your rate of speech and volume control"
+                  : focusArea === 'pitch-tonality'
+                    ? " your pitch variation and emotional expression"
+                    : focusArea === 'pause-fillers'
+                      ? " your strategic pauses and filler word usage"
+                      : " all aspects of your vocal delivery"
+                }
+                , and provide personalized feedback and improvement suggestions.
               </p>
               
               <Button 
@@ -219,6 +243,9 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
           </div>
           
           <div className="bg-gray-50 p-4 rounded-md mb-6">
+            <h3 className="text-sm font-medium mb-2">
+              Focus on: {getFocusAreaDisplay()}
+            </h3>
             <p className="text-sm italic">{passageText}</p>
           </div>
           
@@ -261,18 +288,17 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
                 <div className="flex justify-center space-x-4">
                   <Button variant="outline" onClick={() => {
                     setAudioUrl(null);
+                    setAudioBlob(null);
                     setRecordingTime(0);
                   }}>
                     Record again
                   </Button>
                   
-                  <Button onClick={() => {
-                    setAnalyzingAudio(true);
-                    setTimeout(() => {
-                      setStep("analysis");
-                    }, 1500);
-                  }}>
-                    Analyze Recording
+                  <Button 
+                    onClick={analyzeRecording}
+                    disabled={analyzingAudio}
+                  >
+                    {analyzingAudio ? 'Analyzing...' : 'Analyze Recording'}
                   </Button>
                 </div>
               </div>
@@ -326,81 +352,159 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
               </TabsList>
               
               <TabsContent value="detailed" className="space-y-4 pt-4">
-                <DetailedFeedbackCard 
-                  title="Rate of Speech" 
-                  score={analysis.detailedFeedback.rateOfSpeech.score}
-                  analysis={analysis.detailedFeedback.rateOfSpeech.analysis}
-                />
+                {focusArea === 'rate-volume' || focusArea === 'all' ? (
+                  <DetailedFeedbackCard 
+                    title="Rate of Speech" 
+                    score={analysis.paceScore}
+                    analysis={`You spoke at approximately ${analysis.detailedMetrics.wordsPerMinute} words per minute, which is ${analysis.detailedMetrics.wordsPerMinute > 160 ? "a bit fast" : analysis.detailedMetrics.wordsPerMinute < 120 ? "a bit slow" : "at a good pace"} for optimal comprehension.`}
+                    highlight={focusArea === 'rate-volume'}
+                  />
+                ) : null}
                 
-                <DetailedFeedbackCard 
-                  title="Volume" 
-                  score={analysis.detailedFeedback.volume.score}
-                  analysis={analysis.detailedFeedback.volume.analysis}
-                />
+                {focusArea === 'rate-volume' || focusArea === 'all' ? (
+                  <DetailedFeedbackCard 
+                    title="Volume" 
+                    score={analysis.detailedMetrics.volumeVariation}
+                    analysis={`Your volume variation score indicates ${analysis.detailedMetrics.volumeVariation > 75 ? "excellent dynamic range" : analysis.detailedMetrics.volumeVariation < 50 ? "relatively monotonous volume" : "good variation in your projection"}. ${analysis.detailedMetrics.volumeVariation > 75 ? "You effectively use louder and softer tones for emphasis." : "Try varying your volume more intentionally for emphasis."}`}
+                    highlight={focusArea === 'rate-volume'}
+                  />
+                ) : null}
                 
-                <DetailedFeedbackCard 
-                  title="Pitch Variation" 
-                  score={analysis.detailedFeedback.pitch.score}
-                  analysis={analysis.detailedFeedback.pitch.analysis}
-                />
+                {focusArea === 'pitch-tonality' || focusArea === 'all' ? (
+                  <DetailedFeedbackCard 
+                    title="Pitch Variation" 
+                    score={analysis.detailedMetrics.pitchVariation}
+                    analysis={`Your pitch variation shows ${analysis.detailedMetrics.pitchVariation > 75 ? "excellent expressiveness" : analysis.detailedMetrics.pitchVariation < 50 ? "limited range" : "good modulation"}. ${analysis.detailedMetrics.pitchVariation < 60 ? "Try varying your pitch more to add interest and emphasis." : "You effectively use higher and lower tones to convey meaning."}`}
+                    highlight={focusArea === 'pitch-tonality'}
+                  />
+                ) : null}
+                
+                {focusArea === 'pitch-tonality' || focusArea === 'all' ? (
+                  <DetailedFeedbackCard 
+                    title="Tonality" 
+                    score={analysis.tonalityScore}
+                    analysis={`Your emotional expression through voice shows ${analysis.tonalityScore > 75 ? "strong capability" : analysis.tonalityScore < 50 ? "room for improvement" : "good control"}. ${analysis.tonalityScore < 60 ? "Practice conveying more emotion through your voice." : "You effectively communicate emotion through your vocal tone."}`}
+                    highlight={focusArea === 'pitch-tonality'}
+                  />
+                ) : null}
+                
+                {focusArea === 'pause-fillers' || focusArea === 'all' ? (
+                  <DetailedFeedbackCard 
+                    title="Strategic Pauses" 
+                    score={analysis.pausesScore}
+                    analysis={`You used approximately ${analysis.detailedMetrics.pauseMetrics.totalPauses} strategic pauses with an average duration of ${analysis.detailedMetrics.pauseMetrics.averagePauseDuration.toFixed(1)} seconds. ${analysis.pausesScore > 75 ? "Your pauses effectively create emphasis and allow processing time." : "Try using more intentional pauses to emphasize key points."}`}
+                    highlight={focusArea === 'pause-fillers'}
+                  />
+                ) : null}
+                
+                {focusArea === 'pause-fillers' || focusArea === 'all' ? (
+                  <DetailedFeedbackCard 
+                    title="Filler Words" 
+                    score={analysis.fillerWordsScore}
+                    analysis={`You used approximately ${analysis.detailedMetrics.fillerWordCount.total} filler words, including ${analysis.detailedMetrics.fillerWordCount.um} "um"s and ${analysis.detailedMetrics.fillerWordCount.like} "like"s. ${analysis.detailedMetrics.fillerWordCount.total > 8 ? "Try replacing these with strategic pauses." : "You're doing well at minimizing filler words."}`}
+                    highlight={focusArea === 'pause-fillers'}
+                  />
+                ) : null}
               </TabsContent>
               
               <TabsContent value="scores" className="space-y-4 pt-4">
                 <ScoreItem 
                   label="Rate of Speech" 
-                  score={analysis.detailedFeedback.rateOfSpeech.score} 
-                  description="Optimal speaking pace for comprehension"
+                  score={analysis.paceScore} 
+                  description={`${analysis.detailedMetrics.wordsPerMinute} words per minute`}
+                  highlight={focusArea === 'rate-volume'}
                 />
                 <ScoreItem 
                   label="Volume" 
-                  score={analysis.detailedFeedback.volume.score} 
-                  description="Projection and consistency"
+                  score={analysis.detailedMetrics.volumeVariation} 
+                  description="Projection and variation"
+                  highlight={focusArea === 'rate-volume'}
                 />
                 <ScoreItem 
                   label="Pitch" 
-                  score={analysis.detailedFeedback.pitch.score} 
+                  score={analysis.detailedMetrics.pitchVariation} 
                   description="Variation and expressiveness"
+                  highlight={focusArea === 'pitch-tonality'}
                 />
                 <ScoreItem 
                   label="Tonality" 
                   score={analysis.tonalityScore} 
                   description="Emotional expression in voice"
+                  highlight={focusArea === 'pitch-tonality'}
                 />
                 <ScoreItem 
                   label="Pauses" 
                   score={analysis.pausesScore} 
-                  description="Strategic use of silence"
+                  description={`${analysis.detailedMetrics.pauseMetrics.totalPauses} strategic pauses used`}
+                  highlight={focusArea === 'pause-fillers'}
+                />
+                <ScoreItem 
+                  label="Filler Words" 
+                  score={analysis.fillerWordsScore} 
+                  description={`${analysis.detailedMetrics.fillerWordCount.total} filler words detected`}
+                  highlight={focusArea === 'pause-fillers'}
                 />
               </TabsContent>
               
               <TabsContent value="suggestions" className="pt-4">
                 <div className="space-y-4">
-                  <ImprovementSection 
-                    title="Rate of Speech"
-                    suggestions={analysis.detailedFeedback.rateOfSpeech.suggestions}
-                  />
+                  {focusArea === 'rate-volume' || focusArea === 'all' ? (
+                    <ImprovementSection 
+                      title="Rate of Speech"
+                      suggestions={analysis.specificSuggestions.pace}
+                      highlight={focusArea === 'rate-volume'}
+                    />
+                  ) : null}
                   
-                  <ImprovementSection 
-                    title="Volume"
-                    suggestions={analysis.detailedFeedback.volume.suggestions}
-                  />
+                  {focusArea === 'rate-volume' || focusArea === 'all' ? (
+                    <ImprovementSection 
+                      title="Volume Control"
+                      suggestions={analysis.specificSuggestions.volume}
+                      highlight={focusArea === 'rate-volume'}
+                    />
+                  ) : null}
                   
-                  <ImprovementSection 
-                    title="Pitch Variation"
-                    suggestions={analysis.detailedFeedback.pitch.suggestions}
-                  />
+                  {focusArea === 'pitch-tonality' || focusArea === 'all' ? (
+                    <ImprovementSection 
+                      title="Pitch Variation"
+                      suggestions={analysis.specificSuggestions.pitch}
+                      highlight={focusArea === 'pitch-tonality'}
+                    />
+                  ) : null}
+                  
+                  {focusArea === 'pause-fillers' || focusArea === 'all' ? (
+                    <ImprovementSection 
+                      title="Reducing Filler Words"
+                      suggestions={analysis.specificSuggestions.fillers}
+                      highlight={focusArea === 'pause-fillers'}
+                    />
+                  ) : null}
                 </div>
               </TabsContent>
             </Tabs>
             
+            <Card className="mt-6">
+              <CardContent className="p-4">
+                <h3 className="font-medium mb-2">Transcription</h3>
+                <div className="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap">
+                  {analysis.transcription}
+                  {focusArea === 'pause-fillers' && analysis.detailedMetrics.fillerWordCount.total > 0 && (
+                    <p className="mt-2 text-xs text-red-500">
+                      Filler words detected are highlighted in the transcript.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
             <div className="mt-6 pt-4 border-t">
               <p className="text-sm text-gray-700 mb-4">
                 Based on your performance, we recommend focusing on improving 
-                {analysis.detailedFeedback.pitch.score < analysis.detailedFeedback.rateOfSpeech.score && 
-                 analysis.detailedFeedback.pitch.score < analysis.detailedFeedback.volume.score ? 
-                  ' pitch variation' : 
-                  analysis.detailedFeedback.rateOfSpeech.score < analysis.detailedFeedback.volume.score ? 
-                    ' rate of speech' : ' volume control'} 
+                {analysis.paceScore < analysis.tonalityScore && 
+                 analysis.paceScore < analysis.pausesScore ? 
+                  ' your rate of speech' : 
+                  analysis.tonalityScore < analysis.pausesScore ? 
+                    ' your pitch and tonality' : ' your strategic pauses and filler word usage'} 
                 in your next practice session.
               </p>
               
@@ -419,7 +523,17 @@ const VocalExercise = ({ lessonId, onComplete }: VocalExerciseProps) => {
   );
 };
 
-const DetailedFeedbackCard = ({ title, score, analysis }: { title: string; score: number; analysis: string }) => {
+const DetailedFeedbackCard = ({ 
+  title, 
+  score, 
+  analysis,
+  highlight = false
+}: { 
+  title: string; 
+  score: number; 
+  analysis: string;
+  highlight?: boolean;
+}) => {
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600";
     if (score >= 60) return "text-yellow-600";
@@ -427,7 +541,7 @@ const DetailedFeedbackCard = ({ title, score, analysis }: { title: string; score
   };
   
   return (
-    <Card>
+    <Card className={cn(highlight && "border-l-4 border-blue-500")}>
       <CardContent className="p-4">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-semibold">{title}</h3>
@@ -442,9 +556,17 @@ const DetailedFeedbackCard = ({ title, score, analysis }: { title: string; score
   );
 };
 
-const ImprovementSection = ({ title, suggestions }: { title: string; suggestions: string[] }) => {
+const ImprovementSection = ({ 
+  title, 
+  suggestions,
+  highlight = false
+}: { 
+  title: string; 
+  suggestions: string[];
+  highlight?: boolean;
+}) => {
   return (
-    <Card>
+    <Card className={cn(highlight && "border-l-4 border-blue-500")}>
       <CardContent className="p-4">
         <h3 className="font-semibold mb-2">{title} Improvement Plan</h3>
         <ul className="space-y-2">
@@ -459,7 +581,17 @@ const ImprovementSection = ({ title, suggestions }: { title: string; suggestions
   );
 };
 
-const ScoreItem = ({ label, score, description }: { label: string; score: number; description: string }) => {
+const ScoreItem = ({ 
+  label, 
+  score, 
+  description,
+  highlight = false
+}: { 
+  label: string; 
+  score: number; 
+  description: string;
+  highlight?: boolean;
+}) => {
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600";
     if (score >= 60) return "text-yellow-600";
@@ -467,7 +599,7 @@ const ScoreItem = ({ label, score, description }: { label: string; score: number
   };
   
   return (
-    <div className="space-y-2">
+    <div className={cn("space-y-2", highlight && "border-l-4 border-blue-500 pl-3")}>
       <div className="flex justify-between">
         <div>
           <span className="font-medium">{label}</span>
