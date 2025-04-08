@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle } from "lucide-react";
@@ -34,7 +33,7 @@ const LessonLearning = () => {
     },
     {
       title: "Rate of Speech",
-      content: "Speaking too quickly can make you difficult to understand, while speaking too slowly can cause listeners to lose interest. The ideal rate is typically 150-160 words per minute, but this can vary depending on the context and content of your speech.",
+      content: "Speaking with one pace can dull your message and confuse listeners. Adjust your speaking pace — speed up to excite, slow down to emphasize. Keep it varied to hold attention and clarify your message!",
     },
     {
       title: "Volume",
