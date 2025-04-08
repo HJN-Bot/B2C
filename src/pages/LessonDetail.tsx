@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle, Volume2, MoveHorizontal, Music, MessageSquareText, Pause, XCircle } from "lucide-react";
 import Layout from "@/components/Layout";
@@ -16,7 +15,22 @@ const LessonDetail = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   
-  // Find the lesson or create a new one for vocal foundations
+  const vocalFoundationsPart1 = [
+    "Understanding your natural speaking voice",
+    "Rate of speech: Finding the right pace",
+    "Volume control: Speaking with power and clarity",
+    "Pitch variation: Adding interest to your voice",
+    "Melody and intonation: Creating engaging vocal patterns"
+  ];
+  
+  const vocalFoundationsPart2 = [
+    "Tonality: Conveying emotion through your voice",
+    "Strategic pauses: The power of silence",
+    "Eliminating filler words from your speech",
+    "Breath control for sustained speaking",
+    "Putting it all together: Creating your vocal signature"
+  ];
+
   let lesson = MOCK_LESSONS.find((l) => l.id === lessonId);
   
   if (lessonId === "vocal-foundations" || (lesson && lesson.title === "Vocal Foundations")) {
