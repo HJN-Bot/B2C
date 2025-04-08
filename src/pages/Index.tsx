@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Star, Mic, BookOpen, Award, Volume2 } from "lucide-react";
@@ -22,7 +23,17 @@ const Index = () => {
   }, []);
   
   const allLessons = [
-    ...MOCK_LESSONS,
+    ...MOCK_LESSONS.map(lesson => {
+      // Change the lesson title if it's "Introduction to Public Speaking"
+      if (lesson.title === "Introduction to Public Speaking") {
+        return {
+          ...lesson,
+          title: "Vocal Foundations",
+          category: "articulation"
+        };
+      }
+      return lesson;
+    }),
     {
       id: "vocal-foundations",
       title: "Vocal Foundations",
@@ -37,7 +48,12 @@ const Index = () => {
     }
   ];
   
-  const recommendedLessons = allLessons.slice(0, 3);
+  // Filter out duplicates (in case we already have Vocal Foundations)
+  const uniqueLessons = allLessons.filter((lesson, index, self) => 
+    index === self.findIndex((l) => l.title === lesson.title)
+  );
+  
+  const recommendedLessons = uniqueLessons.slice(0, 3);
   
   return (
     <Layout>
