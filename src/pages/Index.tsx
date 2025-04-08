@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Star, Mic, BookOpen, Award, VolumeUp } from "lucide-react";
+import { ChevronRight, Star, Mic, BookOpen, Award, Volume2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +14,6 @@ const Index = () => {
   const [user, setUser] = useState(MOCK_USER);
   const [greeting, setGreeting] = useState("");
   
-  // Get the current time to display an appropriate greeting
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) setGreeting("Good morning");
@@ -23,7 +21,6 @@ const Index = () => {
     else setGreeting("Good evening");
   }, []);
   
-  // Add the vocal foundations module to the recommended lessons
   const allLessons = [
     ...MOCK_LESSONS,
     {
@@ -45,7 +42,6 @@ const Index = () => {
   return (
     <Layout>
       <div className="p-4 space-y-6">
-        {/* Header with greeting and profile */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{greeting}, {user.name}</h1>
@@ -59,7 +55,6 @@ const Index = () => {
           </div>
         </div>
         
-        {/* XP Progress */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex justify-between items-center mb-2">
@@ -70,7 +65,6 @@ const Index = () => {
           </CardContent>
         </Card>
         
-        {/* Quick Actions */}
         <div className="grid grid-cols-3 gap-4">
           <Button 
             variant="outline" 
@@ -100,7 +94,6 @@ const Index = () => {
           </Button>
         </div>
         
-        {/* Continue Learning */}
         <div>
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-lg font-semibold">Continue Learning</h2>
@@ -131,7 +124,7 @@ const Index = () => {
                   {lesson.category === "public_speaking" && <Mic size={24} className="text-communi-primary" />}
                   {lesson.category === "active_listening" && <BookOpen size={24} className="text-communi-tertiary" />}
                   {lesson.category === "storytelling" && <Star size={24} className="text-communi-quaternary" />}
-                  {lesson.category === "articulation" && <VolumeUp size={24} className="text-communi-secondary" />}
+                  {lesson.category === "articulation" && <Volume2 size={24} className="text-communi-secondary" />}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium">{lesson.title}</h3>
@@ -148,7 +141,6 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Daily Challenge */}
         <div>
           <h2 className="text-lg font-semibold mb-3">Daily Challenge</h2>
           <Card className="bg-gradient-to-r from-communi-primary/20 to-communi-tertiary/20 border-none">
