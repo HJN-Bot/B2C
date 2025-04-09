@@ -9,7 +9,6 @@ import LessonContent from "@/components/LessonContent";
 import PracticeCard from "@/components/PracticeCard";
 import PracticeDialog from "@/components/PracticeDialog";
 import HighlightedText from "@/components/HighlightedText";
-
 const LessonLearning = () => {
   const {
     lessonId
@@ -33,18 +32,18 @@ const LessonLearning = () => {
     title: "Rate of Speech",
     description: "Master the pace of your delivery for maximum impact",
     content: <>
-      <p className="mb-4 py-0 my-0">Speaking with one pace can dull your message and confuse listeners.</p>
-      <p className="mb-4">Adjust your speaking pace with below rule:</p>
+      <p className="mb-4">Speaking with one pace can dull your message and confuse listeners.</p>
+      <p className="mb-4">Adjust your speaking pace —</p>
       <div className="space-y-2 mb-4">
         <div><HighlightedText color="red">Speed up to excite,</HighlightedText></div>
         <div><HighlightedText>slow down to emphasize.</HighlightedText></div>
       </div>
       <p className="mb-6">Keep it varied to hold attention and clarify your message!</p>
-      <Button onClick={() => {
+      <Button className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700" onClick={() => {
         setExerciseFocusArea('rate-volume');
         setExerciseText("Practice varying your speed. The QUICK brown fox jumped over the LAZY dog. Speed up for 'quick' and slow down for 'lazy' to emphasize the contrast.");
         setShowPracticeDialog(true);
-      }} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 py-[14px] my-[90px]">
+      }}>
         Practice Rate of Speech
       </Button>
     </>
@@ -52,9 +51,9 @@ const LessonLearning = () => {
     title: "Volume",
     description: "Control the volume of your voice to enhance your message",
     content: <>
-      <p className="mb-4">Volume = Vitality</p>
+      <p className="mb-4">Volume = The lifeblood of your voice</p>
       <p className="mb-4">Rule of thumb: Ensure your voice is as big as the room. This requires adjusting your energy and presentation style to suit the scale and dynamics of your audience.</p>
-      <p className="mb-6">For instance, a high-energy approach might overwhelm a single conversation partner but could be ideal for a large audience.</p>
+      <p className="mb-6 my-[90px]">For instance, a high-energy approach might overwhelm a single conversation partner but could be ideal for a large audience.</p>
       <Button className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700" onClick={() => {
         setExerciseFocusArea('rate-volume');
         setExerciseText("Practice volume control by reading this sentence with varying volume: Start QUIETLY and gradually increase volume until you reach the LOUDEST part, then return to a conversational level.");
