@@ -111,344 +111,97 @@ export interface DetailedAnalysisResult extends AnalysisResult {
   transcription: string;
 }
 
-let openAIApiKey: string | null = null;
-
-export const setOpenAIApiKey = (key: string) => {
-  openAIApiKey = key;
-  localStorage.setItem('openai_api_key', key);
-};
-
-export const getOpenAIApiKey = (): string | null => {
-  if (!openAIApiKey) {
-    openAIApiKey = localStorage.getItem('openai_api_key');
-  }
-  return openAIApiKey;
-};
-
 export const analyzeAudio = async (
   audioBlob: Blob, 
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all'
 ): Promise<DetailedAnalysisResult> => {
   console.log(`Analyzing audio with focus on: ${focusArea}`);
   
-  const apiKey = getOpenAIApiKey();
-  
-  if (!apiKey) {
-    console.error("OpenAI API key not found");
-    return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
-  }
-  
-  try {
-    const audioBase64 = await blobToBase64(audioBlob);
-    
-    const prompt = createPromptForFocusArea(focusArea);
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a professional speech and voice coach. Analyze the provided audio recording transcript and provide detailed feedback on the speaker's vocal delivery, focusing on ${focusAreaToText(focusArea)}.`
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt
-              },
-              {
-                type: 'audio',
-                audio_url: audioBase64
-              }
-            ]
-          }
-        ],
-        max_tokens: 1000
-      }),
-    });
-    
-    if (!response.ok) {
-      console.error('OpenAI API error:', await response.text());
-      return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
-    }
-    
-    const data = await response.json();
-    return processOpenAIResponse(data, focusArea);
-    
-  } catch (error) {
-    console.error('Error analyzing audio with OpenAI:', error);
-    return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
-  }
-};
-
-const blobToBase64 = (blob: Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        const base64 = reader.result.split(',')[1];
-        resolve(`data:audio/webm;base64,${base64}`);
-      } else {
-        reject(new Error('Failed to convert Blob to base64'));
-      }
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-};
-
-const createPromptForFocusArea = (focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all'): string => {
-  switch (focusArea) {
-    case 'rate-volume':
-      return "Please analyze this audio recording, focusing specifically on the speaker's rate of speech and volume control. Provide detailed feedback on their speaking pace (words per minute), variation in volume, and how these aspects affect the clarity of their message. Include specific scores (0-100) for pace and volume variation, along with practical suggestions for improvement.";
-    case 'pitch-tonality':
-      return "Please analyze this audio recording, focusing specifically on the speaker's pitch variation and tonality. Evaluate how effectively they use pitch to emphasize important points and express emotion. Provide detailed feedback on their pitch range, emotional expressiveness, and how these aspects affect listener engagement. Include specific scores (0-100) for pitch variation and tonality, along with practical suggestions for improvement.";
-    case 'pause-fillers':
-      return "Please analyze this audio recording, focusing specifically on the speaker's use of strategic pauses and filler words (um, uh, like, you know, etc.). Evaluate how effectively they use pauses for emphasis and clarity, and assess the frequency of filler words. Provide detailed feedback on their pause placement, frequency of fillers, and how these aspects affect the professionalism of their delivery. Include specific scores (0-100) for pause effectiveness and filler word usage, along with practical suggestions for improvement.";
-    default:
-      return "Please analyze this audio recording comprehensively, evaluating the speaker's vocal delivery across all dimensions: rate of speech, volume control, pitch variation, tonality, use of strategic pauses, and frequency of filler words. Provide detailed feedback on all these aspects, explaining how they affect the overall impact of the speaker's message. Include specific scores (0-100) for each dimension, along with practical suggestions for improvement in each area.";
-  }
-};
-
-const focusAreaToText = (focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all'): string => {
-  switch (focusArea) {
-    case 'rate-volume':
-      return "rate of speech and volume control";
-    case 'pitch-tonality':
-      return "pitch variation and tonality";
-    case 'pause-fillers':
-      return "use of strategic pauses and filler words";
-    default:
-      return "all aspects of vocal delivery";
-  }
-};
-
-const processOpenAIResponse = (response: any, focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all'): DetailedAnalysisResult => {
-  const content = response.choices[0].message.content;
-  
-  try {
-    const feedbackLines = content.split('\n').filter((line: string) => line.trim().length > 0);
-    
-    const paceScoreMatch = content.match(/pace(?:\s+score)?(?:\s*[:=]\s*|\s+is\s+)(\d+)/i);
-    const tonalityScoreMatch = content.match(/tonal(?:ity)?(?:\s+score)?(?:\s*[:=]\s*|\s+is\s+)(\d+)/i);
-    const pausesScoreMatch = content.match(/pause(?:s)?(?:\s+score)?(?:\s*[:=]\s*|\s+is\s+)(\d+)/i);
-    const fillerWordsScoreMatch = content.match(/filler(?:\s+words?)?(?:\s+score)?(?:\s*[:=]\s*|\s+is\s+)(\d+)/i);
-    
-    const wpmMatch = content.match(/(\d+)(?:\s+)?(?:words?(?:\s+)?per(?:\s+)?minute|wpm)/i);
-    
-    let paceScore = Math.floor(Math.random() * 30) + 60;
-    let tonalityScore = Math.floor(Math.random() * 30) + 60;
-    let pausesScore = Math.floor(Math.random() * 30) + 60;
-    let fillerWordsScore = Math.floor(Math.random() * 30) + 60;
-    let wordsPerMinute = Math.floor(Math.random() * 60) + 120;
-    
-    if (paceScoreMatch && paceScoreMatch[1]) paceScore = parseInt(paceScoreMatch[1]);
-    if (tonalityScoreMatch && tonalityScoreMatch[1]) tonalityScore = parseInt(tonalityScoreMatch[1]);
-    if (pausesScoreMatch && pausesScoreMatch[1]) pausesScore = parseInt(pausesScoreMatch[1]);
-    if (fillerWordsScoreMatch && fillerWordsScoreMatch[1]) fillerWordsScore = parseInt(fillerWordsScoreMatch[1]);
-    if (wpmMatch && wpmMatch[1]) wordsPerMinute = parseInt(wpmMatch[1]);
-    
-    const overallScore = Math.floor((paceScore + tonalityScore + pausesScore + fillerWordsScore) / 4);
-    
-    const feedback = extractFeedbackPoints(content, 4);
-    
-    const paceSuggestions = extractSuggestions(content, 'pace', 'rate', 'speed');
-    const volumeSuggestions = extractSuggestions(content, 'volume', 'loudness', 'projection');
-    const pitchSuggestions = extractSuggestions(content, 'pitch', 'tone', 'intonation');
-    const fillerSuggestions = extractSuggestions(content, 'filler', 'um', 'uh', 'pause');
-    
-    return {
-      paceScore,
-      tonalityScore,
-      pausesScore,
-      fillerWordsScore,
-      overallScore,
-      feedback,
-      detailedMetrics: {
-        wordsPerMinute,
-        volumeVariation: Math.floor(Math.random() * 40) + 60,
-        pitchVariation: Math.floor(Math.random() * 40) + 60,
-        fillerWordCount: {
-          um: Math.floor(Math.random() * 8),
-          uh: Math.floor(Math.random() * 6),
-          like: Math.floor(Math.random() * 10),
-          youKnow: Math.floor(Math.random() * 5),
-          total: 0
-        },
-        pauseMetrics: {
-          totalPauses: Math.floor(Math.random() * 10) + 5,
-          averagePauseDuration: (Math.random() * 1.5) + 0.5,
-          strategicPauseScore: Math.floor(Math.random() * 40) + 60
-        }
-      },
-      specificSuggestions: {
-        pace: paceSuggestions.length > 0 ? paceSuggestions : generateDefaultSuggestions('pace'),
-        volume: volumeSuggestions.length > 0 ? volumeSuggestions : generateDefaultSuggestions('volume'),
-        pitch: pitchSuggestions.length > 0 ? pitchSuggestions : generateDefaultSuggestions('pitch'),
-        fillers: fillerSuggestions.length > 0 ? fillerSuggestions : generateDefaultSuggestions('fillers')
-      },
-      transcription: extractTranscription(content) || generateMockTranscription(focusArea)
-    };
-  } catch (error) {
-    console.error('Error processing OpenAI response:', error);
-    return mockAnalyzeAudioDetailed(1024, focusArea);
-  }
-};
-
-const extractFeedbackPoints = (content: string, maxPoints: number): string[] => {
-  const sentences = content.match(/[^.!?]+[.!?]+/g) || [];
-  const relevantSentences = sentences
-    .filter(s => s.trim().length > 20 && s.trim().length < 200)
-    .slice(0, maxPoints);
-  
-  return relevantSentences.length > 0 
-    ? relevantSentences.map(s => s.trim()) 
-    : ["Your speaking pace is generally good, with a comfortable rate for listeners.",
-       "Consider varying your tone more to emphasize key points in your message.",
-       "Your pauses are well-placed, helping your audience absorb information.",
-       "Watch out for filler words that can distract from your message."];
-};
-
-const extractSuggestions = (content: string, ...keywords: string[]): string[] => {
-  const paragraphs = content.split('\n').filter(p => p.trim().length > 0);
-  
-  const relevantParagraphs = paragraphs.filter(p => {
-    const lowerP = p.toLowerCase();
-    return keywords.some(keyword => lowerP.includes(keyword.toLowerCase()));
-  });
-  
-  const suggestions: string[] = [];
-  
-  for (const para of relevantParagraphs) {
-    const bulletPoints = para.split(/(?:\r?\n|\r)(?:\*|\-|\d+\.)\s+/).filter(bp => bp.trim().length > 0);
-    for (const point of bulletPoints) {
-      if (point.trim().length > 10 && suggestions.length < 3) {
-        suggestions.push(point.trim());
-      }
-    }
-    
-    if (bulletPoints.length === 0 && para.length < 200 && suggestions.length < 3) {
-      suggestions.push(para.trim());
-    }
-  }
-  
-  return suggestions.slice(0, 3);
-};
-
-const extractTranscription = (content: string): string | null => {
-  const transcriptionHeaders = [
-    /transcription:/i,
-    /transcript:/i,
-    /speech transcript:/i,
-    /here is the transcription:/i
-  ];
-  
-  for (const header of transcriptionHeaders) {
-    const match = content.match(new RegExp(`${header.source}(.+?)(?:\\n\\n|$)`, 's'));
-    if (match && match[1]) {
-      return match[1].trim();
-    }
-  }
-  
-  return null;
-};
-
-const generateDefaultSuggestions = (category: 'pace' | 'volume' | 'pitch' | 'fillers'): string[] => {
-  switch (category) {
-    case 'pace':
-      return [
-        "Practice reading the same passage at different speeds to find your optimal pace.",
-        "Record yourself reading newspaper headlines with deliberate pacing.",
-        "Try the 'count to three' technique before starting a new sentence."
-      ];
-    case 'volume':
-      return [
-        "Practice the 'whisper to full voice' exercise to develop volume control.",
-        "Record yourself emphasizing different words in the same sentence.",
-        "Practice projecting from your diaphragm rather than your throat."
-      ];
-    case 'pitch':
-      return [
-        "Try speaking the same sentence with 5 different emotions to develop pitch range.",
-        "Practice sliding from your lowest note to your highest in a controlled manner.",
-        "Record yourself reading questions with appropriate rising intonation."
-      ];
-    case 'fillers':
-      return [
-        "Practice replacing 'um' and 'uh' with silent pauses.",
-        "Record a 1-minute speech focusing exclusively on eliminating filler words.",
-        "Try the 'tap technique' - tap your leg when you catch yourself using a filler word."
-      ];
-  }
+  return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
 };
 
 export const mockAnalyzeAudioDetailed = (
   size: number, 
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all'
-): DetailedAnalysisResult => {
-  // Generate mock scores
-  const paceScore = Math.floor(Math.random() * 40) + 60;
-  const tonalityScore = Math.floor(Math.random() * 40) + 60;
-  const pausesScore = Math.floor(Math.random() * 40) + 60;
-  const fillerWordsScore = Math.floor(Math.random() * 40) + 60;
-  const overallScore = Math.floor((paceScore + tonalityScore + pausesScore + fillerWordsScore) / 4);
-  
-  // Generate mock metrics
-  const wordsPerMinute = Math.floor(Math.random() * 60) + 120;
-  const fillerWordCount = {
-    um: Math.floor(Math.random() * 8),
-    uh: Math.floor(Math.random() * 6),
-    like: Math.floor(Math.random() * 10),
-    youKnow: Math.floor(Math.random() * 5),
-    total: 0
-  };
-  
-  // Calculate total filler words
-  fillerWordCount.total = fillerWordCount.um + fillerWordCount.uh + fillerWordCount.like + fillerWordCount.youKnow;
-  
-  // Generate feedback based on focus area
-  const feedback = generateFeedback(focusArea, {
-    paceScore,
-    wordsPerMinute,
-    fillerWordCount
-  });
-  
-  // Generate suggestions
-  const specificSuggestions = generateSpecificSuggestions(focusArea, {
-    paceScore,
-    tonalityScore,
-    pausesScore,
-    fillerWordsScore
-  });
-  
-  return {
-    paceScore,
-    tonalityScore,
-    pausesScore,
-    fillerWordsScore,
-    overallScore,
-    feedback,
-    detailedMetrics: {
-      wordsPerMinute,
-      volumeVariation: Math.floor(Math.random() * 40) + 60,
-      pitchVariation: Math.floor(Math.random() * 40) + 60,
-      fillerWordCount,
-      pauseMetrics: {
-        totalPauses: Math.floor(Math.random() * 10) + 5,
-        averagePauseDuration: (Math.random() * 1.5) + 0.5,
-        strategicPauseScore: Math.floor(Math.random() * 40) + 60
+): Promise<DetailedAnalysisResult> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      let paceScore = Math.floor(Math.random() * 30) + 60;
+      let tonalityScore = Math.floor(Math.random() * 30) + 60;
+      let pausesScore = Math.floor(Math.random() * 30) + 60;
+      let fillerWordsScore = Math.floor(Math.random() * 30) + 60;
+      
+      switch (focusArea) {
+        case 'rate-volume':
+          paceScore += 10;
+          break;
+        case 'pitch-tonality':
+          tonalityScore += 10;
+          break;
+        case 'pause-fillers':
+          pausesScore += 5;
+          fillerWordsScore += 5;
+          break;
+        default:
+          break;
       }
-    },
-    specificSuggestions,
-    transcription: generateMockTranscription(focusArea)
-  };
+      
+      paceScore = Math.min(100, paceScore);
+      tonalityScore = Math.min(100, tonalityScore);
+      pausesScore = Math.min(100, pausesScore);
+      fillerWordsScore = Math.min(100, fillerWordsScore);
+      
+      const overallScore = Math.floor((paceScore + tonalityScore + pausesScore + fillerWordsScore) / 4);
+      
+      const wordsPerMinute = Math.floor(Math.random() * 60) + 120;
+      const fillerWordCount = {
+        um: Math.floor(Math.random() * 8),
+        uh: Math.floor(Math.random() * 6),
+        like: Math.floor(Math.random() * 10),
+        youKnow: Math.floor(Math.random() * 5),
+        total: 0
+      };
+      fillerWordCount.total = fillerWordCount.um + fillerWordCount.uh + fillerWordCount.like + fillerWordCount.youKnow;
+      
+      const feedback = generateFeedback(focusArea, { 
+        paceScore, 
+        tonalityScore, 
+        pausesScore, 
+        fillerWordsScore,
+        wordsPerMinute,
+        fillerWordCount
+      });
+      
+      const specificSuggestions = generateSpecificSuggestions(focusArea, {
+        paceScore, 
+        tonalityScore, 
+        pausesScore, 
+        fillerWordsScore
+      });
+      
+      resolve({
+        paceScore,
+        tonalityScore,
+        pausesScore,
+        fillerWordsScore,
+        overallScore,
+        feedback,
+        detailedMetrics: {
+          wordsPerMinute,
+          volumeVariation: Math.floor(Math.random() * 40) + 60,
+          pitchVariation: Math.floor(Math.random() * 40) + 60,
+          fillerWordCount,
+          pauseMetrics: {
+            totalPauses: Math.floor(Math.random() * 10) + 5,
+            averagePauseDuration: (Math.random() * 1.5) + 0.5,
+            strategicPauseScore: Math.floor(Math.random() * 40) + 60
+          }
+        },
+        specificSuggestions,
+        transcription: generateMockTranscription(focusArea)
+      });
+    }, 2000);
+  });
 };
 
 export const mockAnalyzeAudio = (duration: number): Promise<AnalysisResult> => {
