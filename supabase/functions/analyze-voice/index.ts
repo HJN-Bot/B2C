@@ -1,13 +1,9 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders } from "./config.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 // Helper function to process audio in chunks to prevent memory issues
 function processBase64Chunks(base64String: string, chunkSize = 32768) {
@@ -101,6 +97,8 @@ async function getVocalFeedback(transcription: string, focusArea: string, audioL
   const prompt = promptMap[focusArea] || promptMap['all'];
 
   try {
+    console.log("Calling OpenAI API with transcription:", transcription.substring(0, 100) + "...");
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -148,6 +146,8 @@ serve(async (req) => {
       throw new Error('No audio data provided');
     }
 
+    console.log("Received audio data, focus area:", focusArea);
+
     // First, get transcription from OpenAI Whisper
     // Process audio in chunks
     const binaryAudio = processBase64Chunks(audio);
@@ -157,6 +157,8 @@ serve(async (req) => {
     const blob = new Blob([binaryAudio], { type: 'audio/webm' });
     formData.append('file', blob, 'audio.webm');
     formData.append('model', 'whisper-1');
+
+    console.log("Calling OpenAI Whisper API for transcription");
 
     // Send to OpenAI for transcription
     const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -176,12 +178,16 @@ serve(async (req) => {
     const transcriptionResult = await transcriptionResponse.json();
     const transcription = transcriptionResult.text;
     
+    console.log("Transcription received:", transcription);
+    
     if (!transcription) {
       throw new Error('Failed to transcribe audio');
     }
 
     // Calculate audio length in seconds (approximate from base64 size)
     const audioLength = Math.round(audio.length / 10000); // Rough approximation
+    
+    console.log("Audio length approximated as", audioLength, "seconds");
     
     // Get analysis from GPT-4o based on the transcription
     const analysisJson = await getVocalFeedback(transcription, focusArea, audioLength);
@@ -224,6 +230,8 @@ serve(async (req) => {
         transcription: transcription
       };
 
+      console.log("Analysis complete, sending response");
+      
       return new Response(JSON.stringify(completeAnalysis), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

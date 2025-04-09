@@ -124,7 +124,7 @@ export const analyzeAudio = async (
     const audioBase64 = await blobToBase64(audioBlob);
     
     // Call the Supabase edge function
-    const { data, error } = await fetch('/api/analyze-voice', {
+    const response = await fetch('/api/analyze-voice', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -134,10 +134,18 @@ export const analyzeAudio = async (
         focusArea,
         exerciseText
       }),
-    }).then(res => res.json());
+    });
     
-    if (error) {
-      console.error('Error from analyze-voice function:', error);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error from analyze-voice function response:', errorText);
+      throw new Error(`Error from analyze-voice function: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.error || data.fallback) {
+      console.error('Error from analyze-voice function:', data.error || 'Using fallback data');
       return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
     }
     
