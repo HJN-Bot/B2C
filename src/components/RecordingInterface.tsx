@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Mic, StopCircle, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,10 @@ import { useToast } from "@/hooks/use-toast";
 interface RecordingInterfaceProps {
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all';
   exerciseText: string;
+  onComplete?: () => void;
 }
 
-const RecordingInterface = ({ focusArea, exerciseText }: RecordingInterfaceProps) => {
+const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingInterfaceProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -69,7 +69,6 @@ const RecordingInterface = ({ focusArea, exerciseText }: RecordingInterfaceProps
       setIsRecording(false);
       stopTimer();
       
-      // AI analysis based on the focus area
       setAnalyzing(true);
       const result = await analyzeAudio(audioBlob, focusArea);
       setAnalysis(result);
@@ -111,6 +110,12 @@ const RecordingInterface = ({ focusArea, exerciseText }: RecordingInterfaceProps
     setAudioUrl(null);
     setRecordingTime(0);
     setAnalysis(null);
+  };
+
+  const handleDone = () => {
+    if (onComplete) {
+      onComplete();
+    }
   };
 
   useEffect(() => {
@@ -189,7 +194,7 @@ const RecordingInterface = ({ focusArea, exerciseText }: RecordingInterfaceProps
               Record again
             </Button>
             
-            <Button onClick={() => {}}>
+            <Button onClick={handleDone}>
               Done
             </Button>
           </div>

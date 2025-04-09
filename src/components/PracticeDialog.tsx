@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import RecordingInterface from "./RecordingInterface";
 
 interface PracticeDialogProps {
@@ -31,11 +31,18 @@ const PracticeDialog = ({ open, onOpenChange, showPracticeExercise, focusArea, e
     }
   };
 
+  const handleCompleted = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Practice Vocal Elements</DialogTitle>
+          <DialogDescription className="text-sm text-gray-500">
+            Record yourself reading the passage below focusing on {focusArea.replace('-', ' ')}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic">
@@ -45,6 +52,7 @@ const PracticeDialog = ({ open, onOpenChange, showPracticeExercise, focusArea, e
           <RecordingInterface 
             focusArea={focusArea} 
             exerciseText={getExerciseText()} 
+            onComplete={handleCompleted}
           />
         </div>
       </DialogContent>
