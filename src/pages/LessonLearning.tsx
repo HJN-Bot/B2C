@@ -71,7 +71,7 @@ const LessonLearning = () => {
       <p className="mb-6">
         "Don't be so <HighlightedText color="red">attached to who you are</HighlightedText> in the present, that you don't give <HighlightedText>the future version of you a chance</HighlightedText>!"
       </p>
-      <Button className="w-full flex items-center justify-center gap-2 py-4 text-lg bg-blue-600 hover:bg-blue-700" onClick={() => {
+      <Button className="w-full flex items-center justify-center gap-2 py-4 mt-6 bg-blue-600 hover:bg-blue-700" onClick={() => {
         setExerciseFocusArea('rate-volume');
         setExerciseText("Don't be so attached to who you are in the present, that you don't give the future version of you a chance!");
         setShowPracticeDialog(true);
@@ -119,7 +119,7 @@ const LessonLearning = () => {
       <p className="mb-6">
         "Embrace the <HighlightedText color="red">natural rhythm</HighlightedText> of your speech by varying your pitch; let the <HighlightedText>highs express excitement</HighlightedText> and the <HighlightedText>lows convey calm reflection</HighlightedText>."
       </p>
-      <Button className="w-full flex items-center justify-center gap-2 py-6 text-lg bg-blue-600 hover:bg-blue-700" onClick={() => {
+      <Button className="w-full flex items-center justify-center gap-2 py-4 mt-6 bg-blue-600 hover:bg-blue-700" onClick={() => {
         setExerciseFocusArea('pitch-tonality');
         setExerciseText("Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection.");
         setShowPracticeDialog(true);
@@ -167,7 +167,7 @@ const LessonLearning = () => {
       <p className="mb-6">
         "Remember that <HighlightedText color="red">communication is not just about</HighlightedText> the words you choose, but <HighlightedText>how you deliver them</HighlightedText>. Your voice has the power to <HighlightedText>inspire, to comfort, to persuade</HighlightedText>."
       </p>
-      <Button className="w-full flex items-center justify-center gap-2 py-6 text-lg bg-blue-600 hover:bg-blue-700" onClick={() => {
+      <Button className="w-full flex items-center justify-center gap-2 py-4 mt-6 bg-blue-600 hover:bg-blue-700" onClick={() => {
         setExerciseFocusArea('pause-fillers');
         setExerciseText("Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade.");
         setShowPracticeDialog(true);
