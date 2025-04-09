@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Mic, StopCircle, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,10 +19,16 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
   const [isPlaying, setIsPlaying] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<DetailedAnalysisResult | null>(null);
+  const [volumeLevel, setVolumeLevel] = useState(0);
+  const [showVolumeIndicator, setShowVolumeIndicator] = useState(false);
   
   const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyzerRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const { toast } = useToast();
 
   const startTimer = () => {
@@ -38,14 +45,56 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
     }
   };
 
+  const setupVolumeMonitoring = (stream: MediaStream) => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+
+    const audioContext = audioContextRef.current;
+    const analyzer = audioContext.createAnalyser();
+    analyzer.fftSize = 256;
+    const bufferLength = analyzer.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyzer);
+    
+    analyzerRef.current = analyzer;
+    dataArrayRef.current = dataArray;
+
+    setShowVolumeIndicator(focusArea === 'rate-volume' || focusArea === 'all');
+    
+    const getVolume = () => {
+      if (!analyzerRef.current || !dataArrayRef.current) return;
+      
+      analyzerRef.current.getByteFrequencyData(dataArrayRef.current);
+      const average = dataArrayRef.current.reduce((acc, val) => acc + val, 0) / dataArrayRef.current.length;
+      setVolumeLevel(Math.min(100, average * 1.5)); // Scale up for better visualization
+      
+      animationFrameRef.current = requestAnimationFrame(getVolume);
+    };
+    
+    getVolume();
+  };
+
+  const cleanupVolumeMonitoring = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    setVolumeLevel(0);
+    setShowVolumeIndicator(false);
+  };
+
   const startRecording = async () => {
     try {
-      await audioRecorder.current.start();
+      const stream = await audioRecorder.current.startWithStream();
       setIsRecording(true);
       setRecordingTime(0);
       setAudioUrl(null);
       setAnalysis(null);
       startTimer();
+      setupVolumeMonitoring(stream);
       toast({
         title: "Recording started",
         description: "Read the passage with attention to vocal elements"
@@ -68,6 +117,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
       setAudioUrl(url);
       setIsRecording(false);
       stopTimer();
+      cleanupVolumeMonitoring();
       
       setAnalyzing(true);
       const result = await analyzeAudio(audioBlob, focusArea);
@@ -82,6 +132,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
       console.error("Error stopping recording:", error);
       setIsRecording(false);
       stopTimer();
+      cleanupVolumeMonitoring();
       toast({
         title: "Recording error",
         description: "There was a problem processing your recording",
@@ -121,8 +172,12 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
   useEffect(() => {
     return () => {
       stopTimer();
+      cleanupVolumeMonitoring();
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
       }
     };
   }, [audioUrl]);
@@ -136,7 +191,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
           <p className="text-sm">Tap to start recording</p>
         </div>}
       
-      {isRecording && <div className="text-center space-y-4">
+      {isRecording && <div className="text-center space-y-4 w-full">
           <div className="text-xl font-semibold">{formatTime(recordingTime)}</div>
           <div className="animate-pulse">
             <div className="record-button mx-auto bg-red-500" onClick={stopRecording}>
@@ -144,6 +199,42 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
             </div>
           </div>
           <p className="text-sm">Recording... Tap to stop</p>
+          
+          {showVolumeIndicator && (
+            <div className="w-full max-w-md mx-auto mt-4 space-y-2">
+              <div className="flex justify-between text-xs">
+                <span>Volume Level</span>
+                <span>{Math.round(volumeLevel)}%</span>
+              </div>
+              <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 origin-left transition-transform duration-100"
+                  style={{ transform: `scaleX(${volumeLevel / 100})` }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className={`flex space-x-1 ${volumeLevel > 75 ? 'text-white' : 'text-gray-700'}`}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div 
+                        key={i} 
+                        className={`w-1 rounded-full transition-all duration-100 ${
+                          volumeLevel > i * 20 ? 'bg-white' : 'bg-gray-300'
+                        }`}
+                        style={{ 
+                          height: `${Math.min(100, Math.max(4, (volumeLevel - i * 15)))}%`,
+                          opacity: volumeLevel > i * 20 ? 1 : 0.5
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {focusArea === 'rate-volume' && (
+                <p className="text-xs text-center mt-1">
+                  {volumeLevel < 30 ? "Speak louder" : volumeLevel > 75 ? "Great projection!" : "Good volume"}
+                </p>
+              )}
+            </div>
+          )}
         </div>}
       
       {audioUrl && <div className="w-full space-y-4">

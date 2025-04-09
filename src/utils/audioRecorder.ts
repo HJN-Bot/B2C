@@ -21,6 +21,26 @@ export class AudioRecorder {
       throw error;
     }
   }
+
+  async startWithStream(): Promise<MediaStream> {
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorder = new MediaRecorder(this.stream);
+      this.audioChunks = [];
+      
+      this.mediaRecorder.addEventListener('dataavailable', (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      });
+      
+      this.mediaRecorder.start();
+      return this.stream;
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      throw error;
+    }
+  }
   
   stop(): Promise<Blob> {
     return new Promise((resolve, reject) => {
