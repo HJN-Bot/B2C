@@ -71,7 +71,7 @@ const LessonLearning = () => {
       <p className="mb-6">
         "Don't be so <HighlightedText color="red">attached to who you are</HighlightedText> in the present, that you don't give <HighlightedText>the future version of you a chance</HighlightedText>!"
       </p>
-      <Button className="w-full flex items-center justify-center gap-2 py-6 text-lg bg-blue-600 hover:bg-blue-700" onClick={() => {
+      <Button className="w-full flex items-center justify-center gap-2 py-4 text-lg bg-blue-600 hover:bg-blue-700" onClick={() => {
         setExerciseFocusArea('rate-volume');
         setExerciseText("Don't be so attached to who you are in the present, that you don't give the future version of you a chance!");
         setShowPracticeDialog(true);
