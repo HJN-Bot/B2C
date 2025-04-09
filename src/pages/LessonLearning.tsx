@@ -9,7 +9,6 @@ import LessonContent from "@/components/LessonContent";
 import PracticeCard from "@/components/PracticeCard";
 import PracticeDialog from "@/components/PracticeDialog";
 import HighlightedText from "@/components/HighlightedText";
-
 const LessonLearning = () => {
   const {
     lessonId
@@ -218,7 +217,7 @@ const LessonLearning = () => {
     return <VocalExercise lessonId={lessonId} focusArea={focusArea} onComplete={() => navigate("/progress")} />;
   }
   return <Layout hideNavigation>
-      <div className="p-4 min-h-screen flex flex-col">
+      <div className="p-4 min-h-screen flex flex-col bg-lime-100">
         <LessonProgress currentStep={currentStep} totalSteps={totalSteps} />
         
         <div className="flex-1 flex flex-col">
