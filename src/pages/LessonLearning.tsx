@@ -1,12 +1,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Mic, Play, Pause, StopCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mic, Play, Pause, StopCircle } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import VocalExercise from "@/components/VocalExercise";
 import { 
   AudioRecorder, 
@@ -24,7 +23,9 @@ const LessonLearning = () => {
   }>();
   const [searchParams] = useSearchParams();
   const part = searchParams.get('part') || "1";
+  const stepParam = searchParams.get('step');
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(stepParam ? parseInt(stepParam, 10) - 1 : 0);
   const [showExercise, setShowExercise] = useState(false);
   const [showPracticeDialog, setShowPracticeDialog] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -41,20 +42,50 @@ const LessonLearning = () => {
 
   // Part 1: Rate of Speech and Volume
   const vocalFoundationsPart1 = [{
+    title: "Introduction to Vocal Foundations",
+    content: "Your voice is your most powerful communication tool. The way you speak can significantly impact how your message is received. In this lesson, we'll explore the key components of effective vocal delivery, focusing on the rate of speech and volume."
+  }, {
     title: "Rate of Speech",
     content: "Speaking with one pace can dull your message and confuse listeners. Adjust your speaking pace — speed up to excite, slow down to emphasize. Keep it varied to hold attention and clarify your message!"
+  }, {
+    title: "Volume",
+    content: "Volume = The lifeblood of your voice\n\nRule of thumb: Ensure your voice is as big as the room. This requires adjusting your energy and presentation style to suit the scale and dynamics of your audience.\n\nFor instance, a high-energy approach might overwhelm a single conversation partner but could be ideal for a large audience."
+  }, {
+    title: "Practice Exercise - Rate and Volume",
+    content: "Now, let's practice adjusting your rate of speech and volume. Click the button below to record yourself reading the following passage: 'In the heart of a bustling city, every sound tells a story. As you speak, let your words flow at a comfortable pace—neither too fast nor too slow. Project your voice with a gentle strength, ensuring that each word is heard clearly.'",
+    hasExercise: true
   }];
 
   // Part 2: Pitch and Tonality
   const vocalFoundationsPart2 = [{
+    title: "Introduction to Pitch and Tonality",
+    content: "In this section, we focus on the energizers of communication: pitch and tonality. These elements add life and emotion to your words, helping you connect with your audience on a deeper level."
+  }, {
     title: "Pitch",
     content: "Pitch refers to how high or low your voice sounds. A monotone voice can be boring to listen to, so varying your pitch helps keep your audience engaged. Try to find your natural pitch range and practice moving comfortably within it."
+  }, {
+    title: "Tonality",
+    content: "Tonality is the emotional quality of your voice. It conveys how you feel about what you're saying. Be mindful of whether your tone matches your message. Practice conveying different emotions through your voice such as enthusiasm, concern, or confidence."
+  }, {
+    title: "Practice Exercise - Pitch and Tonality",
+    content: "Let's practice varying your pitch and tonality. Click the button below to record yourself reading this passage: 'Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection. Your voice is the melody that brings the narrative to life. Through tonality, you can express joy, concern, confidence, or curiosity - bringing your words to life.'",
+    hasExercise: true
   }];
 
   // Part 3: Pause and Filler Words
   const vocalFoundationsPart3 = [{
+    title: "Introduction to Pauses and Filler Words",
+    content: "In this section, we explore the breathers of talking: strategic pauses and the elimination of filler words. Mastering these elements can dramatically improve the clarity and impact of your communication."
+  }, {
     title: "Pause",
     content: "Strategic pauses can be powerful. They give your audience time to process information, create emphasis, and help you control the pace of your delivery. Don't be afraid of silence – it can be one of your most effective tools."
+  }, {
+    title: "Filler Words",
+    content: "Filler words like 'um,' 'uh,' 'like,' and 'you know' can distract from your message and make you sound less confident. Practice speaking slowly and pausing instead of using fillers. Record yourself speaking and note when you use fillers to become more aware of this habit."
+  }, {
+    title: "Practice Exercise - Pauses and Fillers",
+    content: "Let's practice using strategic pauses and reducing filler words. Click the button below to record yourself reading this passage: 'Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade, and to connect. By mastering these vocal elements, you're not just becoming a better speaker – you're becoming a more effective communicator in every aspect of your life.'",
+    hasExercise: true
   }];
 
   let activeSteps;
@@ -74,6 +105,9 @@ const LessonLearning = () => {
       focusArea = 'rate-volume';
   }
   
+  const totalSteps = activeSteps.length;
+  const progress = (currentStep + 1) / totalSteps * 100;
+
   const getExerciseText = () => {
     switch (part) {
       case "2":
@@ -85,8 +119,20 @@ const LessonLearning = () => {
     }
   };
 
-  const handlePracticeClick = () => {
-    setShowPracticeDialog(true);
+  const handleNext = () => {
+    if (currentStep === totalSteps - 1) {
+      setShowExercise(true);
+    } else {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+    } else {
+      navigate(`/lessons/${lessonId}`);
+    }
   };
 
   const startTimer = () => {
@@ -181,6 +227,12 @@ const LessonLearning = () => {
     };
   }, [audioUrl]);
 
+  useEffect(() => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('step', (currentStep + 1).toString());
+    navigate(`/lessons/${lessonId}/learn?${newSearchParams.toString()}`, { replace: true });
+  }, [currentStep, lessonId, navigate, searchParams]);
+
   if (showExercise) {
     return <VocalExercise 
       lessonId={lessonId} 
@@ -189,39 +241,43 @@ const LessonLearning = () => {
     />;
   }
 
-  const currentLesson = activeSteps[0];
-
-  return (
-    <Layout hideNavigation>
-      <div className="p-4 min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div className="w-full max-w-md mx-auto">
-          <Card className="shadow-lg bg-white rounded-3xl overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-2xl font-bold text-center">
-                {currentLesson.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-6">
-              <p className="text-center text-gray-700 leading-relaxed px-4">
-                {currentLesson.content}
-              </p>
-              
-              <div className="flex justify-center mt-8">
-                <Button 
-                  onClick={handlePracticeClick}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-8 py-2 rounded-full"
-                >
-                  Practice Now
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+  return <Layout hideNavigation>
+      <div className="p-4 min-h-screen flex flex-col">
+        <div className="mb-6">
+          <Progress value={progress} className="h-2" />
+          <div className="text-xs text-gray-500 mt-1 text-right">
+            {currentStep + 1}/{totalSteps}
+          </div>
+        </div>
+        
+        <div className="flex-1 text-blue-600">
+          <h1 className="text-xl font-bold mb-4">{activeSteps[currentStep].title}</h1>
+          <p className="text-gray-700 leading-relaxed whitespace-pre-line">{activeSteps[currentStep].content}</p>
+          
+          {activeSteps[currentStep].hasExercise && <Button className="mt-6" onClick={() => setShowPracticeDialog(true)}>
+              Practice Vocal Elements
+            </Button>}
+        </div>
+        
+        <div className="flex justify-between pt-4 border-t mt-6">
+          <Button 
+            variant="outline" 
+            onClick={handlePrevious}
+          >
+            <ArrowLeft size={16} className="mr-2" />
+            Previous
+          </Button>
+          
+          <Button onClick={handleNext}>
+            {currentStep === totalSteps - 1 ? "Start Exercise" : "Next"}
+            <ArrowRight size={16} className="ml-2" />
+          </Button>
         </div>
 
         <Dialog open={showPracticeDialog} onOpenChange={setShowPracticeDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Practice {currentLesson.title}</DialogTitle>
+              <DialogTitle>Practice Vocal Elements</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic">
@@ -289,10 +345,10 @@ const LessonLearning = () => {
                     
                     <div className="flex justify-center space-x-4">
                       <Button variant="outline" onClick={() => {
-                        setAudioUrl(null);
-                        setRecordingTime(0);
-                        setAnalysis(null);
-                      }}>
+                    setAudioUrl(null);
+                    setRecordingTime(0);
+                    setAnalysis(null);
+                  }}>
                         Record again
                       </Button>
                       
@@ -306,8 +362,7 @@ const LessonLearning = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
 
 export default LessonLearning;
