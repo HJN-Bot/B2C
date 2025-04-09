@@ -8,10 +8,15 @@ interface PracticeDialogProps {
   onOpenChange: (open: boolean) => void;
   showPracticeExercise: boolean;
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all';
+  exerciseText?: string;
 }
 
-const PracticeDialog = ({ open, onOpenChange, showPracticeExercise, focusArea }: PracticeDialogProps) => {
+const PracticeDialog = ({ open, onOpenChange, showPracticeExercise, focusArea, exerciseText }: PracticeDialogProps) => {
   const getExerciseText = () => {
+    if (exerciseText) {
+      return exerciseText;
+    }
+    
     if (showPracticeExercise) {
       return "If you just communicate, you can get by. But if you communicate skillfully, you can work miracles.";
     }

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -20,7 +21,8 @@ const LessonLearning = () => {
   const [currentStep, setCurrentStep] = useState(stepParam ? parseInt(stepParam, 10) - 1 : 0);
   const [showExercise, setShowExercise] = useState(false);
   const [showPracticeDialog, setShowPracticeDialog] = useState(false);
-  const [showPracticeExercise, setShowPracticeExercise] = useState(false);
+  const [exerciseFocusArea, setExerciseFocusArea] = useState<'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all'>('all');
+  const [exerciseText, setExerciseText] = useState("");
   
   // Part 1: Rate of Speech and Volume
   const vocalFoundationsPart1 = [{
@@ -35,11 +37,35 @@ const LessonLearning = () => {
         <div><HighlightedText color="red">Speed up to excite,</HighlightedText></div>
         <div><HighlightedText>slow down to emphasize.</HighlightedText></div>
       </div>
-      <p>Keep it varied to hold attention and clarify your message!</p>
+      <p className="mb-6">Keep it varied to hold attention and clarify your message!</p>
+      <Button 
+        className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700"
+        onClick={() => {
+          setExerciseFocusArea('rate-volume');
+          setExerciseText("Practice varying your speed. The QUICK brown fox jumped over the LAZY dog. Speed up for 'quick' and slow down for 'lazy' to emphasize the contrast.");
+          setShowPracticeDialog(true);
+        }}
+      >
+        Practice Rate of Speech
+      </Button>
     </>
   }, {
     title: "Volume",
-    content: "Volume = The lifeblood of your voice\n\nRule of thumb: Ensure your voice is as big as the room. This requires adjusting your energy and presentation style to suit the scale and dynamics of your audience.\n\nFor instance, a high-energy approach might overwhelm a single conversation partner but could be ideal for a large audience."
+    content: <>
+      <p className="mb-4">Volume = The lifeblood of your voice</p>
+      <p className="mb-4">Rule of thumb: Ensure your voice is as big as the room. This requires adjusting your energy and presentation style to suit the scale and dynamics of your audience.</p>
+      <p className="mb-6">For instance, a high-energy approach might overwhelm a single conversation partner but could be ideal for a large audience.</p>
+      <Button 
+        className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700"
+        onClick={() => {
+          setExerciseFocusArea('rate-volume');
+          setExerciseText("Practice volume control by reading this sentence with varying volume: Start QUIETLY and gradually increase volume until you reach the LOUDEST part, then return to a conversational level.");
+          setShowPracticeDialog(true);
+        }}
+      >
+        Practice Volume Control
+      </Button>
+    </>
   }, {
     title: "Practice Exercise",
     content: <>
@@ -49,7 +75,11 @@ const LessonLearning = () => {
       </p>
       <Button 
         className="w-full flex items-center justify-center gap-2 py-6 text-lg bg-blue-600 hover:bg-blue-700"
-        onClick={() => setShowPracticeDialog(true)}
+        onClick={() => {
+          setExerciseFocusArea('rate-volume');
+          setExerciseText("Don't be so attached to who you are in the present, that you don't give the future version of you a chance!");
+          setShowPracticeDialog(true);
+        }}
       >
         Start Recording
       </Button>
@@ -63,10 +93,34 @@ const LessonLearning = () => {
     content: "In this section, we focus on the energizers of communication: pitch and tonality. These elements add life and emotion to your words, helping you connect with your audience on a deeper level."
   }, {
     title: "Pitch",
-    content: "Pitch refers to how high or low your voice sounds. A monotone voice can be boring to listen to, so varying your pitch helps keep your audience engaged. Try to find your natural pitch range and practice moving comfortably within it."
+    content: <>
+      <p className="mb-4">Pitch refers to how high or low your voice sounds. A monotone voice can be boring to listen to, so varying your pitch helps keep your audience engaged. Try to find your natural pitch range and practice moving comfortably within it.</p>
+      <Button 
+        className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 mt-4"
+        onClick={() => {
+          setExerciseFocusArea('pitch-tonality');
+          setExerciseText("Read with pitch variation: 'Is THIS the QUESTION you're asking?' (high pitch) followed by 'This is the ANSWER I'm giving.' (lower pitch)");
+          setShowPracticeDialog(true);
+        }}
+      >
+        Practice Pitch Variation
+      </Button>
+    </>
   }, {
     title: "Tonality",
-    content: "Tonality is the emotional quality of your voice. It conveys how you feel about what you're saying. Be mindful of whether your tone matches your message. Practice conveying different emotions through your voice such as enthusiasm, concern, or confidence."
+    content: <>
+      <p className="mb-4">Tonality is the emotional quality of your voice. It conveys how you feel about what you're saying. Be mindful of whether your tone matches your message. Practice conveying different emotions through your voice such as enthusiasm, concern, or confidence.</p>
+      <Button 
+        className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 mt-4"
+        onClick={() => {
+          setExerciseFocusArea('pitch-tonality');
+          setExerciseText("Say 'I'm really excited about this opportunity' with genuine enthusiasm, then say 'I'm concerned about these results' with an appropriate tone of concern.");
+          setShowPracticeDialog(true);
+        }}
+      >
+        Practice Emotional Tonality
+      </Button>
+    </>
   }, {
     title: "Practice Exercise",
     content: <>
@@ -76,7 +130,11 @@ const LessonLearning = () => {
       </p>
       <Button 
         className="w-full flex items-center justify-center gap-2 py-6 text-lg bg-blue-600 hover:bg-blue-700"
-        onClick={() => setShowPracticeDialog(true)}
+        onClick={() => {
+          setExerciseFocusArea('pitch-tonality');
+          setExerciseText("Embrace the natural rhythm of your speech by varying your pitch; let the highs express excitement and the lows convey calm reflection.");
+          setShowPracticeDialog(true);
+        }}
       >
         Start Recording
       </Button>
@@ -90,10 +148,34 @@ const LessonLearning = () => {
     content: "In this section, we explore the breathers of talking: strategic pauses and the elimination of filler words. Mastering these elements can dramatically improve the clarity and impact of your communication."
   }, {
     title: "Pause",
-    content: "Strategic pauses can be powerful. They give your audience time to process information, create emphasis, and help you control the pace of your delivery. Don't be afraid of silence – it can be one of your most effective tools."
+    content: <>
+      <p className="mb-4">Strategic pauses can be powerful. They give your audience time to process information, create emphasis, and help you control the pace of your delivery. Don't be afraid of silence – it can be one of your most effective tools.</p>
+      <Button 
+        className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 mt-4"
+        onClick={() => {
+          setExerciseFocusArea('pause-fillers');
+          setExerciseText("Practice strategic pauses: 'The decision isn't just important... [pause] it's critical to our future success.' Use the pause for dramatic effect.");
+          setShowPracticeDialog(true);
+        }}
+      >
+        Practice Strategic Pauses
+      </Button>
+    </>
   }, {
     title: "Filler Words",
-    content: "Filler words like 'um,' 'uh,' 'like,' and 'you know' can distract from your message and make you sound less confident. Practice speaking slowly and pausing instead of using fillers. Record yourself speaking and note when you use fillers to become more aware of this habit."
+    content: <>
+      <p className="mb-4">Filler words like 'um,' 'uh,' 'like,' and 'you know' can distract from your message and make you sound less confident. Practice speaking slowly and pausing instead of using fillers. Record yourself speaking and note when you use fillers to become more aware of this habit.</p>
+      <Button 
+        className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 mt-4"
+        onClick={() => {
+          setExerciseFocusArea('pause-fillers');
+          setExerciseText("Describe your favorite hobby for 30 seconds without using any filler words. Replace any urge to say 'um' or 'uh' with a brief pause.");
+          setShowPracticeDialog(true);
+        }}
+      >
+        Practice Eliminating Fillers
+      </Button>
+    </>
   }, {
     title: "Practice Exercise",
     content: <>
@@ -103,7 +185,11 @@ const LessonLearning = () => {
       </p>
       <Button 
         className="w-full flex items-center justify-center gap-2 py-6 text-lg bg-blue-600 hover:bg-blue-700"
-        onClick={() => setShowPracticeDialog(true)}
+        onClick={() => {
+          setExerciseFocusArea('pause-fillers');
+          setExerciseText("Remember that communication is not just about the words you choose, but how you deliver them. Your voice has the power to inspire, to comfort, to persuade.");
+          setShowPracticeDialog(true);
+        }}
       >
         Start Recording
       </Button>
@@ -152,13 +238,6 @@ const LessonLearning = () => {
     navigate(`/lessons/${lessonId}/learn?${newSearchParams.toString()}`, { replace: true });
   }, [currentStep, lessonId, navigate, searchParams]);
 
-  useEffect(() => {
-    // Show practice exercise when halfway through the lesson
-    if (currentStep >= Math.floor(totalSteps / 2) && !showPracticeExercise) {
-      setShowPracticeExercise(true);
-    }
-  }, [currentStep, totalSteps, showPracticeExercise]);
-
   if (showExercise) {
     return <VocalExercise 
       lessonId={lessonId} 
@@ -177,10 +256,6 @@ const LessonLearning = () => {
             title={activeSteps[currentStep].title} 
             content={activeSteps[currentStep].content} 
           />
-          
-          {showPracticeExercise && (
-            <PracticeCard onPracticeClick={() => setShowPracticeDialog(true)} />
-          )}
         </div>
         
         <div className="flex justify-between pt-4 border-t mt-6">
@@ -201,8 +276,9 @@ const LessonLearning = () => {
         <PracticeDialog 
           open={showPracticeDialog} 
           onOpenChange={setShowPracticeDialog}
-          showPracticeExercise={showPracticeExercise}
-          focusArea={focusArea}
+          showPracticeExercise={true}
+          focusArea={exerciseFocusArea}
+          exerciseText={exerciseText}
         />
       </div>
     </Layout>
