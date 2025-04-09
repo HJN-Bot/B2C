@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -23,13 +22,14 @@ const LessonLearning = () => {
   const [showPracticeDialog, setShowPracticeDialog] = useState(false);
   const [exerciseFocusArea, setExerciseFocusArea] = useState<'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all'>('all');
   const [exerciseText, setExerciseText] = useState("");
-  
-  // Part 1: Rate of Speech and Volume
+
   const vocalFoundationsPart1 = [{
-    title: "Introduction to Vocal Foundations",
+    title: "Introduction to the Lifeblood of Voice",
+    description: "Discover the foundational elements that give your voice its power and clarity",
     content: "Your voice is your most powerful communication tool. The way you speak can significantly impact how your message is received. In this lesson, we'll explore the key components of effective vocal delivery, focusing on the rate of speech and volume."
   }, {
     title: "Rate of Speech",
+    description: "Master the pace of your delivery for maximum impact",
     content: <>
       <p className="mb-4">Speaking with one pace can dull your message and confuse listeners.</p>
       <p className="mb-4">Adjust your speaking pace —</p>
@@ -51,6 +51,7 @@ const LessonLearning = () => {
     </>
   }, {
     title: "Volume",
+    description: "Control the volume of your voice to enhance your message",
     content: <>
       <p className="mb-4">Volume = The lifeblood of your voice</p>
       <p className="mb-4">Rule of thumb: Ensure your voice is as big as the room. This requires adjusting your energy and presentation style to suit the scale and dynamics of your audience.</p>
@@ -68,6 +69,7 @@ const LessonLearning = () => {
     </>
   }, {
     title: "Practice Exercise",
+    description: "Apply what you've learned to improve your vocal delivery",
     content: <>
       <p className="mb-4">Read this sentence aloud:</p>
       <p className="mb-6">
@@ -87,12 +89,13 @@ const LessonLearning = () => {
     hasExercise: true
   }];
 
-  // Part 2: Pitch and Tonality
   const vocalFoundationsPart2 = [{
     title: "Introduction to Pitch and Tonality",
+    description: "Enhance your communication with pitch and tonality",
     content: "In this section, we focus on the energizers of communication: pitch and tonality. These elements add life and emotion to your words, helping you connect with your audience on a deeper level."
   }, {
     title: "Pitch",
+    description: "Vary your pitch to engage your audience",
     content: <>
       <p className="mb-4">Pitch refers to how high or low your voice sounds. A monotone voice can be boring to listen to, so varying your pitch helps keep your audience engaged. Try to find your natural pitch range and practice moving comfortably within it.</p>
       <Button 
@@ -108,6 +111,7 @@ const LessonLearning = () => {
     </>
   }, {
     title: "Tonality",
+    description: "Convey emotions through your voice",
     content: <>
       <p className="mb-4">Tonality is the emotional quality of your voice. It conveys how you feel about what you're saying. Be mindful of whether your tone matches your message. Practice conveying different emotions through your voice such as enthusiasm, concern, or confidence.</p>
       <Button 
@@ -123,6 +127,7 @@ const LessonLearning = () => {
     </>
   }, {
     title: "Practice Exercise",
+    description: "Apply pitch and tonality to improve your communication",
     content: <>
       <p className="mb-4">Read this sentence aloud:</p>
       <p className="mb-6">
@@ -142,12 +147,13 @@ const LessonLearning = () => {
     hasExercise: true
   }];
 
-  // Part 3: Pause and Filler Words
   const vocalFoundationsPart3 = [{
     title: "Introduction to Pauses and Filler Words",
+    description: "Master the breathers of talking: pauses and filler words",
     content: "In this section, we explore the breathers of talking: strategic pauses and the elimination of filler words. Mastering these elements can dramatically improve the clarity and impact of your communication."
   }, {
     title: "Pause",
+    description: "Use pauses to emphasize your message",
     content: <>
       <p className="mb-4">Strategic pauses can be powerful. They give your audience time to process information, create emphasis, and help you control the pace of your delivery. Don't be afraid of silence – it can be one of your most effective tools.</p>
       <Button 
@@ -163,6 +169,7 @@ const LessonLearning = () => {
     </>
   }, {
     title: "Filler Words",
+    description: "Eliminate filler words to improve your delivery",
     content: <>
       <p className="mb-4">Filler words like 'um,' 'uh,' 'like,' and 'you know' can distract from your message and make you sound less confident. Practice speaking slowly and pausing instead of using fillers. Record yourself speaking and note when you use fillers to become more aware of this habit.</p>
       <Button 
@@ -178,6 +185,7 @@ const LessonLearning = () => {
     </>
   }, {
     title: "Practice Exercise",
+    description: "Apply pauses and filler words to improve your communication",
     content: <>
       <p className="mb-4">Read this sentence aloud:</p>
       <p className="mb-6">
@@ -254,6 +262,7 @@ const LessonLearning = () => {
         <div className="flex-1 flex flex-col">
           <LessonContent 
             title={activeSteps[currentStep].title} 
+            description={activeSteps[currentStep].description}
             content={activeSteps[currentStep].content} 
           />
         </div>
