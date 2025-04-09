@@ -392,10 +392,63 @@ const generateDefaultSuggestions = (category: 'pace' | 'volume' | 'pitch' | 'fil
 export const mockAnalyzeAudioDetailed = (
   size: number, 
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all'
-): Promise<DetailedAnalysisResult> => {
-  console.log(`Analyzing audio with focus on: ${focusArea}`);
+): DetailedAnalysisResult => {
+  // Generate mock scores
+  const paceScore = Math.floor(Math.random() * 40) + 60;
+  const tonalityScore = Math.floor(Math.random() * 40) + 60;
+  const pausesScore = Math.floor(Math.random() * 40) + 60;
+  const fillerWordsScore = Math.floor(Math.random() * 40) + 60;
+  const overallScore = Math.floor((paceScore + tonalityScore + pausesScore + fillerWordsScore) / 4);
   
-  return mockAnalyzeAudioDetailed(size, focusArea);
+  // Generate mock metrics
+  const wordsPerMinute = Math.floor(Math.random() * 60) + 120;
+  const fillerWordCount = {
+    um: Math.floor(Math.random() * 8),
+    uh: Math.floor(Math.random() * 6),
+    like: Math.floor(Math.random() * 10),
+    youKnow: Math.floor(Math.random() * 5),
+    total: 0
+  };
+  
+  // Calculate total filler words
+  fillerWordCount.total = fillerWordCount.um + fillerWordCount.uh + fillerWordCount.like + fillerWordCount.youKnow;
+  
+  // Generate feedback based on focus area
+  const feedback = generateFeedback(focusArea, {
+    paceScore,
+    wordsPerMinute,
+    fillerWordCount
+  });
+  
+  // Generate suggestions
+  const specificSuggestions = generateSpecificSuggestions(focusArea, {
+    paceScore,
+    tonalityScore,
+    pausesScore,
+    fillerWordsScore
+  });
+  
+  return {
+    paceScore,
+    tonalityScore,
+    pausesScore,
+    fillerWordsScore,
+    overallScore,
+    feedback,
+    detailedMetrics: {
+      wordsPerMinute,
+      volumeVariation: Math.floor(Math.random() * 40) + 60,
+      pitchVariation: Math.floor(Math.random() * 40) + 60,
+      fillerWordCount,
+      pauseMetrics: {
+        totalPauses: Math.floor(Math.random() * 10) + 5,
+        averagePauseDuration: (Math.random() * 1.5) + 0.5,
+        strategicPauseScore: Math.floor(Math.random() * 40) + 60
+      }
+    },
+    specificSuggestions,
+    transcription: generateMockTranscription(focusArea)
+  };
 };
 
 export const mockAnalyzeAudio = (duration: number): Promise<AnalysisResult> => {

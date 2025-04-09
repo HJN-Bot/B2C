@@ -21,6 +21,11 @@ const APIKeyInput = ({ open, onOpenChange, onComplete }: APIKeyInputProps) => {
     const storedKey = getOpenAIApiKey();
     if (storedKey) {
       setApiKey(storedKey);
+    } else {
+      // Set the provided API key if none is stored
+      const defaultKey = "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";
+      setApiKey(defaultKey);
+      setOpenAIApiKey(defaultKey);
     }
   }, [open]);
 
