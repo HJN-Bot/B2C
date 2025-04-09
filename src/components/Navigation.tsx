@@ -15,7 +15,7 @@ const Navigation = () => {
   ];
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t z-10">
+    <div className="fixed bottom-0 left-0 right-0 bg-[#121C3E] border-t border-[#1E2A54] z-10">
       <div className="flex justify-between items-center px-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -27,7 +27,7 @@ const Navigation = () => {
               to={item.path}
               className={cn(
                 "flex flex-col items-center py-2 px-3",
-                isActive ? "text-communi-primary" : "text-gray-500"
+                isActive ? "text-[#FF7A30]" : "text-gray-400"
               )}
             >
               <Icon size={24} className={cn(

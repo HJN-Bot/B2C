@@ -64,11 +64,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				communi: {
-					primary: '#58A9FF',
-					secondary: '#FF7A5C',
-					tertiary: '#7ED957',
-					quaternary: '#FFC947',
-					dark: '#2D3748',
+					primary: '#121C3E',
+					secondary: '#FF7A30',
+					tertiary: '#FF9D45',
+					quaternary: '#FFDD50',
+					dark: '#0C1330',
 					light: '#F8FAFC'
 				}
 			},
