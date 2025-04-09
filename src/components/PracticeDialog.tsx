@@ -37,15 +37,15 @@ const PracticeDialog = ({ open, onOpenChange, showPracticeExercise, focusArea, e
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-[#121C3E] border-[#1E2A54] text-white">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white">Practice Vocal Elements</DialogTitle>
-          <DialogDescription className="text-sm text-gray-300">
+          <DialogTitle>Practice Vocal Elements</DialogTitle>
+          <DialogDescription className="text-sm text-gray-500">
             Record yourself reading the passage below focusing on {focusArea.replace('-', ' ')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <p className="text-sm text-gray-300 bg-[#0C1330] p-3 rounded-md italic border border-[#1E2A54]">
+          <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md italic">
             {getExerciseText()}
           </p>
           
