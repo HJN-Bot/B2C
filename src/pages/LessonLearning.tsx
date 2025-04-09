@@ -9,6 +9,7 @@ import LessonContent from "@/components/LessonContent";
 import PracticeCard from "@/components/PracticeCard";
 import PracticeDialog from "@/components/PracticeDialog";
 import HighlightedText from "@/components/HighlightedText";
+
 const LessonLearning = () => {
   const {
     lessonId
@@ -51,7 +52,7 @@ const LessonLearning = () => {
     title: "Volume",
     description: "Control the volume of your voice to enhance your message",
     content: <>
-      <p className="mb-4">Volume = The lifeblood of your voice</p>
+      <p className="mb-4">Volume = Vitality</p>
       <p className="mb-4">Rule of thumb: Ensure your voice is as big as the room. This requires adjusting your energy and presentation style to suit the scale and dynamics of your audience.</p>
       <p className="mb-6">For instance, a high-energy approach might overwhelm a single conversation partner but could be ideal for a large audience.</p>
       <Button className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700" onClick={() => {
