@@ -9,14 +9,19 @@ import { Progress } from "@/components/ui/progress";
 import { MOCK_USER } from "@/models/user";
 import { MOCK_LESSONS } from "@/models/lesson";
 import { cn } from "@/lib/utils";
+
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(MOCK_USER);
   const [greeting, setGreeting] = useState("");
+
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Good morning");else if (hour < 18) setGreeting("Good afternoon");else setGreeting("Good evening");
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
   }, []);
+
   const allLessons = [...MOCK_LESSONS.map(lesson => {
     // Change the lesson title if it's "Introduction to Public Speaking"
     if (lesson.title === "Introduction to Public Speaking") {
@@ -41,9 +46,13 @@ const Index = () => {
   }];
 
   // Filter out duplicates (in case we already have Vocal Foundations)
-  const uniqueLessons = allLessons.filter((lesson, index, self) => index === self.findIndex(l => l.title === lesson.title));
+  const uniqueLessons = allLessons.filter((lesson, index, self) => 
+    index === self.findIndex(l => l.title === lesson.title)
+  );
   const recommendedLessons = uniqueLessons.slice(0, 3);
-  return <Layout>
+
+  return (
+    <Layout>
       <div className="p-4 space-y-6 bg-yellow-50">
         <div className="flex items-center justify-between">
           <div>
@@ -73,24 +82,42 @@ const Index = () => {
             </Button>
           </div>
           
-          <div className="space-y-3">
-            {recommendedLessons.map(lesson => <div key={lesson.id} className="module-card flex items-center cursor-pointer" onClick={() => navigate(`/lessons/${lesson.id}`)}>
-                <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center mr-4", lesson.category === "public_speaking" ? "bg-communi-primary/20" : lesson.category === "active_listening" ? "bg-communi-tertiary/20" : lesson.category === "storytelling" ? "bg-communi-quaternary/20" : lesson.category === "articulation" ? "bg-communi-secondary/20" : "bg-communi-secondary/20")}>
-                  {lesson.category === "public_speaking" && <Mic size={24} className="text-communi-primary" />}
-                  {lesson.category === "active_listening" && <BookOpen size={24} className="text-communi-tertiary" />}
-                  {lesson.category === "storytelling" && <Star size={24} className="text-communi-quaternary" />}
-                  {lesson.category === "articulation" && <Volume2 size={24} className="text-communi-secondary" />}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium">{lesson.title}</h3>
-                  <p className="text-xs text-gray-500">{lesson.duration} min • {lesson.level}</p>
-                  <div className="progress-bar mt-1">
-                    <div className="progress-value" style={{
-                  width: `${lesson.progress}%`
-                }}></div>
+          <div className="grid grid-cols-1 gap-4">
+            {recommendedLessons.map(lesson => (
+              <Card 
+                key={lesson.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow" 
+                onClick={() => navigate(`/lessons/${lesson.id}`)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className={cn(
+                      "w-12 h-12 rounded-lg flex items-center justify-center mr-4",
+                      lesson.category === "public_speaking" ? "bg-communi-primary/20" : 
+                      lesson.category === "active_listening" ? "bg-communi-tertiary/20" : 
+                      lesson.category === "storytelling" ? "bg-communi-quaternary/20" : 
+                      lesson.category === "articulation" ? "bg-communi-secondary/20" : 
+                      "bg-communi-secondary/20"
+                    )}>
+                      {lesson.category === "public_speaking" && <Mic size={24} className="text-communi-primary" />}
+                      {lesson.category === "active_listening" && <BookOpen size={24} className="text-communi-tertiary" />}
+                      {lesson.category === "storytelling" && <Star size={24} className="text-communi-quaternary" />}
+                      {lesson.category === "articulation" && <Volume2 size={24} className="text-communi-secondary" />}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium">{lesson.title}</h3>
+                      <p className="text-xs text-gray-500">{lesson.duration} min • {lesson.level}</p>
+                      <div className="progress-bar mt-1">
+                        <div 
+                          className="progress-value" 
+                          style={{width: `${lesson.progress}%`}}
+                        ></div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>)}
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
         
@@ -107,6 +134,8 @@ const Index = () => {
           </Card>
         </div>
       </div>
-    </Layout>;
+    </Layout>
+  );
 };
+
 export default Index;
