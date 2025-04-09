@@ -13,7 +13,7 @@ const Layout = ({ children, hideNavigation = false }: LayoutProps) => {
   const isMobile = useIsMobile();
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <div className={cn(
         "mx-auto max-w-md bg-white min-h-screen relative",
         isMobile ? "" : "border-x shadow-md"

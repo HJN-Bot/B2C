@@ -10,13 +10,13 @@ interface PracticeCardProps {
 
 const PracticeCard = ({ onPracticeClick }: PracticeCardProps) => {
   return (
-    <Card className="bg-blue-50 shadow-sm mb-6 border-blue-200">
+    <Card className="bg-blue-50 shadow-md mb-6 border-blue-200">
       <CardContent className="p-6">
         <h2 className="text-lg font-bold mb-3 text-blue-800">Practice Your Skills</h2>
         <p className="mb-4 text-gray-700">
           Read the following quote aloud, focusing on your rate of speech:
         </p>
-        <div className="p-4 bg-white rounded-md mb-4 shadow-inner">
+        <div className="p-4 bg-white rounded-md mb-4 shadow-inner border border-blue-100">
           <p className="italic text-gray-800">
             "<HighlightedText color="green">If you just communicate</HighlightedText>, you can get by. 
             <HighlightedText color="yellow">But if you communicate skillfully</HighlightedText>, 
