@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Star, Mic, BookOpen, Award, Volume2 } from "lucide-react";
@@ -63,23 +64,6 @@ const Index = () => {
             <Progress value={user.xp / user.xpToNextLevel * 100} className="h-2" />
           </CardContent>
         </Card>
-        
-        <div className="grid grid-cols-3 gap-4">
-          <Button variant="outline" className="h-auto flex flex-col items-center py-4 space-y-2" onClick={() => navigate("/lessons")}>
-            <BookOpen size={24} className="text-communi-primary" />
-            <span className="text-xs">Lessons</span>
-          </Button>
-          
-          <Button variant="outline" className="h-auto flex flex-col items-center py-4 space-y-2" onClick={() => navigate("/practice")}>
-            <Mic size={24} className="text-communi-secondary" />
-            <span className="text-xs">Practice</span>
-          </Button>
-          
-          <Button variant="outline" className="h-auto flex flex-col items-center py-4 space-y-2" onClick={() => navigate("/progress")}>
-            <Award size={24} className="text-communi-tertiary" />
-            <span className="text-xs">Progress</span>
-          </Button>
-        </div>
         
         <div>
           <div className="flex justify-between items-center mb-3">
