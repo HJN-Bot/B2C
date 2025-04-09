@@ -120,7 +120,12 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
       cleanupVolumeMonitoring();
       
       setAnalyzing(true);
-      const result = await analyzeAudio(audioBlob, focusArea);
+      toast({
+        title: "Analyzing your recording",
+        description: "This may take a moment..."
+      });
+      
+      const result = await analyzeAudio(audioBlob, focusArea, exerciseText);
       setAnalysis(result);
       setAnalyzing(false);
       
@@ -133,6 +138,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
       setIsRecording(false);
       stopTimer();
       cleanupVolumeMonitoring();
+      setAnalyzing(false);
       toast({
         title: "Recording error",
         description: "There was a problem processing your recording",

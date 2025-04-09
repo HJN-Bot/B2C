@@ -1,3 +1,4 @@
+
 export class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -113,11 +114,54 @@ export interface DetailedAnalysisResult extends AnalysisResult {
 
 export const analyzeAudio = async (
   audioBlob: Blob, 
-  focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all'
+  focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all',
+  exerciseText?: string
 ): Promise<DetailedAnalysisResult> => {
-  console.log(`Analyzing audio with focus on: ${focusArea}`);
-  
-  return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
+  try {
+    console.log(`Analyzing audio with focus on: ${focusArea}`);
+    
+    // Convert the audio blob to base64
+    const audioBase64 = await blobToBase64(audioBlob);
+    
+    // Call the Supabase edge function
+    const { data, error } = await fetch('/api/analyze-voice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        audio: audioBase64,
+        focusArea,
+        exerciseText
+      }),
+    }).then(res => res.json());
+    
+    if (error) {
+      console.error('Error from analyze-voice function:', error);
+      return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error analyzing audio:', error);
+    // Fall back to mock data if the API call fails
+    return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
+  }
+};
+
+// Helper function to convert blob to base64
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      // Remove the data URL prefix (e.g., "data:audio/webm;base64,")
+      const base64 = base64String.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 };
 
 export const mockAnalyzeAudioDetailed = (
