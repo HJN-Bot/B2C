@@ -15,7 +15,7 @@ const Layout = ({ children, hideNavigation = false }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className={cn(
-        "mx-auto max-w-md bg-background min-h-screen relative",
+        "mx-auto max-w-md bg-white min-h-screen relative",
         isMobile ? "" : "border-x shadow-md"
       )}>
         <main className={hideNavigation ? "pb-0" : "pb-16"}>

@@ -53,7 +53,7 @@ const Index = () => {
 
   return (
     <Layout>
-      <div className="p-4 space-y-6 bg-yellow-50">
+      <div className="p-4 space-y-6 bg-gray-50">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{greeting}, {user.name}</h1>
@@ -64,7 +64,7 @@ const Index = () => {
           </div>
         </div>
         
-        <Card>
+        <Card className="shadow-sm">
           <CardContent className="pt-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium">XP Progress</span>
@@ -86,7 +86,7 @@ const Index = () => {
             {recommendedLessons.map(lesson => (
               <Card 
                 key={lesson.id} 
-                className="cursor-pointer hover:shadow-md transition-shadow" 
+                className="cursor-pointer hover:shadow-md transition-shadow bg-white shadow-sm" 
                 onClick={() => navigate(`/lessons/${lesson.id}`)}
               >
                 <CardContent className="p-4">
@@ -123,7 +123,7 @@ const Index = () => {
         
         <div>
           <h2 className="text-lg font-semibold mb-3">Daily Challenge</h2>
-          <Card className="bg-gradient-to-r from-communi-primary/20 to-communi-tertiary/20 border-none">
+          <Card className="bg-gradient-to-r from-communi-primary/20 to-communi-tertiary/20 border-none shadow-sm">
             <CardContent className="p-4">
               <h3 className="font-medium">Practice Active Listening</h3>
               <p className="text-sm mt-1 mb-3">Have a 2-minute conversation where you practice rephrasing what the other person said.</p>
