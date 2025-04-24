@@ -148,60 +148,78 @@ export const MOCK_LESSONS: Lesson[] = [
     description: "Master the art of storytelling by learning essential narrative structures, character development, and emotional engagement techniques that captivate your audience.",
     category: "storytelling",
     level: "intermediate",
-    duration: 20,
+    duration: 25,
     slides: [
       {
         id: "st-intro-1",
         type: "text",
-        content: "Effective storytelling is built on three pillars: Structure, Emotion, and Purpose. Every great story, whether personal or professional, needs these elements to resonate with its audience."
+        content: "Stories are our most powerful communication tool. They bypass our logical defenses and connect directly to our emotions. Whether presenting to clients, inspiring your team, or networking, mastering storytelling gives you an unparalleled advantage in any professional or personal context."
       },
       {
         id: "st-structure-1",
         type: "text",
-        content: "The Classic Story Arc: 1) Hook - Grab attention with an intriguing opening, 2) Build - Develop tension through challenges, 3) Climax - Reach the key moment of change, 4) Resolution - Share the lessons learned or transformation."
+        content: "The Classic Story Arc follows five essential steps: 1) The Hook - A compelling opening that creates curiosity, 2) Context Setting - Establishing the situation and characters, 3) Rising Tension - Challenges or obstacles that create stakes, 4) Climactic Moment - The turning point or revelation, 5) Resolution - The lessons learned and transformation completed."
+      },
+      {
+        id: "st-character-1",
+        type: "text",
+        content: "Every compelling story needs a relatable protagonist facing a meaningful challenge. In professional storytelling, this could be you, your team, your customer, or even your product. The key is making the audience care about what happens to your protagonist through specific details and authentic emotion."
       },
       {
         id: "st-emotion-1",
         type: "text",
-        content: "Emotional connection is created through: Authenticity - Being genuine in your delivery, Vulnerability - Sharing real challenges or mistakes, Relatability - Finding universal themes that connect with your audience."
+        content: "Emotional resonance is created through: 1) Authenticity - Being truthful about your experiences, 2) Vulnerability - Sharing real struggles and failures, 3) Universal themes - Touching on shared human experiences like belonging, achievement, or growth, 4) Sensory details - Making your story vivid and immersive."
       },
       {
         id: "st-technique-1",
         type: "text",
-        content: "Key storytelling techniques: Use sensory details to make scenes vivid, Create tension through pacing, Include dialogue to bring characters to life, Show don't tell - let audiences draw their own conclusions."
+        content: "Advanced storytelling techniques: 1) Contrast and comparison - Highlighting 'before and after' states, 2) The rule of three - Grouping concepts in threes for impact and memorability, 3) Dialogue recreation - Using actual conversations to bring scenes to life, 4) Strategic pauses - Creating anticipation through well-timed silence."
+      },
+      {
+        id: "st-application-1",
+        type: "text",
+        content: "Practical applications of storytelling: 1) Elevator pitches - Condense your value proposition into a compelling 30-second narrative, 2) Case studies - Transform client successes into relatable stories, 3) Vision communication - Use future-focused narratives to inspire teams and stakeholders, 4) Personal branding - Craft consistent stories that highlight your unique strengths and journey."
       }
     ],
     exercises: [
       {
         id: "st-ex-1",
-        title: "Story Structure Practice",
-        description: "Create a brief story following the classic arc structure",
+        title: "Story Structure Blueprint",
+        description: "Map out a complete story using the five-part structure",
         type: "writing",
-        prompt: "Write a 2-minute story about a challenging moment in your life. Include: 1) An attention-grabbing opening, 2) The challenge you faced, 3) The turning point, 4) What you learned. Focus on making each part distinct and compelling.",
+        prompt: "Create a 2-minute story about overcoming a professional challenge. For each of the five parts (Hook, Context, Rising Tension, Climax, Resolution), write 1-2 sentences. Focus on making each section flow naturally into the next while maintaining audience interest throughout.",
         completed: false
       },
       {
         id: "st-ex-2",
-        title: "Emotional Engagement",
-        description: "Practice creating emotional resonance in storytelling",
+        title: "Emotional Vulnerability Practice",
+        description: "Build authenticity by sharing a meaningful personal experience",
         type: "recording",
-        prompt: "Tell a story about a time you made a mistake and what you learned from it. Focus on being vulnerable and authentic, and include how you felt at each stage of the story.",
+        prompt: "Tell a 90-second story about a time you failed or made a significant mistake and what you learned from it. Focus on honest emotions, the specific details of what happened, and how this experience changed your perspective or approach afterward.",
         completed: false
       },
       {
         id: "st-ex-3",
-        title: "Descriptive Detail",
-        description: "Enhance your story with vivid sensory details",
+        title: "Sensory Storytelling",
+        description: "Enhance your storytelling with vivid sensory details",
         type: "writing",
-        prompt: "Describe a significant moment in your life using all five senses. What did you see, hear, smell, taste, and feel? How did these details contribute to the emotional impact of the moment?",
+        prompt: "Describe a pivotal moment in your life using all five senses. What did you see, hear, smell, taste, and feel physically? Write at least one specific detail for each sense, and explain how these sensory experiences contributed to the emotional impact of the moment.",
         completed: false
       },
       {
         id: "st-ex-4",
         title: "Dialogue Integration",
-        description: "Practice incorporating dialogue into your stories",
+        description: "Bring your stories to life with authentic dialogue",
         type: "recording",
-        prompt: "Tell a story about an important conversation in your life. Include actual dialogue to bring the scene to life, focusing on the key exchanges that moved the story forward.",
+        prompt: "Record a 2-minute story about an important conversation that changed your perspective or direction. Include at least three exchanges of actual dialogue, using different voices or tones to distinguish between speakers. Focus on recreating the key moments that made this conversation memorable.",
+        completed: false
+      },
+      {
+        id: "st-ex-5",
+        title: "Elevator Pitch Story",
+        description: "Condense your professional value into a compelling narrative",
+        type: "recording",
+        prompt: "Create and record a 30-second elevator pitch that uses storytelling techniques. Structure it with a hook about a problem you solve, a brief middle explaining your unique approach, and an ending that includes a clear call to action. Make it conversational rather than sales-focused.",
         completed: false
       }
     ],
