@@ -1,4 +1,3 @@
-
 export interface Lesson {
   id: string;
   title: string;
@@ -191,6 +190,141 @@ export const MOCK_LESSONS: Lesson[] = [
         description: "Practice expressing your position in a disagreement without escalating tension.",
         type: "recording",
         prompt: "Role-play addressing a disagreement with a colleague about a project approach.",
+        completed: false
+      }
+    ],
+    completed: false,
+    progress: 0
+  },
+  {
+    id: "non-violent-communication",
+    title: "Non-Violent Communication Basics",
+    description: "Learn how to communicate with empathy and clarity while avoiding conflict triggers.",
+    category: "non_violent_communication",
+    level: "intermediate",
+    duration: 20,
+    slides: [
+      {
+        id: "nvc-intro-1",
+        type: "text",
+        content: "Non-violent communication (NVC) is a method that helps us connect with ourselves and others from the heart, creating mutual understanding and respect."
+      },
+      {
+        id: "nvc-principles",
+        type: "text",
+        content: "The four components of NVC are: 1) Observation without judgment, 2) Feelings identification, 3) Needs expression, and 4) Making clear requests."
+      },
+      {
+        id: "nvc-examples",
+        type: "text",
+        content: "Instead of 'You never listen to me' (judgment), try 'When I share my concerns and don't receive a response (observation), I feel discouraged (feeling) because I need understanding (need). Would you be willing to share what you heard me say? (request)'"
+      }
+    ],
+    exercises: [
+      {
+        id: "nvc-ex-1",
+        title: "Transforming Judgments to Observations",
+        description: "Practice converting judgmental statements into objective observations.",
+        type: "writing",
+        prompt: "Transform these judgments into observations: 1) 'You're always late' 2) 'They're lazy' 3) 'She's inconsiderate'",
+        completed: false
+      },
+      {
+        id: "nvc-ex-2",
+        title: "Expressing Needs Clearly",
+        description: "Practice expressing needs without criticism or demand.",
+        type: "recording",
+        prompt: "Express a need you have at work or in a relationship using the NVC format: observation, feeling, need, and request.",
+        completed: false
+      }
+    ],
+    completed: false,
+    progress: 0
+  },
+  {
+    id: "voice-articulation",
+    title: "Clear Speech and Articulation",
+    description: "Master the art of clear pronunciation and speech delivery for effective communication.",
+    category: "articulation",
+    level: "beginner",
+    duration: 15,
+    slides: [
+      {
+        id: "art-intro-1",
+        type: "text",
+        content: "Clear articulation is fundamental to effective communication. It involves precise pronunciation, appropriate pace, and mindful breathing."
+      },
+      {
+        id: "art-techniques",
+        type: "text",
+        content: "Key techniques: 1) Tongue twisters for flexibility, 2) Diaphragmatic breathing for support, 3) Resonance exercises for voice projection."
+      },
+      {
+        id: "art-practice",
+        type: "text",
+        content: "Daily practice tip: Read aloud for 5 minutes each day, focusing on clear endings of words and appropriate pausing between phrases."
+      }
+    ],
+    exercises: [
+      {
+        id: "art-ex-1",
+        title: "Tongue Twister Challenge",
+        description: "Practice articulation with progressive tongue twisters.",
+        type: "recording",
+        prompt: "Record yourself saying: 'She sells seashells by the seashore' three times, gradually increasing speed while maintaining clarity.",
+        completed: false
+      },
+      {
+        id: "art-ex-2",
+        title: "Pace and Clarity",
+        description: "Practice speaking clearly at different speeds.",
+        type: "recording",
+        prompt: "Read the provided paragraph at three different speeds while maintaining clear articulation.",
+        completed: false
+      }
+    ],
+    completed: false,
+    progress: 0
+  },
+  {
+    id: "storytelling-advanced",
+    title: "Advanced Storytelling Techniques",
+    description: "Master advanced narrative techniques to create compelling and memorable stories.",
+    category: "storytelling",
+    level: "advanced",
+    duration: 25,
+    slides: [
+      {
+        id: "st-adv-1",
+        type: "text",
+        content: "Advanced storytelling involves creating emotional resonance, using vivid imagery, and mastering narrative pacing."
+      },
+      {
+        id: "st-adv-2",
+        type: "text",
+        content: "The Hero's Journey structure: 1) The Call to Adventure, 2) The Challenge, 3) The Transformation, 4) The Return with New Wisdom."
+      },
+      {
+        id: "st-adv-3",
+        type: "text",
+        content: "Sensory details and emotional hooks make stories memorable. Use specific details that engage the five senses and universal emotions."
+      }
+    ],
+    exercises: [
+      {
+        id: "st-adv-ex1",
+        title: "Story Structure Practice",
+        description: "Create a story following the Hero's Journey format.",
+        type: "writing",
+        prompt: "Write a 3-minute story about a personal challenge using the Hero's Journey structure.",
+        completed: false
+      },
+      {
+        id: "st-adv-ex2",
+        title: "Sensory Storytelling",
+        description: "Practice incorporating sensory details in storytelling.",
+        type: "recording",
+        prompt: "Tell a story about a memorable meal, incorporating at least three different sensory details.",
         completed: false
       }
     ],
