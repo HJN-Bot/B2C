@@ -145,24 +145,63 @@ export const MOCK_LESSONS: Lesson[] = [
   {
     id: "storytelling-structure",
     title: "Crafting Compelling Stories",
-    description: "Learn the essential structure of engaging stories that captivate your audience.",
+    description: "Master the art of storytelling by learning essential narrative structures, character development, and emotional engagement techniques that captivate your audience.",
     category: "storytelling",
     level: "intermediate",
-    duration: 12,
+    duration: 20,
     slides: [
       {
         id: "st-intro-1",
         type: "text",
-        content: "A good story has a clear beginning, middle, and end, with a compelling character who faces a challenge."
+        content: "Effective storytelling is built on three pillars: Structure, Emotion, and Purpose. Every great story, whether personal or professional, needs these elements to resonate with its audience."
+      },
+      {
+        id: "st-structure-1",
+        type: "text",
+        content: "The Classic Story Arc: 1) Hook - Grab attention with an intriguing opening, 2) Build - Develop tension through challenges, 3) Climax - Reach the key moment of change, 4) Resolution - Share the lessons learned or transformation."
+      },
+      {
+        id: "st-emotion-1",
+        type: "text",
+        content: "Emotional connection is created through: Authenticity - Being genuine in your delivery, Vulnerability - Sharing real challenges or mistakes, Relatability - Finding universal themes that connect with your audience."
+      },
+      {
+        id: "st-technique-1",
+        type: "text",
+        content: "Key storytelling techniques: Use sensory details to make scenes vivid, Create tension through pacing, Include dialogue to bring characters to life, Show don't tell - let audiences draw their own conclusions."
       }
     ],
     exercises: [
       {
         id: "st-ex-1",
-        title: "Your Personal Story",
-        description: "Create and tell a short personal story that follows the structure we learned.",
+        title: "Story Structure Practice",
+        description: "Create a brief story following the classic arc structure",
+        type: "writing",
+        prompt: "Write a 2-minute story about a challenging moment in your life. Include: 1) An attention-grabbing opening, 2) The challenge you faced, 3) The turning point, 4) What you learned. Focus on making each part distinct and compelling.",
+        completed: false
+      },
+      {
+        id: "st-ex-2",
+        title: "Emotional Engagement",
+        description: "Practice creating emotional resonance in storytelling",
         type: "recording",
-        prompt: "Share a 1-minute personal story about a time when you overcame a challenge.",
+        prompt: "Tell a story about a time you made a mistake and what you learned from it. Focus on being vulnerable and authentic, and include how you felt at each stage of the story.",
+        completed: false
+      },
+      {
+        id: "st-ex-3",
+        title: "Descriptive Detail",
+        description: "Enhance your story with vivid sensory details",
+        type: "writing",
+        prompt: "Describe a significant moment in your life using all five senses. What did you see, hear, smell, taste, and feel? How did these details contribute to the emotional impact of the moment?",
+        completed: false
+      },
+      {
+        id: "st-ex-4",
+        title: "Dialogue Integration",
+        description: "Practice incorporating dialogue into your stories",
+        type: "recording",
+        prompt: "Tell a story about an important conversation in your life. Include actual dialogue to bring the scene to life, focusing on the key exchanges that moved the story forward.",
         completed: false
       }
     ],
