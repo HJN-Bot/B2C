@@ -1,4 +1,3 @@
-
 export interface Lesson {
   id: string;
   title: string;
@@ -75,24 +74,37 @@ export const MOCK_LESSONS: Lesson[] = [
   {
     id: "active-listening-basics",
     title: "The Art of Active Listening",
-    description: "Discover how to truly hear and understand others through active listening techniques.",
+    description: "Transform your communication skills by mastering the essential techniques of truly hearing and understanding others.",
     category: "active_listening",
     level: "beginner",
-    duration: 8,
+    duration: 12,
     slides: [
       {
         id: "al-intro-1",
         type: "text",
-        content: "Active listening means fully concentrating on what is being said rather than passively hearing the words."
+        content: "Active listening is more than just hearing words—it's about fully engaging with the speaker, understanding their perspective, and showing genuine empathy."
+      },
+      {
+        id: "al-intro-2",
+        type: "text",
+        content: "The core principles of active listening include: maintaining eye contact, providing verbal and non-verbal feedback, and suspending judgment."
       }
     ],
     exercises: [
       {
         id: "al-ex-1",
-        title: "Paraphrasing Practice",
-        description: "Practice repeating back what you've heard in your own words.",
+        title: "Empathetic Paraphrasing",
+        description: "Practice reflecting back what you've heard to ensure understanding and show you're truly listening.",
         type: "recording",
-        prompt: "Listen to the provided statement and then paraphrase it in your own words.",
+        prompt: "Listen carefully to a partner describing a recent challenge. Then, paraphrase their story, focusing on their emotions and key points.",
+        completed: false
+      },
+      {
+        id: "al-ex-2",
+        title: "Non-Verbal Communication Awareness",
+        description: "Learn to recognize and use non-verbal cues that enhance active listening.",
+        type: "recording",
+        prompt: "Have a conversation with a partner and pay attention to your body language, facial expressions, and nodding to show you're engaged.",
         completed: false
       }
     ],
