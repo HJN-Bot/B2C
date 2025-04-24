@@ -1,3 +1,4 @@
+
 export interface Lesson {
   id: string;
   title: string;
@@ -77,34 +78,65 @@ export const MOCK_LESSONS: Lesson[] = [
     description: "Transform your communication skills by mastering the essential techniques of truly hearing and understanding others.",
     category: "active_listening",
     level: "beginner",
-    duration: 12,
+    duration: 15,
     slides: [
       {
         id: "al-intro-1",
         type: "text",
-        content: "Active listening is more than just hearing words—it's about fully engaging with the speaker, understanding their perspective, and showing genuine empathy."
+        content: "Active listening is the foundation of meaningful connection. It requires your full attention, genuine curiosity, and a commitment to understanding before responding."
       },
       {
         id: "al-intro-2",
         type: "text",
-        content: "The core principles of active listening include: maintaining eye contact, providing verbal and non-verbal feedback, and suspending judgment."
+        content: "The 75/25 rule: In effective conversations, you should be listening 75% of the time and speaking only 25% of the time. Quality communication is more about understanding than being understood."
+      },
+      {
+        id: "al-techniques-1",
+        type: "text",
+        content: "Technique #1: Reflective Listening - Paraphrase what you've heard to confirm understanding, starting with phrases like 'So what you're saying is...' or 'It sounds like you feel...'"
+      },
+      {
+        id: "al-techniques-2",
+        type: "text",
+        content: "Technique #2: Ask Open-Ended Questions - Questions that require more than a yes/no answer encourage deeper sharing. 'What was that experience like for you?' instead of 'Did you like it?'"
+      },
+      {
+        id: "al-techniques-3",
+        type: "text",
+        content: "Technique #3: Mindful Presence - Put away distractions, maintain appropriate eye contact, and use affirming body language that shows you're fully engaged."
       }
     ],
     exercises: [
       {
         id: "al-ex-1",
-        title: "Empathetic Paraphrasing",
-        description: "Practice reflecting back what you've heard to ensure understanding and show you're truly listening.",
+        title: "The Mirror Exercise",
+        description: "Practice reflecting back what someone says without adding your own interpretation.",
         type: "recording",
-        prompt: "Listen carefully to a partner describing a recent challenge. Then, paraphrase their story, focusing on their emotions and key points.",
+        prompt: "Listen to this statement: 'I've been overwhelmed lately with all my responsibilities and don't feel like I have time for myself.' Now reflect it back, starting with 'What I'm hearing is...'",
         completed: false
       },
       {
         id: "al-ex-2",
-        title: "Non-Verbal Communication Awareness",
-        description: "Learn to recognize and use non-verbal cues that enhance active listening.",
+        title: "Open-Ended Question Transformation",
+        description: "Convert closed questions into open-ended ones that encourage deeper conversation.",
+        type: "writing",
+        prompt: "Transform these closed questions into open-ended ones: 1) Did you have a good weekend? 2) Was the meeting productive? 3) Are you upset about what happened?",
+        completed: false
+      },
+      {
+        id: "al-ex-3",
+        title: "Active Listening Self-Assessment",
+        description: "Identify your listening barriers and strengths.",
+        type: "multiple_choice",
+        prompt: "Which of these listening barriers do you most often experience? A) Formulating a response while the other person is still talking, B) Getting distracted by environmental factors, C) Judging the speaker's message before they finish, D) Focusing on facts while missing emotional cues",
+        completed: false
+      },
+      {
+        id: "al-ex-4",
+        title: "Empathy in Action",
+        description: "Practice showing empathy through your listening response.",
         type: "recording",
-        prompt: "Have a conversation with a partner and pay attention to your body language, facial expressions, and nodding to show you're engaged.",
+        prompt: "Respond with empathy to this statement: 'I applied for a promotion I really wanted but didn't get it. I'm trying not to take it personally, but it's hard.'",
         completed: false
       }
     ],
