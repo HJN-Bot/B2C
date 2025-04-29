@@ -1,21 +1,21 @@
-
+import { supabase } from "@/integrations/supabase/client";
 export class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private stream: MediaStream | null = null;
-  
+
   async start(): Promise<void> {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(this.stream);
       this.audioChunks = [];
-      
+
       this.mediaRecorder.addEventListener('dataavailable', (event) => {
         if (event.data.size > 0) {
           this.audioChunks.push(event.data);
         }
       });
-      
+
       this.mediaRecorder.start();
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -28,13 +28,13 @@ export class AudioRecorder {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(this.stream);
       this.audioChunks = [];
-      
+
       this.mediaRecorder.addEventListener('dataavailable', (event) => {
         if (event.data.size > 0) {
           this.audioChunks.push(event.data);
         }
       });
-      
+
       this.mediaRecorder.start();
       return this.stream;
     } catch (error) {
@@ -42,31 +42,31 @@ export class AudioRecorder {
       throw error;
     }
   }
-  
+
   stop(): Promise<Blob> {
     return new Promise((resolve, reject) => {
       if (!this.mediaRecorder) {
         reject(new Error('MediaRecorder not initialized'));
         return;
       }
-      
+
       this.mediaRecorder.addEventListener('stop', () => {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
         this.stopStream();
         resolve(audioBlob);
       });
-      
+
       this.mediaRecorder.stop();
     });
   }
-  
+
   private stopStream(): void {
     if (this.stream) {
       this.stream.getTracks().forEach(track => track.stop());
       this.stream = null;
     }
   }
-  
+
   isRecording(): boolean {
     return this.mediaRecorder !== null && this.mediaRecorder.state === 'recording';
   }
@@ -113,43 +113,32 @@ export interface DetailedAnalysisResult extends AnalysisResult {
 }
 
 export const analyzeAudio = async (
-  audioBlob: Blob, 
+  audioBlob: Blob,
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all',
   exerciseText?: string
 ): Promise<DetailedAnalysisResult> => {
   try {
     console.log(`Analyzing audio with focus on: ${focusArea}`);
-    
+
     // Convert the audio blob to base64
     const audioBase64 = await blobToBase64(audioBlob);
-    
-    // Call the Supabase edge function
-    const response = await fetch('/api/analyze-voice', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+
+    const { data, error } = await supabase.functions.invoke("analyze-voice", {
       body: JSON.stringify({
         audio: audioBase64,
         focusArea,
         exerciseText
       }),
     });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error from analyze-voice function response:', errorText);
-      throw new Error(`Error from analyze-voice function: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.error || data.fallback) {
-      console.error('Error from analyze-voice function:', data.error || 'Using fallback data');
+
+    if (error || data.fallback) {
+      console.error('Error from analyze-voice function:', error || 'Using fallback data');
       return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
+    } else {
+      console.log("Vote recorded via edge function:", data);
+      return data;
     }
-    
-    return data;
+
   } catch (error) {
     console.error('Error analyzing audio:', error);
     // Fall back to mock data if the API call fails
@@ -173,7 +162,7 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
 };
 
 export const mockAnalyzeAudioDetailed = (
-  size: number, 
+  size: number,
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all'
 ): Promise<DetailedAnalysisResult> => {
   return new Promise((resolve) => {
@@ -182,7 +171,7 @@ export const mockAnalyzeAudioDetailed = (
       let tonalityScore = Math.floor(Math.random() * 30) + 60;
       let pausesScore = Math.floor(Math.random() * 30) + 60;
       let fillerWordsScore = Math.floor(Math.random() * 30) + 60;
-      
+
       switch (focusArea) {
         case 'rate-volume':
           paceScore += 10;
@@ -197,14 +186,14 @@ export const mockAnalyzeAudioDetailed = (
         default:
           break;
       }
-      
+
       paceScore = Math.min(100, paceScore);
       tonalityScore = Math.min(100, tonalityScore);
       pausesScore = Math.min(100, pausesScore);
       fillerWordsScore = Math.min(100, fillerWordsScore);
-      
+
       const overallScore = Math.floor((paceScore + tonalityScore + pausesScore + fillerWordsScore) / 4);
-      
+
       const wordsPerMinute = Math.floor(Math.random() * 60) + 120;
       const fillerWordCount = {
         um: Math.floor(Math.random() * 8),
@@ -214,23 +203,23 @@ export const mockAnalyzeAudioDetailed = (
         total: 0
       };
       fillerWordCount.total = fillerWordCount.um + fillerWordCount.uh + fillerWordCount.like + fillerWordCount.youKnow;
-      
-      const feedback = generateFeedback(focusArea, { 
-        paceScore, 
-        tonalityScore, 
-        pausesScore, 
+
+      const feedback = generateFeedback(focusArea, {
+        paceScore,
+        tonalityScore,
+        pausesScore,
         fillerWordsScore,
         wordsPerMinute,
         fillerWordCount
       });
-      
+
       const specificSuggestions = generateSpecificSuggestions(focusArea, {
-        paceScore, 
-        tonalityScore, 
-        pausesScore, 
+        paceScore,
+        tonalityScore,
+        pausesScore,
         fillerWordsScore
       });
-      
+
       resolve({
         paceScore,
         tonalityScore,
@@ -281,7 +270,7 @@ function generateFeedback(
   metrics: any
 ): string[] {
   const feedback = [];
-  
+
   if (metrics.paceScore > 80) {
     feedback.push("Your speaking pace is excellent, with a good balance of speed and clarity.");
   } else if (metrics.paceScore > 60) {
@@ -289,7 +278,7 @@ function generateFeedback(
   } else {
     feedback.push(`Your speaking rate of ${metrics.wordsPerMinute} words per minute is ${metrics.wordsPerMinute > 160 ? "too fast" : "too slow"} for optimal comprehension.`);
   }
-  
+
   switch (focusArea) {
     case 'rate-volume':
       feedback.push("Your volume variation shows good dynamic range. Keep practicing to develop more control.");
@@ -310,7 +299,7 @@ function generateFeedback(
       feedback.push("Your overall vocal delivery shows good potential. Focus on developing all aspects of your voice.");
       break;
   }
-  
+
   return feedback;
 }
 
@@ -345,7 +334,7 @@ function generateSpecificSuggestions(
       "Try the 'tap technique' - tap your leg when you catch yourself using a filler word."
     ]
   };
-  
+
   switch (focusArea) {
     case 'rate-volume':
       break;
@@ -360,7 +349,7 @@ function generateSpecificSuggestions(
     default:
       break;
   }
-  
+
   return suggestions;
 }
 

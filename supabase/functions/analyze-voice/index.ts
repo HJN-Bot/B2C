@@ -1,49 +1,42 @@
-
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "./config.ts";
-
+// Setup type definitions for built-in Supabase Runtime APIs
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+};
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 // Helper function to process audio in chunks to prevent memory issues
-function processBase64Chunks(base64String: string, chunkSize = 32768) {
-  const chunks: Uint8Array[] = [];
+function processBase64Chunks(base64String, chunkSize = 32768) {
+  const chunks = [];
   let position = 0;
-  
-  while (position < base64String.length) {
+  while(position < base64String.length){
     const chunk = base64String.slice(position, position + chunkSize);
     const binaryChunk = atob(chunk);
     const bytes = new Uint8Array(binaryChunk.length);
-    
-    for (let i = 0; i < binaryChunk.length; i++) {
+    for(let i = 0; i < binaryChunk.length; i++){
       bytes[i] = binaryChunk.charCodeAt(i);
     }
-    
     chunks.push(bytes);
     position += chunkSize;
   }
-
-  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+  const totalLength = chunks.reduce((acc, chunk)=>acc + chunk.length, 0);
   const result = new Uint8Array(totalLength);
   let offset = 0;
-
-  for (const chunk of chunks) {
+  for (const chunk of chunks){
     result.set(chunk, offset);
     offset += chunk.length;
   }
-
   return result;
 }
-
 // Function to get feedback on vocal performance based on focus area
-async function getVocalFeedback(transcription: string, focusArea: string, audioLength: number) {
+async function getVocalFeedback(transcription, focusArea, audioLength) {
   const promptMap = {
     'rate-volume': `
       Analyze this speech transcription focusing on rate of speech and volume:
       "${transcription}"
-      
+
       The audio was ${audioLength} seconds long.
-      
+
       Provide an analysis in JSON format with these fields:
       - paceScore (0-100): How well the speaker maintained appropriate speaking rate
       - detailedMetrics: Object containing wordsPerMinute (calculated) and volumeVariation (estimated 0-100)
@@ -53,7 +46,7 @@ async function getVocalFeedback(transcription: string, focusArea: string, audioL
     'pitch-tonality': `
       Analyze this speech transcription focusing on pitch variation and tonality:
       "${transcription}"
-      
+
       Provide an analysis in JSON format with these fields:
       - tonalityScore (0-100): How well the speaker used tonality to express emotion
       - detailedMetrics: Object containing pitchVariation (estimated 0-100)
@@ -63,7 +56,7 @@ async function getVocalFeedback(transcription: string, focusArea: string, audioL
     'pause-fillers': `
       Analyze this speech transcription focusing on strategic pauses and filler words:
       "${transcription}"
-      
+
       Provide an analysis in JSON format with these fields:
       - pausesScore (0-100): How effectively the speaker used pauses
       - fillerWordsScore (0-100): How well the speaker avoided filler words
@@ -74,9 +67,9 @@ async function getVocalFeedback(transcription: string, focusArea: string, audioL
     'all': `
       Analyze this speech transcription focusing on all vocal elements:
       "${transcription}"
-      
+
       The audio was ${audioLength} seconds long.
-      
+
       Provide a comprehensive analysis in JSON format with these fields:
       - paceScore (0-100): Rate of speech quality
       - tonalityScore (0-100): Pitch and emotional expression
@@ -93,38 +86,38 @@ async function getVocalFeedback(transcription: string, focusArea: string, audioL
       - specificSuggestions: Object with 'pace', 'volume', 'pitch', and 'fillers' arrays, each with 2 specific improvement tips
     `
   };
-
   const prompt = promptMap[focusArea] || promptMap['all'];
-
   try {
     console.log("Calling OpenAI API with transcription:", transcription.substring(0, 100) + "...");
-    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { 
-            role: 'system', 
+          {
+            role: 'system',
             content: 'You are an expert voice coach specialized in analyzing vocal delivery. Provide specific, actionable feedback on speech recordings. Format your response as valid JSON only, with no additional text.'
           },
-          { role: 'user', content: prompt }
+          {
+            role: 'user',
+            content: prompt
+          }
         ],
         temperature: 0.7,
-        response_format: { type: "json_object" }
-      }),
+        response_format: {
+          type: "json_object"
+        }
+      })
     });
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error:', errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
-
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
@@ -132,70 +125,66 @@ async function getVocalFeedback(transcription: string, focusArea: string, audioL
     throw error;
   }
 }
-
-serve(async (req) => {
+Deno.serve(async (req)=>{
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders
+    });
   }
-
   try {
     const { audio, focusArea, exerciseText } = await req.json();
-    
     if (!audio) {
       throw new Error('No audio data provided');
     }
-
     console.log("Received audio data, focus area:", focusArea);
-
     // First, get transcription from OpenAI Whisper
     // Process audio in chunks
     const binaryAudio = processBase64Chunks(audio);
-    
     // Prepare form data for transcription
     const formData = new FormData();
-    const blob = new Blob([binaryAudio], { type: 'audio/webm' });
+    const blob = new Blob([
+      binaryAudio
+    ], {
+      type: 'audio/webm'
+    });
     formData.append('file', blob, 'audio.webm');
     formData.append('model', 'whisper-1');
+    formData.append('response_format', 'verbose_json');
 
     console.log("Calling OpenAI Whisper API for transcription");
-
     // Send to OpenAI for transcription
     const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${openAIApiKey}`
       },
-      body: formData,
+      body: formData
     });
-
     if (!transcriptionResponse.ok) {
       const errorText = await transcriptionResponse.text();
       console.error('OpenAI Transcription API error:', errorText);
       throw new Error(`OpenAI Transcription API error: ${transcriptionResponse.status}`);
     }
-
     const transcriptionResult = await transcriptionResponse.json();
     const transcription = transcriptionResult.text;
-    
+    const duration = transcriptionResult.duration;
+    const segments = transcriptionResult.segments
+
     console.log("Transcription received:", transcription);
-    
     if (!transcription) {
       throw new Error('Failed to transcribe audio');
     }
-
     // Calculate audio length in seconds (approximate from base64 size)
-    const audioLength = Math.round(audio.length / 10000); // Rough approximation
-    
+    const audioLength = duration ?? Math.round(audio.length / 10000); // Rough approximation for fallback
+
     console.log("Audio length approximated as", audioLength, "seconds");
-    
     // Get analysis from GPT-4o based on the transcription
     const analysisJson = await getVocalFeedback(transcription, focusArea, audioLength);
-    
+
     try {
       // Parse the JSON response
       const analysis = JSON.parse(analysisJson);
-      
       // Ensure we have a complete analysis object with all required fields
       const completeAnalysis = {
         paceScore: analysis.paceScore || 70,
@@ -220,36 +209,50 @@ serve(async (req) => {
             strategicPauseScore: 70
           }
         },
-        feedback: analysis.feedback || ["You demonstrated good vocal delivery overall."],
+        feedback: analysis.feedback || [
+          "You demonstrated good vocal delivery overall."
+        ],
         specificSuggestions: {
-          pace: analysis.specificSuggestions?.pace || ["Try varying your pace more to emphasize key points."],
-          volume: analysis.specificSuggestions?.volume || ["Practice projecting your voice more consistently."],
-          pitch: analysis.specificSuggestions?.pitch || ["Experiment with more variation in your pitch range."],
-          fillers: analysis.specificSuggestions?.fillers || ["Be mindful of filler words and replace them with strategic pauses."]
+          pace: analysis.specificSuggestions?.pace || [
+            "Try varying your pace more to emphasize key points."
+          ],
+          volume: analysis.specificSuggestions?.volume || [
+            "Practice projecting your voice more consistently."
+          ],
+          pitch: analysis.specificSuggestions?.pitch || [
+            "Experiment with more variation in your pitch range."
+          ],
+          fillers: analysis.specificSuggestions?.fillers || [
+            "Be mindful of filler words and replace them with strategic pauses."
+          ]
         },
-        transcription: transcription
+        transcription,
+        duration,
+        segments,
       };
-
       console.log("Analysis complete, sending response");
-      
       return new Response(JSON.stringify(completeAnalysis), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       });
-      
     } catch (parseError) {
       console.error('Error parsing analysis JSON:', parseError);
       throw new Error('Failed to parse analysis response');
     }
-    
   } catch (error) {
     console.error('Error in analyze-voice function:', error);
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: error.message,
       fallback: true,
       message: "Using fallback analysis due to API error"
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
 });
