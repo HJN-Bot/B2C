@@ -36,6 +36,11 @@ const RecordingSection = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleReactionCollected = (reaction: Reaction) => {
+    console.log("Reaction collected in RecordingSection:", reaction);
+    onReactionCollected(reaction);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center py-4">
       {!isRecording && !audioUrl && (
@@ -60,7 +65,7 @@ const RecordingSection = ({
           <div className="mt-4 min-h-[80px] flex items-center justify-center">
             <LiveReactionFeedback 
               isActive={isRecording} 
-              onReactionCollected={onReactionCollected}
+              onReactionCollected={handleReactionCollected}
             />
           </div>
         </div>

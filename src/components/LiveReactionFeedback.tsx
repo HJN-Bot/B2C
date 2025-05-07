@@ -30,6 +30,7 @@ const LiveReactionFeedback = ({ isActive, onReactionCollected }: LiveReactionFee
     }
 
     const showReaction = () => {
+      console.log("Showing a new reaction");
       // Select a random reaction
       const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
       const reactionWithTimestamp = {...randomReaction, timestamp: Date.now()};
@@ -39,6 +40,7 @@ const LiveReactionFeedback = ({ isActive, onReactionCollected }: LiveReactionFee
 
       // Notify parent component of collected reaction
       if (onReactionCollected) {
+        console.log("Reaction collected:", reactionWithTimestamp);
         onReactionCollected(reactionWithTimestamp);
       }
 

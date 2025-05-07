@@ -74,6 +74,7 @@ const Practice = () => {
       setIsRecording(false);
       stopTimer();
       
+      console.log("Recording stopped, collected reactions:", collectedReactions.length);
       toast({
         title: "Recording complete",
         description: `You collected ${collectedReactions.length} reactions!`
