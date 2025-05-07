@@ -1,14 +1,17 @@
 
 import { useState, useEffect } from "react";
 import { Smile, Heart, Star, ThumbsUp, CircleCheck } from "lucide-react";
-import { Reaction } from "@/models/reactions";
+
+type Reaction = {
+  emoji: JSX.Element;
+  comment: string;
+};
 
 interface LiveReactionFeedbackProps {
   isActive: boolean;
-  onReactionCollected?: (reaction: Reaction) => void;
 }
 
-const LiveReactionFeedback = ({ isActive, onReactionCollected }: LiveReactionFeedbackProps) => {
+const LiveReactionFeedback = ({ isActive }: LiveReactionFeedbackProps) => {
   const [currentReaction, setCurrentReaction] = useState<Reaction | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -35,11 +38,6 @@ const LiveReactionFeedback = ({ isActive, onReactionCollected }: LiveReactionFee
       setCurrentReaction(randomReaction);
       setVisible(true);
 
-      // Notify parent component of collected reaction
-      if (onReactionCollected) {
-        onReactionCollected({...randomReaction, timestamp: Date.now()});
-      }
-
       // Hide the reaction after a few seconds
       setTimeout(() => {
         setVisible(false);
@@ -60,7 +58,7 @@ const LiveReactionFeedback = ({ isActive, onReactionCollected }: LiveReactionFee
       clearTimeout(initialTimer);
       clearInterval(intervalTimer);
     };
-  }, [isActive, onReactionCollected]);
+  }, [isActive]);
 
   if (!isActive || !visible || !currentReaction) {
     return null;
