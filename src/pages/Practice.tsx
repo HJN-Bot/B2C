@@ -1,27 +1,95 @@
 import { useState, useEffect, useRef } from "react";
-import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart } from "lucide-react";
+import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye } from "lucide-react"; // Added Eye for Overview
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Slider } from "@/components/ui/slider"; // Not used in the provided final code, but kept if needed elsewhere
 import { 
   AudioRecorder, 
   createAudioUrl, 
   analyzeAudio,
   DetailedAnalysisResult 
-} from "@/utils/audioRecorder";
+} from "@/utils/audioRecorder"; // Ensure this path is correct
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
-import LiveReactionFeedback from "@/components/LiveReactionFeedback";
+import { cn } from "@/lib/utils"; // Ensure this path is correct
+import { useToast } from "@/hooks/use-toast"; // Ensure this path is correct
+import LiveReactionFeedback from "@/components/LiveReactionFeedback"; // Ensure this path is correct
 
-// New ReactionGallery Component
-const ReactionGallery = ({ collectedReactions }: { collectedReactions: string[] }) => {
-  if (!collectedReactions || collectedReactions.length === 0) {
-    // Optionally, return a message if no reactions (though for mockup, we'll always have some)
-    return null; 
+// You'll need to install recharts: npm install recharts or yarn add recharts
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
+
+// --- Helper Components & Constants ---
+
+// Constants for Radar Chart
+const baseRadarMetricsConfig = [
+  { subject: 'Pace', fullMark: 100 },
+  { subject: 'Tonality', fullMark: 100 },
+  { subject: 'Expression', fullMark: 100 }, // Mocked for audio-only
+  { subject: 'Energy', fullMark: 100 },
+  { subject: 'Fluency', fullMark: 100 },   // (Pauses + Fillers)
+  { subject: 'Volume', fullMark: 100 },
+  { subject: 'Articulation', fullMark: 100 }, // Mocked for audio-only
+];
+
+const getInitialRadarData = () => baseRadarMetricsConfig.map(m => ({ ...m, score: 0 }));
+
+interface RadarDataPoint {
+  subject: string;
+  score: number;
+  fullMark: number;
+}
+
+interface RechartsRadarChartComponentProps {
+  data: RadarDataPoint[];
+  title?: string;
+  isLive?: boolean;
+}
+
+const RechartsRadarChartComponent: React.FC<RechartsRadarChartComponentProps> = ({ data, title, isLive = false }) => {
+  if (!data || data.length === 0) {
+    return <p className="text-center text-sm text-gray-500 py-4">Chart data is not available yet.</p>;
   }
 
+  const processedData = data.map(item => ({
+    ...item,
+    score: Math.max(0, Math.min(item.score, 100)), // Ensure scores are 0-100
+  }));
+
+  return (
+    <div style={{ width: '100%', height: isLive ? 300 : 350 }} className="my-2">
+      {title && <h3 className="text-md font-semibold mb-1 text-center">{title}</h3>}
+      <ResponsiveContainer>
+        <RadarChart cx="50%" cy="50%" outerRadius="75%" data={processedData}>
+          <PolarGrid strokeDasharray="3 3" />
+          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: '#6b7280' }} /> {/* Adjusted tick color */}
+          <PolarRadiusAxis 
+            angle={30} // Positions the labels for radius axis
+            domain={[0, 100]} 
+            tickCount={6} 
+            tickFormatter={(value) => `${value}`} 
+            tick={{ fontSize: 10, fill: '#6b7280' }} // Adjusted tick color
+          />
+          <Radar 
+            name="Performance" 
+            dataKey="score" 
+            stroke={isLive ? "#a78bfa" : "#3b82f6"} // purple for live, blue for final
+            fill={isLive ? "#a78bfa" : "#3b82f6"} 
+            fillOpacity={isLive ? 0.5 : 0.6} 
+            animationDuration={isLive ? 300 : 800}
+          />
+          {!isLive && <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />} {/* Added padding to legend */}
+          {!isLive && <RechartsTooltip contentStyle={{fontSize: '12px', padding: '5px', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)'}} />} {/* Styled tooltip */}
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+const ReactionGallery = ({ collectedReactions }: { collectedReactions: string[] }) => {
+  if (!collectedReactions || collectedReactions.length === 0) {
+    return null; 
+  }
   return (
     <div className="my-6 p-4 border border-dashed border-yellow-400 rounded-lg bg-yellow-50/50">
       <h3 className="text-lg font-semibold mb-2 text-yellow-700 text-center">
@@ -45,7 +113,40 @@ const ReactionGallery = ({ collectedReactions }: { collectedReactions: string[] 
   );
 };
 
+const ScoreItem = ({ 
+  label, 
+  score, 
+  description, 
+  highlight = false 
+}: { 
+  label: string; 
+  score: number; 
+  description: string; 
+  highlight?: boolean;
+}) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
+  
+  return (
+    <div className={cn("space-y-2 py-2", highlight && "border-l-4 border-blue-500 pl-3 -ml-3")}> {/* Added py-2 for spacing */}
+      <div className="flex justify-between items-center">
+        <div>
+          <span className="font-medium">{label}</span>
+          <p className="text-xs text-gray-500">{description}</p>
+        </div>
+        <span className={cn("font-bold text-lg", getScoreColor(score))}>
+          {score}/100
+        </span>
+      </div>
+      <Progress value={score} className="h-2" />
+    </div>
+  );
+};
 
+// --- Main Practice Component ---
 const Practice = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -57,6 +158,10 @@ const Practice = () => {
   const [focusArea, setFocusArea] = useState<'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all'>('all');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   
+  // Radar chart state
+  const [liveRadarData, setLiveRadarData] = useState<RadarDataPoint[]>(getInitialRadarData());
+  const [finalRadarData, setFinalRadarData] = useState<RadarDataPoint[] | null>(null);
+  
   const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -64,10 +169,7 @@ const Practice = () => {
   
   const startTimer = () => {
     if (timerRef.current) return;
-    
-    timerRef.current = window.setInterval(() => {
-      setRecordingTime((prev) => prev + 1);
-    }, 1000);
+    timerRef.current = window.setInterval(() => setRecordingTime((prev) => prev + 1), 1000);
   };
   
   const stopTimer = () => {
@@ -76,6 +178,28 @@ const Practice = () => {
       timerRef.current = null;
     }
   };
+
+  useEffect(() => {
+    let intervalId: number | null = null;
+    if (isRecording) {
+      setLiveRadarData(baseRadarMetricsConfig.map(m => ({ ...m, score: Math.floor(15 + Math.random() * 25) })));
+      intervalId = window.setInterval(() => {
+        setLiveRadarData(prevData =>
+          prevData.map(metric => ({
+            ...metric,
+            score: Math.min(100, Math.max(0, metric.score + Math.floor(Math.random() * 15 - 6))),
+          }))
+        );
+      }, 750);
+    } else {
+      if (!finalRadarData) { // Only reset if no final data is present (i.e., not after analysis)
+          setLiveRadarData(getInitialRadarData());
+      }
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isRecording, finalRadarData]);
   
   const startRecording = async () => {
     try {
@@ -85,81 +209,79 @@ const Practice = () => {
       setAudioUrl(null);
       setAudioBlob(null);
       setAnalysis(null);
+      setFinalRadarData(null); 
+      // liveRadarData is handled by useEffect
       startTimer();
-      toast({
-        title: "Recording started",
-        description: "Speak clearly into your microphone"
-      });
+      toast({ title: "Recording started", description: "Speak clearly into your microphone" });
     } catch (error) {
       console.error("Error starting recording:", error);
-      toast({
-        title: "Recording failed",
-        description: "Microphone access denied or not available",
-        variant: "destructive"
-      });
+      toast({ title: "Recording failed", description: "Microphone access denied or not available", variant: "destructive" });
     }
   };
   
   const stopRecording = async () => {
     if (!audioRecorder.current.isRecording()) return;
-    
     try {
       const blob = await audioRecorder.current.stop();
       setAudioBlob(blob);
       const url = createAudioUrl(blob);
       setAudioUrl(url);
-      setIsRecording(false);
+      setIsRecording(false); // This will trigger liveRadarData reset via useEffect if needed
       stopTimer();
+      toast({ title: "Recording complete", description: "Analyzing your vocal performance..." });
       
-      toast({
-        title: "Recording complete",
-        description: "Analyzing your vocal performance..."
-      });
-      
-      // Analyze the audio
       setAnalyzingAudio(true);
-      const result = await analyzeAudio(blob, focusArea);
+      const result = await analyzeAudio(blob, focusArea); // Ensure analyzeAudio exists and returns DetailedAnalysisResult
       setAnalysis(result);
       setAnalyzingAudio(false);
       
-      toast({
-        title: "Analysis complete",
-        description: `Overall score: ${result.overallScore}/100`
-      });
+      if (result) {
+        const newFinalRadarData = [
+          { subject: 'Pace', score: result.paceScore, fullMark: 100 },
+          { subject: 'Tonality', score: result.tonalityScore, fullMark: 100 },
+          { subject: 'Expression', score: Math.floor(50 + Math.random() * 30), fullMark: 100 }, 
+          { subject: 'Energy', score: Math.min(100, Math.floor(result.detailedMetrics.volumeVariation * 1.1 + 10)), fullMark: 100 },
+          { subject: 'Fluency', score: Math.floor((result.pausesScore + result.fillerWordsScore) / 2), fullMark: 100 },
+          { subject: 'Volume', score: result.detailedMetrics.volumeVariation, fullMark: 100 },
+          { subject: 'Articulation', score: Math.floor(45 + Math.random() * 35), fullMark: 100 },
+        ].map(item => ({...item, score: Math.max(0, Math.min(100, Math.round(item.score)))}));
+        setFinalRadarData(newFinalRadarData);
+      }
+      
+      toast({ title: "Analysis complete", description: `Overall score: ${result.overallScore}/100` });
     } catch (error) {
       console.error("Error stopping recording:", error);
       setIsRecording(false);
       stopTimer();
-      toast({
-        title: "Recording error",
-        description: "There was a problem processing your recording",
-        variant: "destructive"
-      });
+      setAnalyzingAudio(false);
+      toast({ title: "Recording error", description: "There was a problem processing your recording", variant: "destructive" });
     }
   };
   
   const togglePlayback = () => {
     if (!audioRef.current || !audioUrl) return;
-    
     if (isPlaying) {
       audioRef.current.pause();
     } else {
       audioRef.current.play();
     }
-    
     setIsPlaying(!isPlaying);
   };
   
   const resetRecording = () => {
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-    }
-    
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioUrl(null);
     setAudioBlob(null);
     setAnalysis(null);
     setRecordingTime(0);
     setShowPrompt(true);
+    setFinalRadarData(null);
+    setLiveRadarData(getInitialRadarData()); // Explicitly reset live radar data
+    setIsPlaying(false);
+    if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.src = ''; // Clear src to ensure it stops completely
+    }
   };
   
   const formatTime = (seconds: number) => {
@@ -169,34 +291,42 @@ const Practice = () => {
   };
   
   const reanalyzeWithFocus = async (area: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all') => {
-    if (!audioBlob) return;
-    
+    if (!audioBlob || !analysis) return; // Ensure audioBlob and previous analysis exist
     setFocusArea(area);
     setAnalyzingAudio(true);
-    
-    toast({
-      title: "Reanalyzing recording",
-      description: `Focusing on ${area.replace('-', ' ')}...`
-    });
-    
+    toast({ title: "Reanalyzing recording", description: `Focusing on ${area.replace('-', ' ')}...` });
     const result = await analyzeAudio(audioBlob, area);
     setAnalysis(result);
-    setAnalyzingAudio(false);
     
-    toast({
-      title: "Analysis updated",
-      description: `New focus: ${area.replace('-', ' ')}`
-    });
+     if (result) { // Update final radar data based on new analysis
+        const currentExpression = finalRadarData?.find(d => d.subject === 'Expression')?.score || Math.floor(50 + Math.random() * 30);
+        const currentArticulation = finalRadarData?.find(d => d.subject === 'Articulation')?.score || Math.floor(45 + Math.random() * 35);
+
+        const newFinalRadarData = [
+          { subject: 'Pace', score: result.paceScore, fullMark: 100 },
+          { subject: 'Tonality', score: result.tonalityScore, fullMark: 100 },
+          { subject: 'Expression', score: currentExpression, fullMark: 100 }, 
+          { subject: 'Energy', score: Math.min(100, Math.floor(result.detailedMetrics.volumeVariation * 1.1 + 10)), fullMark: 100 },
+          { subject: 'Fluency', score: Math.floor((result.pausesScore + result.fillerWordsScore) / 2), fullMark: 100 },
+          { subject: 'Volume', score: result.detailedMetrics.volumeVariation, fullMark: 100 },
+          { subject: 'Articulation', score: currentArticulation, fullMark: 100 }, 
+        ].map(item => ({...item, score: Math.max(0, Math.min(100, Math.round(item.score)))}));
+        setFinalRadarData(newFinalRadarData);
+      }
+    setAnalyzingAudio(false);
+    toast({ title: "Analysis updated", description: `New focus: ${area.replace('-', ' ')}` });
   };
   
   useEffect(() => {
+    // Cleanup audio URL on component unmount or when audioUrl changes
+    let currentAudioUrl = audioUrl;
     return () => {
       stopTimer();
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
+      if (currentAudioUrl) {
+        URL.revokeObjectURL(currentAudioUrl);
       }
     };
-  }, [audioUrl]);
+  }, [audioUrl]); // Only audioUrl dependency here, timer is managed separately
   
   return (
     <Layout>
@@ -208,7 +338,7 @@ const Practice = () => {
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
                 <h3 className="font-medium">Today's Practice</h3>
-                {audioUrl && (
+                {(audioUrl || analysis) && ( // Show X if there's a recording or analysis
                   <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => setShowPrompt(false)}>
                     <X size={18} />
                   </Button>
@@ -218,7 +348,7 @@ const Practice = () => {
                 Practice giving a short 1-2 minute speech introducing yourself and describing what communication skills you want to improve.
               </p>
               
-              {audioUrl && (
+              {(audioUrl || analysis) && ( // Show focus options if there's a recording or analysis
                 <div className="mt-3">
                   <h4 className="text-sm font-medium mb-2">Focus your analysis:</h4>
                   <div className="flex flex-wrap gap-2">
@@ -226,6 +356,7 @@ const Practice = () => {
                       variant={focusArea === 'rate-volume' ? 'default' : 'outline'} 
                       size="sm" 
                       onClick={() => reanalyzeWithFocus('rate-volume')}
+                      disabled={!audioBlob || analyzingAudio}
                     >
                       Rate & Volume
                     </Button>
@@ -233,6 +364,7 @@ const Practice = () => {
                       variant={focusArea === 'pitch-tonality' ? 'default' : 'outline'} 
                       size="sm" 
                       onClick={() => reanalyzeWithFocus('pitch-tonality')}
+                      disabled={!audioBlob || analyzingAudio}
                     >
                       Pitch & Tonality
                     </Button>
@@ -240,6 +372,7 @@ const Practice = () => {
                       variant={focusArea === 'pause-fillers' ? 'default' : 'outline'} 
                       size="sm" 
                       onClick={() => reanalyzeWithFocus('pause-fillers')}
+                      disabled={!audioBlob || analyzingAudio}
                     >
                       Pauses & Fillers
                     </Button>
@@ -247,6 +380,7 @@ const Practice = () => {
                       variant={focusArea === 'all' ? 'default' : 'outline'} 
                       size="sm" 
                       onClick={() => reanalyzeWithFocus('all')}
+                      disabled={!audioBlob || analyzingAudio}
                     >
                       All Aspects
                     </Button>
@@ -260,32 +394,36 @@ const Practice = () => {
         <div className="flex flex-col items-center justify-center py-4">
           {!isRecording && !audioUrl && (
             <div className="text-center space-y-4">
-              <div className="record-button mx-auto" onClick={startRecording}>
-                <Mic size={32} />
+              <div className="record-button mx-auto cursor-pointer p-4 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors" onClick={startRecording}> {/* Added styles to record-button div */}
+                <Mic size={32} className="text-blue-600"/>
               </div>
               <p className="text-sm">Tap to start recording</p>
             </div>
           )}
           
           {isRecording && (
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-2 w-full">
               <div className="text-xl font-semibold">{formatTime(recordingTime)}</div>
               <div className="animate-pulse-light">
-                <div className="record-button mx-auto bg-red-500" onClick={stopRecording}>
-                  <StopCircle size={32} />
+                <div className="record-button mx-auto cursor-pointer p-4 rounded-full bg-red-100 hover:bg-red-200 transition-colors" onClick={stopRecording}> {/* Added styles to record-button div */}
+                  <StopCircle size={32} className="text-red-500"/>
                 </div>
               </div>
               <p className="text-sm">Recording... Tap to stop</p>
               
-              <div className="mt-4 min-h-[80px] flex items-center justify-center">
+              <div className="mt-2 min-h-[80px] flex items-center justify-center">
                 <LiveReactionFeedback isActive={isRecording} />
+              </div>
+
+              <div className="mt-3 w-full max-w-sm mx-auto">
+                <RechartsRadarChartComponent data={liveRadarData} title="Live Performance Snapshot" isLive={true} />
               </div>
             </div>
           )}
           
-          {audioUrl && (
-            <div className="w-full space-y-4">
-              <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />
+          {audioUrl && !isRecording && ( // Only show playback if not currently recording and audioURL exists
+            <div className="w-full space-y-4 mt-4">
+              <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} className="w-full"/>
               
               <div className="flex items-center justify-center space-x-4">
                 <Button 
@@ -308,14 +446,14 @@ const Practice = () => {
         
         {analyzingAudio && (
           <div className="text-center py-6">
-            <div className="inline-block animate-pulse-light">
-              <div className="h-12 w-12 rounded-full border-4 border-communi-primary border-t-transparent animate-spin mx-auto"></div>
+            <div className="inline-block animate-pulse-light"> {/* Assuming animate-pulse-light is defined */}
+              <div className="h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin mx-auto"></div> {/* Using specific color for spinner */}
             </div>
             <p className="mt-3 text-sm">Analyzing your recording...</p>
           </div>
         )}
         
-        {analysis && (
+        {analysis && !isRecording && ( // Only show analysis if analysis exists and not currently recording
           <div className="space-y-5">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <BarChart size={20} />
@@ -325,45 +463,31 @@ const Practice = () => {
               </span>
             </h2>
             
-            <Tabs defaultValue="scores">
-              <TabsList className="grid w-full grid-cols-4">
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5"> {/* Responsive grid cols */}
+                <TabsTrigger value="overview"><Eye size={16} className="inline mr-1 sm:mr-2"/>Overview</TabsTrigger>
                 <TabsTrigger value="scores">Scores</TabsTrigger>
-                <TabsTrigger value="metrics">Detailed Metrics</TabsTrigger>
+                <TabsTrigger value="metrics">Metrics</TabsTrigger> {/* Shortened "Detailed Metrics" */}
                 <TabsTrigger value="feedback">Feedback</TabsTrigger>
                 <TabsTrigger value="transcript">Transcript</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="scores" className="space-y-4 pt-4">
-                <ScoreItem 
-                  label="Pace" 
-                  score={analysis.paceScore} 
-                  description="How well you maintained an appropriate speaking rate"
-                  highlight={focusArea === 'rate-volume'}
-                />
-                <ScoreItem 
-                  label="Tonality" 
-                  score={analysis.tonalityScore} 
-                  description="Variation in pitch and emphasis"
-                  highlight={focusArea === 'pitch-tonality'}
-                />
-                <ScoreItem 
-                  label="Pauses" 
-                  score={analysis.pausesScore} 
-                  description="Effective use of pauses for emphasis"
-                  highlight={focusArea === 'pause-fillers'}
-                />
-                <ScoreItem 
-                  label="Filler Words" 
-                  score={analysis.fillerWordsScore} 
-                  description="Minimizing 'um', 'uh', 'like', etc."
-                  highlight={focusArea === 'pause-fillers'}
-                />
-                
-                <div className="pt-4 border-t mt-4">
+              <TabsContent value="overview" className="pt-4">
+                {finalRadarData && (
+                  <Card>
+                    <CardHeader className="pb-2 pt-4"> {/* Adjusted padding */}
+                      <CardTitle className="text-lg text-center">Final Performance Radar</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <RechartsRadarChartComponent data={finalRadarData} />
+                    </CardContent>
+                  </Card>
+                )}
+                 <div className="pt-6 border-t mt-6"> {/* Added more spacing */}
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">Overall Score</span>
+                    <span className="font-semibold text-md">Overall Score</span> {/* Increased font size */}
                     <span className={cn(
-                      "text-lg font-bold",
+                      "text-xl font-bold", // Increased font size
                       analysis.overallScore >= 80 ? "text-green-600" :
                       analysis.overallScore >= 60 ? "text-yellow-600" :
                       "text-red-600"
@@ -375,6 +499,33 @@ const Practice = () => {
                 </div>
               </TabsContent>
               
+              <TabsContent value="scores" className="space-y-1 pt-4"> {/* Reduced space-y */}
+                <ScoreItem 
+                  label="Pace" 
+                  score={analysis.paceScore} 
+                  description="Appropriate speaking rate"
+                  highlight={focusArea === 'rate-volume' || focusArea === 'all'}
+                />
+                <ScoreItem 
+                  label="Tonality" 
+                  score={analysis.tonalityScore} 
+                  description="Variation in pitch and emphasis"
+                  highlight={focusArea === 'pitch-tonality' || focusArea === 'all'}
+                />
+                <ScoreItem 
+                  label="Pauses" 
+                  score={analysis.pausesScore} 
+                  description="Effective use of pauses"
+                  highlight={focusArea === 'pause-fillers' || focusArea === 'all'}
+                />
+                <ScoreItem 
+                  label="Filler Words" 
+                  score={analysis.fillerWordsScore} 
+                  description="Minimizing 'um', 'uh', etc."
+                  highlight={focusArea === 'pause-fillers' || focusArea === 'all'}
+                />
+              </TabsContent>
+              
               <TabsContent value="metrics" className="pt-4">
                 <div className="space-y-4">
                   <Card>
@@ -382,7 +533,7 @@ const Practice = () => {
                       <CardTitle className="text-md">Speaking Metrics</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-gray-500">Words per minute</p>
                           <p className="text-xl font-semibold">{analysis.detailedMetrics.wordsPerMinute}</p>
@@ -408,7 +559,7 @@ const Practice = () => {
                       <CardTitle className="text-md">Pauses & Filler Words</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-gray-500">Strategic pauses</p>
                           <p className="text-xl font-semibold">{analysis.detailedMetrics.pauseMetrics.totalPauses}</p>
@@ -420,8 +571,8 @@ const Practice = () => {
                           <p className="text-sm text-gray-500">Filler words</p>
                           <p className="text-xl font-semibold">{analysis.detailedMetrics.fillerWordCount.total}</p>
                           <p className="text-xs text-gray-400">
-                            um: {analysis.detailedMetrics.fillerWordCount.um}, 
-                            like: {analysis.detailedMetrics.fillerWordCount.like}
+                            (e.g., um: {analysis.detailedMetrics.fillerWordCount.um}, 
+                            like: {analysis.detailedMetrics.fillerWordCount.like})
                           </p>
                         </div>
                       </div>
@@ -448,58 +599,63 @@ const Practice = () => {
               
               <TabsContent value="feedback" className="pt-4">
                 <div className="space-y-5">
-                  {/* Mockup Reaction Gallery */}
                   <ReactionGallery 
                     collectedReactions={["🤩", "🎉", "👏", "👍", "💯", "🥳", "🙌", "✨", "🎯", "💡", "🔥", "✅"]} 
                   />
 
                   <div className="space-y-3">
                     <h3 className="text-md font-semibold">General Feedback</h3>
-                    {analysis.feedback.map((item, index) => (
-                      <div key={index} className="p-3 bg-gray-100 rounded-lg">
+                    {analysis.feedback.length > 0 ? analysis.feedback.map((item, index) => (
+                      <div key={index} className="p-3 bg-gray-100 rounded-lg shadow-sm"> {/* Added shadow */}
                         <p className="text-sm">{item}</p>
                       </div>
-                    ))}
+                    )) : <p className="text-sm text-gray-500">No general feedback available for this recording.</p>}
                   </div>
                   
                   <div className="space-y-3">
                     <h3 className="text-md font-semibold">Improvement Suggestions</h3>
                     <Card>
                       <CardContent className="p-4">
-                        <h4 className="font-medium mb-2">Rate & Pace</h4>
-                        <ul className="space-y-2">
-                          {analysis.specificSuggestions.pace.map((suggestion, index) => (
-                            <li key={index} className="text-sm bg-gray-50 p-2 rounded">
-                              {suggestion}
-                            </li>
-                          ))}
-                        </ul>
+                        <h4 className="font-medium mb-2 text-blue-600">Rate & Pace</h4> {/* Styled heading */}
+                        {analysis.specificSuggestions.pace.length > 0 ? (
+                            <ul className="space-y-2 list-disc list-inside">
+                            {analysis.specificSuggestions.pace.map((suggestion, index) => (
+                                <li key={index} className="text-sm bg-gray-50 p-2 rounded">
+                                {suggestion}
+                                </li>
+                            ))}
+                            </ul>
+                        ) : <p className="text-sm text-gray-500 italic">No specific suggestions for pace.</p>}
                       </CardContent>
                     </Card>
                     
                     <Card>
                       <CardContent className="p-4">
-                        <h4 className="font-medium mb-2">Pitch & Tonality</h4>
-                        <ul className="space-y-2">
-                          {analysis.specificSuggestions.pitch.map((suggestion, index) => (
-                            <li key={index} className="text-sm bg-gray-50 p-2 rounded">
-                              {suggestion}
-                            </li>
-                          ))}
-                        </ul>
+                        <h4 className="font-medium mb-2 text-blue-600">Pitch & Tonality</h4>
+                         {analysis.specificSuggestions.pitch.length > 0 ? (
+                            <ul className="space-y-2 list-disc list-inside">
+                            {analysis.specificSuggestions.pitch.map((suggestion, index) => (
+                                <li key={index} className="text-sm bg-gray-50 p-2 rounded">
+                                {suggestion}
+                                </li>
+                            ))}
+                            </ul>
+                        ) : <p className="text-sm text-gray-500 italic">No specific suggestions for pitch & tonality.</p>}
                       </CardContent>
                     </Card>
                     
                     <Card>
                       <CardContent className="p-4">
-                        <h4 className="font-medium mb-2">Filler Words</h4>
-                        <ul className="space-y-2">
-                          {analysis.specificSuggestions.fillers.map((suggestion, index) => (
-                            <li key={index} className="text-sm bg-gray-50 p-2 rounded">
-                              {suggestion}
-                            </li>
-                          ))}
-                        </ul>
+                        <h4 className="font-medium mb-2 text-blue-600">Filler Words</h4>
+                        {analysis.specificSuggestions.fillers.length > 0 ? (
+                            <ul className="space-y-2 list-disc list-inside">
+                            {analysis.specificSuggestions.fillers.map((suggestion, index) => (
+                                <li key={index} className="text-sm bg-gray-50 p-2 rounded">
+                                {suggestion}
+                                </li>
+                            ))}
+                            </ul>
+                        ) : <p className="text-sm text-gray-500 italic">No specific suggestions for filler words.</p>}
                       </CardContent>
                     </Card>
                   </div>
@@ -508,10 +664,12 @@ const Practice = () => {
               
               <TabsContent value="transcript" className="pt-4">
                 <Card>
+                  <CardHeader className="pb-2"> {/* Added header */}
+                    <CardTitle className="text-md">Transcription</CardTitle>
+                  </CardHeader>
                   <CardContent className="p-4">
-                    <h3 className="font-medium mb-2">Transcription</h3>
-                    <div className="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap">
-                      {analysis.transcription}
+                    <div className="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap max-h-60 overflow-y-auto border"> {/* Added max-h and border */}
+                      {analysis.transcription || "Transcription not available."}
                     </div>
                     <p className="text-xs text-gray-500 mt-3">
                       Note: This is an AI-generated transcription and may not be 100% accurate.
@@ -522,45 +680,12 @@ const Practice = () => {
             </Tabs>
             
             <div className="pt-4">
-              <Button className="w-full">Save to My Progress</Button>
+              <Button className="w-full" size="lg">Save to My Progress</Button> {/* Made button larger */}
             </div>
           </div>
         )}
       </div>
     </Layout>
-  );
-};
-
-const ScoreItem = ({ 
-  label, 
-  score, 
-  description, 
-  highlight = false 
-}: { 
-  label: string; 
-  score: number; 
-  description: string; 
-  highlight?: boolean;
-}) => {
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600";
-    if (score >= 60) return "text-yellow-600";
-    return "text-red-600";
-  };
-  
-  return (
-    <div className={cn("space-y-2", highlight && "border-l-4 border-blue-500 pl-3 py-1 -ml-3")}> {/* Adjusted highlight style slightly */}
-      <div className="flex justify-between items-center"> {/* Added items-center */}
-        <div>
-          <span className="font-medium">{label}</span>
-          <p className="text-xs text-gray-500">{description}</p>
-        </div>
-        <span className={cn("font-bold text-lg", getScoreColor(score))}> {/* Made score slightly larger */}
-          {score}/100
-        </span>
-      </div>
-      <Progress value={score} className="h-2" />
-    </div>
   );
 };
 
