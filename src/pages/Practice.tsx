@@ -1,10 +1,8 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { 
   AudioRecorder, 
   createAudioUrl, 
@@ -16,6 +14,37 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import LiveReactionFeedback from "@/components/LiveReactionFeedback";
+
+// New ReactionGallery Component
+const ReactionGallery = ({ collectedReactions }: { collectedReactions: string[] }) => {
+  if (!collectedReactions || collectedReactions.length === 0) {
+    // Optionally, return a message if no reactions (though for mockup, we'll always have some)
+    return null; 
+  }
+
+  return (
+    <div className="my-6 p-4 border border-dashed border-yellow-400 rounded-lg bg-yellow-50/50">
+      <h3 className="text-lg font-semibold mb-2 text-yellow-700 text-center">
+        🌟 Woohoo! Your Audience Loved These Moments! 🌟
+      </h3>
+      <p className="text-sm text-yellow-600 text-center mb-4">
+        You're doing great! Keep practicing to capture even more positive reactions.
+      </p>
+      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 p-3 bg-white/70 rounded-md shadow-inner">
+        {collectedReactions.map((emoji, index) => (
+          <div 
+            key={index} 
+            className="text-3xl sm:text-4xl p-2 bg-white rounded-lg shadow-md hover:scale-125 transform transition-all duration-200 ease-in-out flex items-center justify-center aspect-square cursor-default"
+            title={`Positive reaction: ${emoji}`} 
+          >
+            {emoji}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 
 const Practice = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -174,7 +203,6 @@ const Practice = () => {
       <div className="p-4 space-y-5">
         <h1 className="text-2xl font-bold">Practice</h1>
         
-        {/* Practice prompt */}
         {showPrompt && (
           <Card>
             <CardContent className="p-4">
@@ -229,7 +257,6 @@ const Practice = () => {
           </Card>
         )}
         
-        {/* Recording UI */}
         <div className="flex flex-col items-center justify-center py-4">
           {!isRecording && !audioUrl && (
             <div className="text-center space-y-4">
@@ -250,7 +277,6 @@ const Practice = () => {
               </div>
               <p className="text-sm">Recording... Tap to stop</p>
               
-              {/* Add the live reaction feedback component */}
               <div className="mt-4 min-h-[80px] flex items-center justify-center">
                 <LiveReactionFeedback isActive={isRecording} />
               </div>
@@ -280,7 +306,6 @@ const Practice = () => {
           )}
         </div>
         
-        {/* Analysis Results */}
         {analyzingAudio && (
           <div className="text-center py-6">
             <div className="inline-block animate-pulse-light">
@@ -423,10 +448,15 @@ const Practice = () => {
               
               <TabsContent value="feedback" className="pt-4">
                 <div className="space-y-5">
+                  {/* Mockup Reaction Gallery */}
+                  <ReactionGallery 
+                    collectedReactions={["🤩", "🎉", "👏", "👍", "💯", "🥳", "🙌", "✨", "🎯", "💡", "🔥", "✅"]} 
+                  />
+
                   <div className="space-y-3">
                     <h3 className="text-md font-semibold">General Feedback</h3>
                     {analysis.feedback.map((item, index) => (
-                      <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                      <div key={index} className="p-3 bg-gray-100 rounded-lg">
                         <p className="text-sm">{item}</p>
                       </div>
                     ))}
@@ -519,13 +549,13 @@ const ScoreItem = ({
   };
   
   return (
-    <div className={cn("space-y-2", highlight && "border-l-4 border-blue-500 pl-3")}>
-      <div className="flex justify-between">
+    <div className={cn("space-y-2", highlight && "border-l-4 border-blue-500 pl-3 py-1 -ml-3")}> {/* Adjusted highlight style slightly */}
+      <div className="flex justify-between items-center"> {/* Added items-center */}
         <div>
           <span className="font-medium">{label}</span>
           <p className="text-xs text-gray-500">{description}</p>
         </div>
-        <span className={cn("font-bold", getScoreColor(score))}>
+        <span className={cn("font-bold text-lg", getScoreColor(score))}> {/* Made score slightly larger */}
           {score}/100
         </span>
       </div>
