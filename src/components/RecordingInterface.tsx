@@ -5,7 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { AudioRecorder, createAudioUrl, analyzeAudio, DetailedAnalysisResult } from "@/utils/audioRecorder";
 import { useToast } from "@/hooks/use-toast";
 import LiveReactionFeedback from "./LiveReactionFeedback";
-import { Reaction } from "@/models/reactions";
 
 interface RecordingInterfaceProps {
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all';
@@ -22,7 +21,6 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
   const [analysis, setAnalysis] = useState<DetailedAnalysisResult | null>(null);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [showVolumeIndicator, setShowVolumeIndicator] = useState(false);
-  const [collectedReactions, setCollectedReactions] = useState<Reaction[]>([]);
   
   const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -177,11 +175,6 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
     }
   };
 
-  const handleReactionCollected = (reaction: Reaction) => {
-    setCollectedReactions(prev => [...prev, reaction]);
-    console.log("Reaction collected:", reaction);
-  };
-
   useEffect(() => {
     return () => {
       stopTimer();
@@ -213,12 +206,9 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
           </div>
           <p className="text-sm">Recording... Tap to stop</p>
           
-          {/* Add the live reaction feedback component with onReactionCollected */}
+          {/* Add the live reaction feedback component */}
           <div className="mt-4 min-h-[80px] flex items-center justify-center">
-            <LiveReactionFeedback 
-              isActive={isRecording} 
-              onReactionCollected={handleReactionCollected}
-            />
+            <LiveReactionFeedback isActive={isRecording} />
           </div>
           
           {showVolumeIndicator && (

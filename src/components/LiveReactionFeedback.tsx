@@ -30,18 +30,14 @@ const LiveReactionFeedback = ({ isActive, onReactionCollected }: LiveReactionFee
     }
 
     const showReaction = () => {
-      console.log("Showing a new reaction");
       // Select a random reaction
       const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
-      const reactionWithTimestamp = {...randomReaction, timestamp: Date.now()};
-      
-      setCurrentReaction(reactionWithTimestamp);
+      setCurrentReaction(randomReaction);
       setVisible(true);
 
       // Notify parent component of collected reaction
       if (onReactionCollected) {
-        console.log("Reaction collected:", reactionWithTimestamp);
-        onReactionCollected(reactionWithTimestamp);
+        onReactionCollected({...randomReaction, timestamp: Date.now()});
       }
 
       // Hide the reaction after a few seconds
@@ -64,7 +60,7 @@ const LiveReactionFeedback = ({ isActive, onReactionCollected }: LiveReactionFee
       clearTimeout(initialTimer);
       clearInterval(intervalTimer);
     };
-  }, [isActive, onReactionCollected, reactions]);
+  }, [isActive, onReactionCollected]);
 
   if (!isActive || !visible || !currentReaction) {
     return null;

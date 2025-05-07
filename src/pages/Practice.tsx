@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { AudioRecorder, createAudioUrl, analyzeAudio, DetailedAnalysisResult } from "@/utils/audioRecorder";
@@ -74,7 +75,6 @@ const Practice = () => {
       setIsRecording(false);
       stopTimer();
       
-      console.log("Recording stopped, collected reactions:", collectedReactions.length);
       toast({
         title: "Recording complete",
         description: `You collected ${collectedReactions.length} reactions!`
@@ -149,7 +149,6 @@ const Practice = () => {
   };
 
   const handleReactionCollected = (reaction: Reaction) => {
-    console.log("Reaction collected in Practice component:", reaction);
     setCollectedReactions(prev => [...prev, reaction]);
   };
   
