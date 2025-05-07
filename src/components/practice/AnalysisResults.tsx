@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Reaction } from "@/models/reactions";
+import { Reaction, CollectedReactions } from "@/models/reactions";
 
 interface AnalysisResultsProps {
   analysis: DetailedAnalysisResult | null;
@@ -169,22 +169,35 @@ const AnalysisResults = ({
             {/* Display collected reactions */}
             {collectedReactions.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-md font-semibold">Audience Reactions</h3>
+                <h3 className="text-md font-semibold">Audience Reactions ({collectedReactions.length})</h3>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex flex-wrap gap-3 mb-3">
                     {collectedReactions.map((reaction, index) => (
                       <div key={index} className="flex flex-col items-center">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm mb-1">
                           {reaction.emoji}
                         </div>
+                        <span className="text-xs">{reaction.comment}</span>
                       </div>
                     ))}
                   </div>
-                  <p className="text-sm font-medium text-center">
+                  <p className="text-sm font-medium text-center mt-3">
                     {collectedReactions.length > 5 
                       ? "Impressive! You collected many positive reactions." 
-                      : "Good job! Keep practicing to collect more reactions."}
+                      : collectedReactions.length > 0
+                        ? "Good job! Keep practicing to collect more reactions."
+                        : "Try again to collect audience reactions!"}
                   </p>
+                </div>
+              </div>
+            )}
+            
+            {collectedReactions.length === 0 && (
+              <div className="space-y-3">
+                <h3 className="text-md font-semibold">Audience Reactions</h3>
+                <div className="p-4 bg-gray-50 rounded-lg text-center">
+                  <p className="text-sm">No reactions collected during this recording.</p>
+                  <p className="text-xs mt-2">Record for longer and practice with more expression to collect audience reactions!</p>
                 </div>
               </div>
             )}
