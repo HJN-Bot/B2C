@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import LiveReactionFeedback from "@/components/LiveReactionFeedback";
 
 const Practice = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -248,6 +249,11 @@ const Practice = () => {
                 </div>
               </div>
               <p className="text-sm">Recording... Tap to stop</p>
+              
+              {/* Add the live reaction feedback component */}
+              <div className="mt-4 min-h-[80px] flex items-center justify-center">
+                <LiveReactionFeedback isActive={isRecording} />
+              </div>
             </div>
           )}
           

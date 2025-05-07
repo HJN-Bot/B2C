@@ -1,10 +1,10 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Mic, StopCircle, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { AudioRecorder, createAudioUrl, analyzeAudio, DetailedAnalysisResult } from "@/utils/audioRecorder";
 import { useToast } from "@/hooks/use-toast";
+import LiveReactionFeedback from "./LiveReactionFeedback";
 
 interface RecordingInterfaceProps {
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all';
@@ -205,6 +205,11 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
             </div>
           </div>
           <p className="text-sm">Recording... Tap to stop</p>
+          
+          {/* Add the live reaction feedback component */}
+          <div className="mt-4 min-h-[80px] flex items-center justify-center">
+            <LiveReactionFeedback isActive={isRecording} />
+          </div>
           
           {showVolumeIndicator && (
             <div className="w-full max-w-md mx-auto mt-4 space-y-2">
