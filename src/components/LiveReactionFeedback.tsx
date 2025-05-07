@@ -9,9 +9,10 @@ type Reaction = {
 
 interface LiveReactionFeedbackProps {
   isActive: boolean;
+  onReactionCollected?: (reaction: Reaction) => void;
 }
 
-const LiveReactionFeedback = ({ isActive }: LiveReactionFeedbackProps) => {
+const LiveReactionFeedback = ({ isActive, onReactionCollected }: LiveReactionFeedbackProps) => {
   const [currentReaction, setCurrentReaction] = useState<Reaction | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -38,6 +39,11 @@ const LiveReactionFeedback = ({ isActive }: LiveReactionFeedbackProps) => {
       setCurrentReaction(randomReaction);
       setVisible(true);
 
+      // Notify parent component of new reaction
+      if (onReactionCollected) {
+        onReactionCollected(randomReaction);
+      }
+
       // Hide the reaction after a few seconds
       setTimeout(() => {
         setVisible(false);
@@ -58,7 +64,7 @@ const LiveReactionFeedback = ({ isActive }: LiveReactionFeedbackProps) => {
       clearTimeout(initialTimer);
       clearInterval(intervalTimer);
     };
-  }, [isActive]);
+  }, [isActive, onReactionCollected]);
 
   if (!isActive || !visible || !currentReaction) {
     return null;
