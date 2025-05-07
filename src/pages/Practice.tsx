@@ -17,12 +17,6 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import LiveReactionFeedback from "@/components/LiveReactionFeedback";
 
-// Define a Reaction type to match the one in LiveReactionFeedback
-type Reaction = {
-  emoji: JSX.Element;
-  comment: string;
-};
-
 const Practice = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -33,8 +27,6 @@ const Practice = () => {
   const [showPrompt, setShowPrompt] = useState(true);
   const [focusArea, setFocusArea] = useState<'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all'>('all');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  // Add state for collected reactions
-  const [collectedReactions, setCollectedReactions] = useState<Reaction[]>([]);
   
   const audioRecorder = useRef<AudioRecorder>(new AudioRecorder());
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -64,8 +56,6 @@ const Practice = () => {
       setAudioUrl(null);
       setAudioBlob(null);
       setAnalysis(null);
-      // Clear previous reactions when starting a new recording
-      setCollectedReactions([]);
       startTimer();
       toast({
         title: "Recording started",
@@ -100,30 +90,13 @@ const Practice = () => {
       // Analyze the audio
       setAnalyzingAudio(true);
       const result = await analyzeAudio(blob, focusArea);
-      
-      // Add collected reactions to the analysis result
-      const resultWithReactions = {
-        ...result,
-        collectedReactions: collectedReactions,
-        reactionsCount: collectedReactions.length
-      };
-      
-      setAnalysis(resultWithReactions);
+      setAnalysis(result);
       setAnalyzingAudio(false);
       
       toast({
         title: "Analysis complete",
         description: `Overall score: ${result.overallScore}/100`
       });
-      
-      // Add a special toast if they collected reactions
-      if (collectedReactions.length > 0) {
-        toast({
-          title: "Reactions collected!",
-          description: `You earned ${collectedReactions.length} audience reactions!`
-        });
-      }
-      
     } catch (error) {
       console.error("Error stopping recording:", error);
       setIsRecording(false);
@@ -134,11 +107,6 @@ const Practice = () => {
         variant: "destructive"
       });
     }
-  };
-  
-  const handleReactionCollected = (reaction: Reaction) => {
-    console.log("Reaction collected:", reaction);
-    setCollectedReactions(prev => [...prev, reaction]);
   };
   
   const togglePlayback = () => {
@@ -163,7 +131,6 @@ const Practice = () => {
     setAnalysis(null);
     setRecordingTime(0);
     setShowPrompt(true);
-    setCollectedReactions([]);
   };
   
   const formatTime = (seconds: number) => {
@@ -184,15 +151,7 @@ const Practice = () => {
     });
     
     const result = await analyzeAudio(audioBlob, area);
-    
-    // Add collected reactions to the analysis result
-    const resultWithReactions = {
-      ...result,
-      collectedReactions: collectedReactions,
-      reactionsCount: collectedReactions.length
-    };
-    
-    setAnalysis(resultWithReactions);
+    setAnalysis(result);
     setAnalyzingAudio(false);
     
     toast({
@@ -291,19 +250,10 @@ const Practice = () => {
               </div>
               <p className="text-sm">Recording... Tap to stop</p>
               
-              {/* Add the live reaction feedback component with the collection handler */}
+              {/* Add the live reaction feedback component */}
               <div className="mt-4 min-h-[80px] flex items-center justify-center">
-                <LiveReactionFeedback 
-                  isActive={isRecording} 
-                  onReactionCollected={handleReactionCollected}
-                />
+                <LiveReactionFeedback isActive={isRecording} />
               </div>
-              
-              {collectedReactions.length > 0 && (
-                <p className="text-xs text-gray-500">
-                  {collectedReactions.length} reaction{collectedReactions.length !== 1 ? 's' : ''} collected so far
-                </p>
-              )}
             </div>
           )}
           
@@ -473,29 +423,6 @@ const Practice = () => {
               
               <TabsContent value="feedback" className="pt-4">
                 <div className="space-y-5">
-                  {/* Display collected reactions */}
-                  {collectedReactions.length > 0 && (
-                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <h3 className="text-md font-semibold mb-3">Audience Reactions</h3>
-                      <div className="flex flex-wrap gap-3">
-                        {collectedReactions.map((reaction, idx) => (
-                          <div key={idx} className="flex items-center gap-1.5 bg-white p-2 rounded-md shadow-sm">
-                            <div className="flex-shrink-0">
-                              {reaction.emoji}
-                            </div>
-                            <span className="text-sm">{reaction.comment}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="mt-3 text-sm text-gray-600">
-                        You received {collectedReactions.length} positive reaction{collectedReactions.length !== 1 ? 's' : ''} from your audience! 
-                        {collectedReactions.length < 3 ? " Try recording longer next time to collect more reactions." : 
-                         collectedReactions.length < 6 ? " Great job engaging your audience!" : 
-                         " Amazing job! Your audience was very engaged!"}
-                      </p>
-                    </div>
-                  )}
-
                   <div className="space-y-3">
                     <h3 className="text-md font-semibold">General Feedback</h3>
                     {analysis.feedback.map((item, index) => (
