@@ -88,7 +88,7 @@ export interface AnalysisResult {
 export interface DetailedAnalysisResult extends AnalysisResult {
   detailedMetrics: {
     wordsPerMinute: number;
-    volumeVariation: number;
+    volumeVariation: number; // This should be a 0-100 score
     pitchVariation: number;
     fillerWordCount: {
       um: number;
@@ -120,7 +120,6 @@ const getAudioContext = (): AudioContext => {
   return audioContext;
 };
 
-// Helper: Decode Audio Blob to PCM Data
 interface DecodedAudio {
   pcmData: Float32Array;
   sampleRate: number;
@@ -131,10 +130,7 @@ async function decodeAudioBlobToPCM(audioBlob: Blob): Promise<DecodedAudio> {
   const context = getAudioContext();
   const arrayBuffer = await audioBlob.arrayBuffer();
   const audioBuffer = await context.decodeAudioData(arrayBuffer);
-
-  // For simplicity, we'll use the first channel.
-  // You might want to average channels if it's stereo.
-  const pcmData = audioBuffer.getChannelData(0);
+  const pcmData = audioBuffer.getChannelData(0); // Use first channel
   return {
     pcmData,
     sampleRate: audioBuffer.sampleRate,
@@ -142,60 +138,167 @@ async function decodeAudioBlobToPCM(audioBlob: Blob): Promise<DecodedAudio> {
   };
 }
 
-// Helper: Calculate Volume Metrics (RMS)
 interface VolumeMetrics {
-  averageLoudnessRMS: number; // Average RMS value
-  volumeVariation: number;    // A 0-100 score for variation
+  averageLoudnessOfSpokenParts: number; // Raw average RMS of all parts above silence threshold
+  volumeVariationOfSpokenParts: number; // Word-based volume variation score (0-100)
+  percentageOfSpeechDetected: number;
+  detectedWordsCount: number; // Number of word segments detected
 }
 
-function calculateVolumeMetrics(pcmData: Float32Array, sampleRate: number): VolumeMetrics {
+// Helper function to calculate mean of an array of numbers
+function calculateMean(arr: number[]): number {
+  if (arr.length === 0) return 0;
+  return arr.reduce((sum, val) => sum + val, 0) / arr.length;
+}
+
+// Helper function to calculate standard deviation of an array of numbers
+function calculateStdDev(arr: number[], mean?: number): number {
+  if (arr.length < 2) return 0; // Standard deviation is not meaningful for less than 2 values
+  const m = mean === undefined ? calculateMean(arr) : mean;
+  const variance = arr.reduce((sum, val) => sum + Math.pow(val - m, 2), 0) / arr.length;
+  return Math.sqrt(variance);
+}
+
+
+function calculateVolumeMetrics(
+  pcmData: Float32Array, 
+  sampleRate: number,
+  // Constants for algorithm, mirroring Python version's defaults
+  minWordRmsWindows: number = 3,
+  volumeScoreLinearScale: number = 100.0 
+): VolumeMetrics {
+
+  const defaultReturn: VolumeMetrics = {
+    averageLoudnessOfSpokenParts: 0,
+    volumeVariationOfSpokenParts: 0,
+    percentageOfSpeechDetected: 0,
+    detectedWordsCount: 0,
+  };
+
   if (pcmData.length === 0) {
-    return { averageLoudnessRMS: 0, volumeVariation: 0 };
+    return defaultReturn;
   }
 
-  const windowSize = Math.floor(sampleRate * 0.05); // 50ms window
-  const stepSize = Math.floor(sampleRate * 0.025); // 25ms step
-  const rmsValues: number[] = [];
+  // --- Parameters ---
+  const WINDOW_DURATION_MS = 50;
+  const STEP_DURATION_MS = 25;
+  const SILENCE_THRESHOLD_PEAK_FACTOR = 0.05;
+  const ABSOLUTE_MIN_SILENCE_THRESHOLD = 1e-4;
 
+  const windowSize = Math.max(1, Math.floor(sampleRate * (WINDOW_DURATION_MS / 1000.0)));
+  const stepSize = Math.max(1, Math.floor(sampleRate * (STEP_DURATION_MS / 1000.0)));
+  const actualMinWordRmsWindows = Math.max(1, minWordRmsWindows);
+
+  // --- Handle very short audio ---
+  if (pcmData.length < windowSize) {
+    let sumSquares = 0;
+    for (let i = 0; i < pcmData.length; i++) {
+      sumSquares += pcmData[i] * pcmData[i];
+    }
+    const overallRMS = pcmData.length > 0 ? Math.sqrt(sumSquares / pcmData.length) : 0;
+    const variationScore = overallRMS > 1e-5 ? 10 : 0; // Low variation for very short audio
+    return {
+      averageLoudnessOfSpokenParts: overallRMS,
+      volumeVariationOfSpokenParts: variationScore,
+      percentageOfSpeechDetected: overallRMS > 1e-5 ? 100 : 0,
+      detectedWordsCount: overallRMS > 1e-5 ? 1 : 0,
+    };
+  }
+
+  // --- Calculate RMS for all windows ---
+  const allRmsValues: number[] = [];
   for (let i = 0; i <= pcmData.length - windowSize; i += stepSize) {
     let sumSquares = 0;
     for (let j = 0; j < windowSize; j++) {
       sumSquares += pcmData[i + j] * pcmData[i + j];
     }
-    rmsValues.push(Math.sqrt(sumSquares / windowSize));
+    allRmsValues.push(Math.sqrt(sumSquares / windowSize));
   }
 
-  if (rmsValues.length === 0) {
-     // Could happen if audio is shorter than windowSize
-    let sumSquares = 0;
-    for (let i = 0; i < pcmData.length; i++) {
-        sumSquares += pcmData[i] * pcmData[i];
-    }
-    const overallRMS = Math.sqrt(sumSquares / pcmData.length);
-    return { averageLoudnessRMS: overallRMS, volumeVariation: 10 }; // Low variation for very short audio
+  if (allRmsValues.length === 0) {
+    return defaultReturn;
   }
 
-  const meanLoudness = rmsValues.reduce((sum, val) => sum + val, 0) / rmsValues.length;
+  // --- Determine Silence Threshold ---
+  const peakRms = Math.max(...allRmsValues);
+  const silenceThreshold = Math.max(peakRms * SILENCE_THRESHOLD_PEAK_FACTOR, ABSOLUTE_MIN_SILENCE_THRESHOLD);
+  const overallMeanRmsAllFrames = calculateMean(allRmsValues);
+
+  // --- Filter overall spoken RMS values (all frames above threshold) ---
+  const overallSpokenRmsArray = allRmsValues.filter(rms => rms > silenceThreshold);
+  const percentageOfSpeechDetected = allRmsValues.length > 0 ? (overallSpokenRmsArray.length / allRmsValues.length) * 100 : 0;
   
-  // Calculate standard deviation of RMS values
-  const variance = rmsValues.reduce((sum, val) => sum + Math.pow(val - meanLoudness, 2), 0) / rmsValues.length;
-  const stdDevLoudness = Math.sqrt(variance);
+  let meanOverallSpokenRms = 0;
+  if (overallSpokenRmsArray.length > 0) {
+      meanOverallSpokenRms = calculateMean(overallSpokenRmsArray);
+  } else if (overallMeanRmsAllFrames < ABSOLUTE_MIN_SILENCE_THRESHOLD * 2 && allRmsValues.length > 0) {
+      // If audio is extremely quiet and no specific speech detected, use overall mean
+      meanOverallSpokenRms = overallMeanRmsAllFrames;
+  }
 
-  // Normalize variation to a 0-100 score. This is somewhat arbitrary and can be tuned.
-  // A higher stdDev relative to the mean indicates more variation.
-  // We cap it, and handle division by zero if meanLoudness is tiny.
-  let volumeVariationScore = (stdDevLoudness / (meanLoudness + 1e-9)) * 200; // Factor for scaling
-  volumeVariationScore = Math.min(100, Math.max(0, volumeVariationScore));
 
+  // --- Word Segmentation ---
+  const wordSegmentDetails: { avgRms: number }[] = [];
+  let currentWordStartIdx = -1;
+
+  for (let i = 0; i < allRmsValues.length; i++) {
+    const rmsVal = allRmsValues[i];
+    if (rmsVal > silenceThreshold) {
+      if (currentWordStartIdx === -1) {
+        currentWordStartIdx = i; // Start of a new potential word segment
+      }
+    } else {
+      if (currentWordStartIdx !== -1) { // End of the current segment
+        const segmentLen = i - currentWordStartIdx;
+        if (segmentLen >= actualMinWordRmsWindows) {
+          const wordRmsSequence = allRmsValues.slice(currentWordStartIdx, i);
+          wordSegmentDetails.push({ avgRms: calculateMean(wordRmsSequence) });
+        }
+        currentWordStartIdx = -1; // Reset for next segment
+      }
+    }
+  }
+  // Check for a word segment at the very end of the audio
+  if (currentWordStartIdx !== -1) {
+    const segmentLen = allRmsValues.length - currentWordStartIdx;
+    if (segmentLen >= actualMinWordRmsWindows) {
+      const wordRmsSequence = allRmsValues.slice(currentWordStartIdx);
+      wordSegmentDetails.push({ avgRms: calculateMean(wordRmsSequence) });
+    }
+  }
+
+  const averageRmsPerWordArray = wordSegmentDetails.map(seg => seg.avgRms);
+  let wordVolumeVariationScore = 0;
+
+  if (averageRmsPerWordArray.length >= 2) {
+    const meanOfAvgWordRms = calculateMean(averageRmsPerWordArray);
+    const stdDevOfAvgWordRms = calculateStdDev(averageRmsPerWordArray, meanOfAvgWordRms);
+    const coeffVarWords = stdDevOfAvgWordRms / (meanOfAvgWordRms + 1e-9); // Add epsilon to prevent division by zero
+    wordVolumeVariationScore = Math.round(Math.min(100, Math.max(0, coeffVarWords * volumeScoreLinearScale)));
+  } else if (averageRmsPerWordArray.length === 1) {
+    wordVolumeVariationScore = 10; // Low variation for a single detected word segment
+  }
+
+
+  // Handle extremely quiet audio case for final scores
+  if (overallMeanRmsAllFrames < ABSOLUTE_MIN_SILENCE_THRESHOLD * 2 && wordSegmentDetails.length === 0) {
+    return {
+      averageLoudnessOfSpokenParts: overallMeanRmsAllFrames,
+      volumeVariationOfSpokenParts: 0, // No variation if effectively silent
+      percentageOfSpeechDetected: 0,
+      detectedWordsCount: 0,
+    };
+  }
+  
   return {
-    averageLoudnessRMS: meanLoudness,
-    volumeVariation: Math.round(volumeVariationScore),
+    averageLoudnessOfSpokenParts: meanOverallSpokenRms, // Average RMS of all parts above threshold
+    volumeVariationOfSpokenParts: wordVolumeVariationScore, // Word-based score (0-100)
+    percentageOfSpeechDetected: Math.round(percentageOfSpeechDetected),
+    detectedWordsCount: wordSegmentDetails.length,
   };
 }
 
-// Helper: Calculate Pitch Metrics (Basic Autocorrelation)
-// WARNING: This is a simplified pitch detection and may not be highly accurate,
-// especially with noisy audio or rapid pitch changes. Robust pitch detection is complex.
+
 interface PitchMetrics {
   averagePitchHz: number;
   pitchVariation: number; // A 0-100 score for variation
@@ -204,43 +307,35 @@ interface PitchMetrics {
 function findFundamentalFrequency(
   buffer: Float32Array,
   sampleRate: number,
-  minFreq: number = 75, // Typical human voice lower bound
-  maxFreq: number = 500  // Typical human voice upper bound
+  minFreq: number = 75, 
+  maxFreq: number = 500  
 ): number {
   const minPeriod = Math.floor(sampleRate / maxFreq);
   const maxPeriod = Math.ceil(sampleRate / minFreq);
   let bestPeriod = 0;
   let bestCorrelation = -1;
-  const correlations = new Array(maxPeriod + 1).fill(0);
 
   for (let period = minPeriod; period <= maxPeriod; period++) {
     let sum = 0;
     for (let i = 0; i < buffer.length - period; i++) {
       sum += buffer[i] * buffer[i + period];
     }
-    // Normalize (optional, but helps)
-    let norm = 0;
+    
     let norm1 = 0;
     let norm2 = 0;
     for (let i = 0; i < buffer.length - period; i++) {
         norm1 += buffer[i] * buffer[i];
         norm2 += buffer[i+period] * buffer[i+period];
     }
-    norm = Math.sqrt(norm1 * norm2);
-    correlations[period] = norm > 1e-6 ? sum / norm : 0;
+    const norm = Math.sqrt(norm1 * norm2);
+    const correlation = norm > 1e-6 ? sum / norm : 0;
 
-
-    if (correlations[period] > bestCorrelation) {
-      bestCorrelation = correlations[period];
+    if (correlation > bestCorrelation) {
+      bestCorrelation = correlation;
       bestPeriod = period;
     }
   }
-  // Basic peak picking enhancement (parabolic interpolation can make this better)
-  if (bestPeriod > 0 && bestPeriod < maxPeriod) {
-     // Check neighbors if they are better
-  }
-
-
+  
   if (bestCorrelation > 0.15 && bestPeriod > 0) { // Confidence threshold
     return sampleRate / bestPeriod;
   }
@@ -259,33 +354,23 @@ function calculatePitchMetrics(pcmData: Float32Array, sampleRate: number): Pitch
   for (let i = 0; i <= pcmData.length - windowSize; i += stepSize) {
     const windowBuffer = pcmData.subarray(i, i + windowSize);
     const fundamentalFreq = findFundamentalFrequency(windowBuffer, sampleRate);
-    if (fundamentalFreq > 0) { // Only consider voiced segments
+    if (fundamentalFreq > 0) { 
       pitchValuesHz.push(fundamentalFreq);
     }
   }
 
-  if (pitchValuesHz.length < 2) { // Not enough data for variation
+  if (pitchValuesHz.length < 2) { 
     const avgPitch = pitchValuesHz.length === 1 ? pitchValuesHz[0] : 0;
-    return { averagePitchHz: avgPitch, pitchVariation: avgPitch > 0 ? 10: 0 };
+    return { averagePitchHz: Math.round(avgPitch), pitchVariation: avgPitch > 0 ? 10: 0 };
   }
 
-  const meanPitch = pitchValuesHz.reduce((sum, val) => sum + val, 0) / pitchValuesHz.length;
+  const meanPitch = calculateMean(pitchValuesHz);
   
-  // Calculate standard deviation in Hertz
-  const variance = pitchValuesHz.reduce((sum, val) => sum + Math.pow(val - meanPitch, 2), 0) / pitchValuesHz.length;
-  const stdDevHz = Math.sqrt(variance);
-
-  // Convert to semitones for a more perceptually relevant standard deviation
+  // Calculate standard deviation in semitones for perceptual relevance
   const pitchValuesSemitones = pitchValuesHz.map(hz => 12 * Math.log2(hz / meanPitch)); // Relative to mean
-  const meanSemitones = pitchValuesSemitones.reduce((sum, val) => sum + val, 0) / pitchValuesSemitones.length; // should be close to 0
-  const varianceSemitones = pitchValuesSemitones.reduce((sum, val) => sum + Math.pow(val - meanSemitones, 2), 0) / pitchValuesSemitones.length;
-  const stdDevSemitones = Math.sqrt(varianceSemitones);
+  const stdDevSemitones = calculateStdDev(pitchValuesSemitones);
 
-
-  // Normalize pitch variation (stdDev in semitones) to a 0-100 score.
-  // E.g., 1 semitone std dev = 20 points, 5 semitones = 100 points.
-  // This scaling is arbitrary and needs tuning.
-  let pitchVariationScore = stdDevSemitones * 20;
+  let pitchVariationScore = stdDevSemitones * 20; // Arbitrary scaling (e.g. 5 semitones variation = 100 score)
   pitchVariationScore = Math.min(100, Math.max(0, pitchVariationScore));
   
   return {
@@ -302,66 +387,55 @@ export const analyzeAudio = async (
   try {
     console.log(`Analyzing audio with focus on: ${focusArea}`);
 
-    // --- Client-Side Audio Processing ---
     let clientSideMetrics = {
-        calculatedVolumeVariation: 0,
-        calculatedPitchVariation: 0,
+        calculatedVolumeVariation: 0, // Will be the word-based score (0-100)
+        calculatedPitchVariation: 0,  // 0-100 score
         audioDuration: 0,
+        detectedWordsCount: 0, // For potential future use or logging
     };
 
     try {
         const { pcmData, sampleRate, duration } = await decodeAudioBlobToPCM(audioBlob);
         clientSideMetrics.audioDuration = duration;
 
-        if (focusArea === 'rate-volume' || focusArea === 'all') {
-            const volumeData = calculateVolumeMetrics(pcmData, sampleRate);
-            clientSideMetrics.calculatedVolumeVariation = volumeData.volumeVariation;
-            console.log('Client-side volume average, variation:', volumeData);
-            const pitchData = calculatePitchMetrics(pcmData, sampleRate);
-            clientSideMetrics.calculatedPitchVariation = pitchData.pitchVariation;
-            console.log('Client-side pitch average, variation:', pitchData);
-        }
-        if (focusArea === 'pitch-tonality' || focusArea === 'all') {
-            const volumeData = calculateVolumeMetrics(pcmData, sampleRate);
-            clientSideMetrics.calculatedVolumeVariation = volumeData.volumeVariation;
-            console.log('Client-side volume average, variation:', volumeData);
-            const pitchData = calculatePitchMetrics(pcmData, sampleRate);
-            clientSideMetrics.calculatedPitchVariation = pitchData.pitchVariation;
-            console.log('Client-side pitch average, variation:', pitchData);
-        }
+        // Always calculate all available client-side metrics if pcmData is available
+        const volumeData = calculateVolumeMetrics(pcmData, sampleRate);
+        clientSideMetrics.calculatedVolumeVariation = volumeData.volumeVariationOfSpokenParts;
+        clientSideMetrics.detectedWordsCount = volumeData.detectedWordsCount; // Store this
+        console.log('Client-side volume data:', volumeData);
+
+        const pitchData = calculatePitchMetrics(pcmData, sampleRate);
+        clientSideMetrics.calculatedPitchVariation = pitchData.pitchVariation;
+        console.log('Client-side pitch data:', pitchData);
+
     } catch (processingError) {
         console.error("Error during client-side audio processing:", processingError);
-        // Continue, but metrics will be 0 or default.
-        // The Supabase function might rely on transcription only in this case, or use fallback.
     }
-    // --- End of Client-Side Processing ---
 
     const audioBase64 = await blobToBase64(audioBlob);
 
-    const bodyPayload: any = { // Use 'any' for flexibility or define a specific type
+    const bodyPayload: any = { 
         audio: audioBase64,
-        focusArea,
+        focusArea: focusArea, // Send the actual focusArea string
         exerciseText,
-        // Send client-calculated metrics to the backend
-        // The backend (Supabase Edge Function) needs to be updated to accept these
-        // and pass them to the LLM prompt if available.
         calculatedVolumeVariation: clientSideMetrics.calculatedVolumeVariation,
         calculatedPitchVariation: clientSideMetrics.calculatedPitchVariation,
-        // You can also send the client-calculated duration if it's more accurate
-        // than what Whisper might return or your backend's approximation.
         clientCalculatedDuration: clientSideMetrics.audioDuration 
     };
      console.log("Sending to Supabase function with payload:", {
-      ...bodyPayload,
-      audio: bodyPayload.audio.substring(0,30) + "..." // Don't log full base64
+      focusArea: bodyPayload.focusArea, // Log only relevant parts
+      exerciseTextProvided: !!bodyPayload.exerciseText,
+      calculatedVolumeVariation: bodyPayload.calculatedVolumeVariation,
+      calculatedPitchVariation: bodyPayload.calculatedPitchVariation,
+      clientCalculatedDuration: bodyPayload.clientCalculatedDuration,
+      audioLengthBase64: bodyPayload.audio.length 
     });
-
 
     const { data, error } = await supabase.functions.invoke("analyze-voice", {
       body: JSON.stringify(bodyPayload),
     });
 
-    if (error || (data && data.fallback)) { // Check if data itself indicates fallback
+    if (error || (data && data.fallback)) { 
       console.error('Error or fallback from analyze-voice function:', error || data?.error || 'Using fallback data from server');
       // Fallback to client-side mock if server fails or indicates fallback
       return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
@@ -370,9 +444,10 @@ export const analyzeAudio = async (
       // Ensure the data returned from Supabase is correctly structured as DetailedAnalysisResult
       // If the server directly uses the provided client-side metrics, they should already be in `data`.
       // If the server's LLM re-evaluates or scores, that's fine too.
-      // You might want to merge or prioritize if both client and server have versions of these metrics.
+      // TODO merge or prioritize if both client and server have versions of these metrics.
       // For now, assume server response is authoritative if successful.
-      return data as DetailedAnalysisResult; // Cast assuming server returns the correct type
+
+      return data as DetailedAnalysisResult; 
     } else {
       console.error('No data and no error from analyze-voice function. Unexpected state.');
       return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
