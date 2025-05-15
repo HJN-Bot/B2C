@@ -29,18 +29,18 @@ function processBase64Chunks(base64String, chunkSize = 32768) {
   return result;
 }
 // Function to get feedback on vocal performance based on focus area
-async function getVocalFeedback(transcription, focusArea, audioLength, clientMetrics) {
+async function getVocalFeedback(transcription, segments, words, focusArea, audioLength, clientMetrics) {
   // Use clientMetrics if available, otherwise default/estimate
-  const volVar = clientMetrics?.calculatedVolumeVariation !== undefined
-                   ? clientMetrics.calculatedVolumeVariation
-                   : "not available, please estimate"; // Or a default numeric value
-  const pitchVar = clientMetrics?.calculatedPitchVariation !== undefined
-                     ? clientMetrics.calculatedPitchVariation
-                     : "not available, please estimate"; 
+  const volVar = clientMetrics?.calculatedVolumeVariation !== undefined ? clientMetrics.calculatedVolumeVariation : "not available, please estimate"; // Or a default numeric value
+  const pitchVar = clientMetrics?.calculatedPitchVariation !== undefined ? clientMetrics.calculatedPitchVariation : "not available, please estimate";
   const promptMap = {
     'rate-volume': `
       Analyze this speech transcription focusing on rate of speech and volume:
       "${transcription}"
+
+      Timestamped words in speech:
+      "${words}"
+
 
       The audio was ${audioLength} seconds long.
 
@@ -82,6 +82,10 @@ async function getVocalFeedback(transcription, focusArea, audioLength, clientMet
       "${transcription}"
 
       The audio was ${audioLength} seconds long.
+
+      Signal analysis provided:
+      - Calculated Volume Variation (0-100): ${volVar}
+      - Calculated Pitch Variation (0-100): ${pitchVar}
 
       Provide a comprehensive analysis in JSON format with these fields:
       - paceScore (0-100): Rate of speech quality
@@ -146,15 +150,8 @@ Deno.serve(async (req)=>{
     });
   }
   try {
-    const {
-      audio,
-      focusArea,
-      exerciseText,
-      calculatedVolumeVariation, // New: from client
-      calculatedPitchVariation,  // New: from client
-      clientCalculatedDuration   // New: from client
-    } = await req.json();
-
+    const { audio, focusArea, exerciseText, calculatedVolumeVariation, calculatedPitchVariation, clientCalculatedDuration// New: from client
+     } = await req.json();
     if (!audio) {
       throw new Error('No audio data provided');
     }
@@ -172,7 +169,7 @@ Deno.serve(async (req)=>{
     formData.append('file', blob, 'audio.webm');
     formData.append('model', 'whisper-1');
     formData.append('response_format', 'verbose_json');
-
+    formData.append('timestamp_granularities[]', 'word');
     console.log("Calling OpenAI Whisper API for transcription");
     // Send to OpenAI for transcription
     const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -190,27 +187,20 @@ Deno.serve(async (req)=>{
     const transcriptionResult = await transcriptionResponse.json();
     const transcription = transcriptionResult.text;
     const duration = transcriptionResult.duration;
-    const segments = transcriptionResult.segments
-
-    console.log("Transcription received:", transcription);
-    if (!transcription) {
+    const segments = transcriptionResult.segments || '';
+    const words = transcriptionResult.words || '';
+    console.log("Transcription received:", transcriptionResult);
+    if (!transcriptionResult) {
       throw new Error('Failed to transcribe audio');
     }
     // Calculate audio length in seconds (approximate from base64 size)
     const audioLength = duration ?? Math.round(audio.length / 10000); // Rough approximation for fallback
-
     console.log("Audio length approximated as", audioLength, "seconds");
     // Get analysis from GPT-4o based on the transcription
-    const analysisJson = await getVocalFeedback(
-      transcription,
-      focusArea,
-      clientCalculatedDuration || audioLength, // Prefer client duration if available
-      { // Pass as an object
-        calculatedVolumeVariation: calculatedVolumeVariation, // from client if present
-        calculatedPitchVariation: calculatedPitchVariation   // from client if present
-      }
-    );
-
+    const analysisJson = await getVocalFeedback(transcription, focusArea, segments, words, clientCalculatedDuration || audioLength, {
+      calculatedVolumeVariation: calculatedVolumeVariation,
+      calculatedPitchVariation: calculatedPitchVariation // from client if present
+    });
     try {
       // Parse the JSON response
       const analysis = JSON.parse(analysisJson);
@@ -258,6 +248,8 @@ Deno.serve(async (req)=>{
         transcription,
         duration,
         segments,
+        words,
+        transcriptionResult
       };
       console.log("Analysis complete, sending response");
       return new Response(JSON.stringify(completeAnalysis), {
