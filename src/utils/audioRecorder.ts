@@ -298,6 +298,57 @@ function calculateVolumeMetrics(
   };
 }
 
+/**
+ * Applies a simple median filter to an array of numbers.
+ * Boundary points (first and last k//2) are not filtered by this simple implementation.
+ * @param data - The input array of numbers.
+ * @param k - Kernel size, should be an odd positive integer.
+ * @returns A new array with the median filter applied.
+ */
+function manualMedianFilter(data: number[], k: number = 3): number[] {
+  if (k % 2 === 0 || k < 1) { // k must be odd and positive
+      return [...data]; // Return copy if k is invalid for median
+  }
+  if (k === 1) {
+      return [...data]; // No filtering if k=1
+  }
+  if (!data || data.length < k) {
+      return [...data]; // Not enough data
+  }
+
+  const offset = Math.floor(k / 2);
+  const filteredData = [...data]; // Work on a copy
+
+  for (let i = offset; i < data.length - offset; i++) {
+      // Extract window, sort, and find median
+      const windowArr = data.slice(i - offset, i + offset + 1);
+      windowArr.sort((a, b) => a - b);
+      filteredData[i] = windowArr[offset];
+  }
+  return filteredData;
+}
+
+/**
+* Applies a moving average filter to an array of numbers.
+* @param data - The input array of numbers.
+* @param windowSize - The size of the moving average window.
+* @returns A new array with the moving average applied. Returns empty if not enough data.
+*/
+function movingAverage(data: number[], windowSize: number): number[] {
+  if (!data || data.length < windowSize) {
+      return [];
+  }
+  const result: number[] = [];
+  for (let i = 0; i <= data.length - windowSize; i++) {
+      let sum = 0;
+      for (let j = 0; j < windowSize; j++) {
+          sum += data[i + j];
+      }
+      result.push(sum / windowSize);
+  }
+  return result;
+}
+
 
 interface PitchMetrics {
   averagePitchHz: number;
@@ -344,38 +395,117 @@ function findFundamentalFrequency(
 
 function calculatePitchMetrics(pcmData: Float32Array, sampleRate: number): PitchMetrics {
   if (pcmData.length === 0) {
-    return { averagePitchHz: 0, pitchVariation: 0 };
+      return { averagePitchHz: 0, pitchVariation: 0 };
   }
 
-  const windowSize = Math.floor(sampleRate * 0.1); // 100ms for pitch analysis
-  const stepSize = Math.floor(sampleRate * 0.05); // 50ms step
-  const pitchValuesHz: number[] = [];
+  // --- Parameters from Python version ---
+  const PITCH_WINDOW_DURATION_S = 0.1; // 100ms
+  const PITCH_STEP_DURATION_S = 0.05;  // 50ms
+  const SILENCE_THRESHOLD_FACTOR = 0.21; // User-defined
+  const MEDIAN_FILTER_KERNEL = 11;       // User-defined
+  const MA_WINDOW_SIZE_FOR_PHRASE = 4;
+  const ABSOLUTE_MIN_RMS_THRESHOLD = 1e-4;
+  const MIN_PITCH_FREQ = 75;
+  const MAX_PITCH_FREQ = 500;
 
-  for (let i = 0; i <= pcmData.length - windowSize; i += stepSize) {
-    const windowBuffer = pcmData.subarray(i, i + windowSize);
-    const fundamentalFreq = findFundamentalFrequency(windowBuffer, sampleRate);
-    if (fundamentalFreq > 0) { 
-      pitchValuesHz.push(fundamentalFreq);
-    }
+  const pitchWindowSizeSamples = Math.floor(sampleRate * PITCH_WINDOW_DURATION_S);
+  const pitchStepSizeSamples = Math.floor(sampleRate * PITCH_STEP_DURATION_S);
+
+  if (pcmData.length < pitchWindowSizeSamples) {
+      return { averagePitchHz: 0, pitchVariation: 0 }; // Not enough data for even one window
   }
 
-  if (pitchValuesHz.length < 2) { 
-    const avgPitch = pitchValuesHz.length === 1 ? pitchValuesHz[0] : 0;
-    return { averagePitchHz: Math.round(avgPitch), pitchVariation: avgPitch > 0 ? 10: 0 };
+  // --- VAD Step: Calculate RMS for all potential pitch windows ---
+  const potentialWindowRmsValues: number[] = [];
+  for (let i = 0; i <= pcmData.length - pitchWindowSizeSamples; i += pitchStepSizeSamples) {
+      const windowBuffer = pcmData.subarray(i, i + pitchWindowSizeSamples);
+      let sumSquares = 0;
+      for (let j = 0; j < windowBuffer.length; j++) {
+          sumSquares += windowBuffer[j] * windowBuffer[j];
+      }
+      potentialWindowRmsValues.push(windowBuffer.length > 0 ? Math.sqrt(sumSquares / windowBuffer.length) : 0);
   }
 
-  const meanPitch = calculateMean(pitchValuesHz);
+  if (potentialWindowRmsValues.length === 0) {
+      return { averagePitchHz: 0, pitchVariation: 0 };
+  }
+
+  const peakOverallPitchWindowRms = Math.max(...potentialWindowRmsValues);
+  const dynamicSilenceThreshold = Math.max(
+      peakOverallPitchWindowRms * SILENCE_THRESHOLD_FACTOR,
+      ABSOLUTE_MIN_RMS_THRESHOLD
+  );
+
+  // --- Initial F0 Extraction for VAD-positive frames ---
+  const allVoicedFramesF0Temp: number[] = [];
+  // const allVoicedFramesTimesTemp: number[] = []; // Not strictly needed for final metrics, but good for debugging
+
+  let windowRmsIdx = 0;
+  for (let i = 0; i <= pcmData.length - pitchWindowSizeSamples; i += pitchStepSizeSamples) {
+      const currentWindowRms = potentialWindowRmsValues[windowRmsIdx++];
+      if (currentWindowRms > dynamicSilenceThreshold) {
+          const windowBuffer = pcmData.subarray(i, i + pitchWindowSizeSamples);
+          // const timeCenter = (i + pitchWindowSizeSamples / 2) / sampleRate;
+          const fundamentalFreq = findFundamentalFrequency(windowBuffer, sampleRate, MIN_PITCH_FREQ, MAX_PITCH_FREQ);
+          allVoicedFramesF0Temp.push(fundamentalFreq); // fundamentalFreq can be 0
+          // allVoicedFramesTimesTemp.push(timeCenter);
+      }
+  }
+
+  // --- Create Valid Pitch Contour (F0 > 0) ---
+  const pitchContourF0Positive: number[] = allVoicedFramesF0Temp.filter(f0 => f0 > 0);
+
+  if (pitchContourF0Positive.length === 0) {
+      return { averagePitchHz: 0, pitchVariation: 0 };
+  }
+
+  // --- Apply Median Filter ---
+  const medianFilteredF0Contour = manualMedianFilter(pitchContourF0Positive, MEDIAN_FILTER_KERNEL);
+
+  if (medianFilteredF0Contour.length === 0) { // Should not happen if pitchContourF0Positive was not empty
+      return { averagePitchHz: 0, pitchVariation: 0 };
+  }
   
-  // Calculate standard deviation in semitones for perceptual relevance
-  const pitchValuesSemitones = pitchValuesHz.map(hz => 12 * Math.log2(hz / meanPitch)); // Relative to mean
+  // --- Calculate Smoothed F0 Phrase Pitch ---
+  const smoothedF0PhraseHz = movingAverage(medianFilteredF0Contour, MA_WINDOW_SIZE_FOR_PHRASE);
+
+  // --- Final Metrics Calculation ---
+  let finalPitchContourForStats: number[];
+
+  if (smoothedF0PhraseHz.length >= 2) {
+      finalPitchContourForStats = smoothedF0PhraseHz;
+  } else {
+      // Fallback to median-filtered (but not phrase-smoothed) contour if smoothed one is too short
+      finalPitchContourForStats = medianFilteredF0Contour;
+  }
+  
+  if (finalPitchContourForStats.length === 0) {
+       return { averagePitchHz: 0, pitchVariation: 0 };
+  }
+  if (finalPitchContourForStats.length === 1) {
+      const avgPitch = finalPitchContourForStats[0];
+      // Ensure avgPitch is positive, though it should be if it's from F0Positive lists
+      const variation = avgPitch > 0 ? 10 : 0; 
+      return { averagePitchHz: Math.round(avgPitch), pitchVariation: variation };
+  }
+
+  // finalPitchContourForStats.length >= 2
+  const meanPitch = calculateMean(finalPitchContourForStats);
+  
+  const pitchValuesSemitones = finalPitchContourForStats.map(hz => {
+      if (hz > 1e-6 && meanPitch > 1e-6) { // Guard against log(0) or division by zero
+          return 12 * Math.log2(hz / meanPitch);
+      }
+      return 0; // Return 0 for problematic cases (e.g. hz or meanPitch is zero)
+  });
+
   const stdDevSemitones = calculateStdDev(pitchValuesSemitones);
-
-  let pitchVariationScore = stdDevSemitones * 20; // Arbitrary scaling (e.g. 5 semitones variation = 100 score)
+  let pitchVariationScore = stdDevSemitones * 10; // Scaling factor
   pitchVariationScore = Math.min(100, Math.max(0, pitchVariationScore));
-  
+
   return {
-    averagePitchHz: Math.round(meanPitch),
-    pitchVariation: Math.round(pitchVariationScore),
+      averagePitchHz: Math.round(meanPitch),
+      pitchVariation: Math.round(pitchVariationScore),
   };
 }
 
