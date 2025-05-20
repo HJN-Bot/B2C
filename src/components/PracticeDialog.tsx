@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import RecordingInterface from "./RecordingInterface";
 
 interface PracticeDialogProps {
+  title: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   showPracticeExercise: boolean;
@@ -11,7 +12,7 @@ interface PracticeDialogProps {
   exerciseText?: string;
 }
 
-const PracticeDialog = ({ open, onOpenChange, showPracticeExercise, focusArea, exerciseText }: PracticeDialogProps) => {
+const PracticeDialog = ({ title, open, onOpenChange, showPracticeExercise, focusArea, exerciseText }: PracticeDialogProps) => {
   const getExerciseText = () => {
     if (exerciseText) {
       return exerciseText;
@@ -53,6 +54,7 @@ const PracticeDialog = ({ open, onOpenChange, showPracticeExercise, focusArea, e
             focusArea={focusArea} 
             exerciseText={getExerciseText()} 
             onComplete={handleCompleted}
+            title={title}
           />
         </div>
       </DialogContent>

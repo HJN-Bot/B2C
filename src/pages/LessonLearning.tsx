@@ -463,7 +463,7 @@ const LessonLearning = () => {
           </Button>
         </div>
 
-        <PracticeDialog open={showPracticeDialog} onOpenChange={setShowPracticeDialog} showPracticeExercise={true} focusArea={exerciseFocusArea} exerciseText={exerciseText} />
+        <PracticeDialog title={activeSteps[currentStep].title} open={showPracticeDialog} onOpenChange={setShowPracticeDialog} showPracticeExercise={true} focusArea={exerciseFocusArea} exerciseText={exerciseText} />
       </div>
     </Layout>;
 };

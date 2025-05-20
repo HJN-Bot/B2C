@@ -10,9 +10,10 @@ interface RecordingInterfaceProps {
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all';
   exerciseText: string;
   onComplete?: () => void;
+  title: string;
 }
 
-const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingInterfaceProps) => {
+const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: RecordingInterfaceProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -188,6 +189,25 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
     };
   }, [audioUrl]);
 
+  const getScore = (title: string, analysis: DetailedAnalysisResult): number => {
+    switch (title) {
+      case "Rate of Speech":
+        return analysis.paceScore;
+      case "Volume":
+        return analysis.detailedMetrics.volumeVariation;
+      case "Pitch":
+        return analysis.detailedMetrics.pitchVariation;
+      case "Tonality":
+        return analysis.tonalityScore;
+      case "Pause":
+        return analysis.pausesScore;
+      case "Filler Words":
+        return analysis.fillerWordsScore;
+      default:
+        return 77;
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center py-6">
       {!isRecording && !audioUrl && <div className="text-center space-y-4">
@@ -270,13 +290,13 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
             <div className="bg-gray-50 p-3 rounded-lg mb-4 text-sm">
               <h4 className="font-semibold mb-2">Quick Analysis:</h4>
               <div className="flex justify-between text-xs mb-1">
-                <span>Rate of Speech:</span>
+                <span>{ title } </span>
                 <span className="font-medium">
-                  {analysis.paceScore}/100
+                  { getScore(title, analysis) }/100
                 </span>
               </div>
               <Progress value={analysis.paceScore} className="h-2 mb-3" />
-              <p className="text-xs">
+              {/* <p className="text-xs">
                 Your speaking rate is approximately {analysis.detailedMetrics.wordsPerMinute} words per minute. {
                   analysis.detailedMetrics.wordsPerMinute > 160 
                     ? "Try slowing down a bit for better clarity." 
@@ -284,9 +304,15 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete }: RecordingIn
                       ? "You could speed up slightly to maintain engagement." 
                       : "This is a good pace for effective communication."
                 }
-              </p>
+              </p> */}
               <p className="text-xs mt-2">
                 {analysis.feedback[0]}
+              </p>
+              <p className="text-xs mt-2">
+                {analysis.feedback[1]}
+              </p>
+              <p className="text-xs mt-2">
+                {analysis.feedback[2]}
               </p>
             </div>
           )}
