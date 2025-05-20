@@ -203,9 +203,6 @@ const LessonDetail = () => {
                                 </Tooltip>
                                 <div className="mt-1 hidden sm:block text-gray-600 text-sm">{factor.description}</div>
                               </div>
-                              <div className="flex h-5 items-center">
-                                <Checkbox id={`topic1-${index}`} disabled checked={false} />
-                              </div>
                             </div>
                           </li>
                         ))}
@@ -250,9 +247,6 @@ const LessonDetail = () => {
                                 </Tooltip>
                                 <div className="mt-1 hidden sm:block text-gray-600 text-sm">{factor.description}</div>
                               </div>
-                              <div className="flex h-5 items-center">
-                                <Checkbox id={`topic2-${index}`} disabled checked={false} />
-                              </div>
                             </div>
                           </li>
                         ))}
@@ -296,9 +290,6 @@ const LessonDetail = () => {
                                   </TooltipContent>
                                 </Tooltip>
                                 <div className="mt-1 hidden sm:block text-gray-600 text-sm">{factor.description}</div>
-                              </div>
-                              <div className="flex h-5 items-center">
-                                <Checkbox id={`topic3-${index}`} disabled checked={false} />
                               </div>
                             </div>
                           </li>
