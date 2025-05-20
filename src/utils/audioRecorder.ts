@@ -509,6 +509,95 @@ function calculatePitchMetrics(pcmData: Float32Array, sampleRate: number): Pitch
   };
 }
 
+export interface PauseDetail {
+  timestamp: number; // in seconds
+  duration: number;  // in seconds
+}
+
+function calculatePauseDetails(
+  pcmData: Float32Array,
+  sampleRate: number,
+  minPauseDurationMs: number = 500 // MODIFIED: Default is now 0.5 seconds
+): PauseDetail[] {
+  const pauses: PauseDetail[] = [];
+
+  if (pcmData.length === 0) {
+    return pauses;
+  }
+
+  const WINDOW_DURATION_MS = 50;
+  const STEP_DURATION_MS = 25; 
+  const SILENCE_THRESHOLD_PEAK_FACTOR = 0.05;
+  const ABSOLUTE_MIN_SILENCE_THRESHOLD = 1e-4;
+
+  const windowSize = Math.max(1, Math.floor(sampleRate * (WINDOW_DURATION_MS / 1000.0)));
+  const stepSize = Math.max(1, Math.floor(sampleRate * (STEP_DURATION_MS / 1000.0)));
+
+  if (pcmData.length < windowSize) {
+    return pauses;
+  }
+
+  const allRmsValues: number[] = [];
+  for (let i = 0; i <= pcmData.length - windowSize; i += stepSize) {
+    let sumSquares = 0;
+    for (let j = 0; j < windowSize; j++) {
+      sumSquares += pcmData[i + j] * pcmData[i + j];
+    }
+    allRmsValues.push(Math.sqrt(sumSquares / windowSize));
+  }
+
+  if (allRmsValues.length === 0) {
+    return pauses;
+  }
+
+  const peakRms = Math.max(...allRmsValues);
+  const silenceThreshold = Math.max(peakRms * SILENCE_THRESHOLD_PEAK_FACTOR, ABSOLUTE_MIN_SILENCE_THRESHOLD);
+
+  let currentPauseStartIdx = -1; 
+
+  for (let i = 0; i < allRmsValues.length; i++) {
+    const rmsVal = allRmsValues[i];
+    if (rmsVal <= silenceThreshold) { 
+      if (currentPauseStartIdx === -1) {
+        currentPauseStartIdx = i; 
+      }
+    } else { 
+      if (currentPauseStartIdx !== -1) { 
+        const numSilentWindows = i - currentPauseStartIdx;
+        const pauseDurationSeconds = numSilentWindows * (STEP_DURATION_MS / 1000.0);
+        const pauseTimestampSeconds = currentPauseStartIdx * (STEP_DURATION_MS / 1000.0);
+        
+        // MODIFIED: Check duration AND if it's not an initial pause (timestamp > 0)
+        if (pauseDurationSeconds * 1000 >= minPauseDurationMs) {
+            if (pauseTimestampSeconds > 0) {
+                 pauses.push({ timestamp: pauseTimestampSeconds, duration: pauseDurationSeconds });
+            } else {
+                console.log(`calculatePauseDetails: Ignored initial pause at timestamp 0s, duration ${pauseDurationSeconds.toFixed(2)}s`);
+            }
+        }
+        currentPauseStartIdx = -1; 
+      }
+    }
+  }
+
+  if (currentPauseStartIdx !== -1) {
+    const numSilentWindows = allRmsValues.length - currentPauseStartIdx;
+    const pauseDurationSeconds = numSilentWindows * (STEP_DURATION_MS / 1000.0);
+    const pauseTimestampSeconds = currentPauseStartIdx * (STEP_DURATION_MS / 1000.0);
+
+    // MODIFIED: Check duration AND if it's not an initial pause (timestamp > 0)
+    if (pauseDurationSeconds * 1000 >= minPauseDurationMs) {
+        if (pauseTimestampSeconds > 0) {
+            pauses.push({ timestamp: pauseTimestampSeconds, duration: pauseDurationSeconds });
+        } else {
+             console.log(`calculatePauseDetails: Ignored initial (full audio) pause at timestamp 0s, duration ${pauseDurationSeconds.toFixed(2)}s`);
+        }
+    }
+  }
+  return pauses;
+}
+
+
 export const analyzeAudio = async (
   audioBlob: Blob,
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all',
@@ -518,25 +607,31 @@ export const analyzeAudio = async (
     console.log(`Analyzing audio with focus on: ${focusArea}`);
 
     let clientSideMetrics = {
-        calculatedVolumeVariation: 0, // Will be the word-based score (0-100)
-        calculatedPitchVariation: 0,  // 0-100 score
+        calculatedVolumeVariation: 0, 
+        calculatedPitchVariation: 0,  
         audioDuration: 0,
-        detectedWordsCount: 0, // For potential future use or logging
+        detectedWordsCount: 0, 
+        detectedPauses: [] as PauseDetail[], 
     };
 
     try {
         const { pcmData, sampleRate, duration } = await decodeAudioBlobToPCM(audioBlob);
         clientSideMetrics.audioDuration = duration;
 
-        // Always calculate all available client-side metrics if pcmData is available
         const volumeData = calculateVolumeMetrics(pcmData, sampleRate);
         clientSideMetrics.calculatedVolumeVariation = volumeData.volumeVariationOfSpokenParts;
-        clientSideMetrics.detectedWordsCount = volumeData.detectedWordsCount; // Store this
+        clientSideMetrics.detectedWordsCount = volumeData.detectedWordsCount;
         console.log('Client-side volume data:', volumeData);
 
         const pitchData = calculatePitchMetrics(pcmData, sampleRate);
         clientSideMetrics.calculatedPitchVariation = pitchData.pitchVariation;
         console.log('Client-side pitch data:', pitchData);
+
+        // Call calculatePauseDetails (it will use the new default minPauseDurationMs)
+        const pauseData = calculatePauseDetails(pcmData, sampleRate); 
+        clientSideMetrics.detectedPauses = pauseData;
+        console.log('Client-side pause data:', pauseData);
+
 
     } catch (processingError) {
         console.error("Error during client-side audio processing:", processingError);
@@ -546,18 +641,20 @@ export const analyzeAudio = async (
 
     const bodyPayload: any = { 
         audio: audioBase64,
-        focusArea: focusArea, // Send the actual focusArea string
+        focusArea: focusArea,
         exerciseText,
         calculatedVolumeVariation: clientSideMetrics.calculatedVolumeVariation,
         calculatedPitchVariation: clientSideMetrics.calculatedPitchVariation,
-        clientCalculatedDuration: clientSideMetrics.audioDuration 
+        clientCalculatedDuration: clientSideMetrics.audioDuration,
+        detectedPauses: clientSideMetrics.detectedPauses, 
     };
      console.log("Sending to Supabase function with payload:", {
-      focusArea: bodyPayload.focusArea, // Log only relevant parts
+      focusArea: bodyPayload.focusArea,
       exerciseTextProvided: !!bodyPayload.exerciseText,
       calculatedVolumeVariation: bodyPayload.calculatedVolumeVariation,
       calculatedPitchVariation: bodyPayload.calculatedPitchVariation,
       clientCalculatedDuration: bodyPayload.clientCalculatedDuration,
+      detectedPausesCount: bodyPayload.detectedPauses.length, 
       audioLengthBase64: bodyPayload.audio.length 
     });
 
@@ -567,16 +664,9 @@ export const analyzeAudio = async (
 
     if (error || (data && data.fallback)) { 
       console.error('Error or fallback from analyze-voice function:', error || data?.error || 'Using fallback data from server');
-      // Fallback to client-side mock if server fails or indicates fallback
       return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
     } else if (data) {
       console.log("Analysis received from edge function:", data);
-      // Ensure the data returned from Supabase is correctly structured as DetailedAnalysisResult
-      // If the server directly uses the provided client-side metrics, they should already be in `data`.
-      // If the server's LLM re-evaluates or scores, that's fine too.
-      // TODO merge or prioritize if both client and server have versions of these metrics.
-      // For now, assume server response is authoritative if successful.
-
       return data as DetailedAnalysisResult; 
     } else {
       console.error('No data and no error from analyze-voice function. Unexpected state.');
@@ -586,8 +676,6 @@ export const analyzeAudio = async (
   } catch (e) {
     const err = e as Error;
     console.error('Critical error in analyzeAudio:', err.message, err.stack);
-    // Fall back to mock data if any top-level API call fails
-    // Pass clientSideMetrics to mock data so it can potentially use them
     return mockAnalyzeAudioDetailed(audioBlob.size, focusArea);
   }
 };
@@ -598,7 +686,6 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
-      // Remove the data URL prefix (e.g., "data:audio/webm;base64,")
       const base64 = base64String.split(',')[1];
       resolve(base64);
     };
@@ -680,7 +767,7 @@ export const mockAnalyzeAudioDetailed = (
           fillerWordCount,
           pauseMetrics: {
             totalPauses: Math.floor(Math.random() * 10) + 5,
-            averagePauseDuration: (Math.random() * 1.5) + 0.5,
+            averagePauseDuration: (Math.random() * 1.5) + 0.5, // mock might not reflect 0.5s min
             strategicPauseScore: Math.floor(Math.random() * 40) + 60
           }
         },
