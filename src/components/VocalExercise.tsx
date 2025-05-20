@@ -347,7 +347,7 @@ const VocalExercise = ({ lessonId, focusArea = 'all', onComplete }: VocalExercis
             <Tabs defaultValue="detailed">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="detailed">Detailed Analysis</TabsTrigger>
-                <TabsTrigger value="scores">Basic Scores</TabsTrigger>
+                {/* <TabsTrigger value="scores">Basic Scores</TabsTrigger> */}
                 <TabsTrigger value="suggestions">Improvement Plan</TabsTrigger>
               </TabsList>
               
@@ -407,7 +407,7 @@ const VocalExercise = ({ lessonId, focusArea = 'all', onComplete }: VocalExercis
                 ) : null}
               </TabsContent>
               
-              <TabsContent value="scores" className="space-y-4 pt-4">
+              {/* <TabsContent value="scores" className="space-y-4 pt-4">
                 <ScoreItem 
                   label="Rate of Speech" 
                   score={analysis.paceScore} 
@@ -444,7 +444,7 @@ const VocalExercise = ({ lessonId, focusArea = 'all', onComplete }: VocalExercis
                   description={`${analysis.detailedMetrics.fillerWordCount.total} filler words detected`}
                   highlight={focusArea === 'pause-fillers'}
                 />
-              </TabsContent>
+              </TabsContent> */}
               
               <TabsContent value="suggestions" className="pt-4">
                 <div className="space-y-4">
