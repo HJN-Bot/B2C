@@ -23,6 +23,7 @@ const VocalExercise = ({ lessonId, focusArea = 'all', onComplete }: VocalExercis
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [mimeType, setMimeType] = useState<string>('application/octet-stream');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [analysis, setAnalysis] = useState<DetailedAnalysisResult | null>(null);
@@ -92,9 +93,11 @@ const VocalExercise = ({ lessonId, focusArea = 'all', onComplete }: VocalExercis
     
     try {
       const blob = await audioRecorder.current.stop();
+      const actualMimeType = audioRecorder.current.getActualMimeType();
       setAudioBlob(blob);
       const url = createAudioUrl(blob);
       setAudioUrl(url);
+      setMimeType(actualMimeType);
       setIsRecording(false);
       stopTimer();
       toast({
@@ -118,7 +121,7 @@ const VocalExercise = ({ lessonId, focusArea = 'all', onComplete }: VocalExercis
     
     setAnalyzingAudio(true);
     try {
-      const result = await analyzeAudio(audioBlob, focusArea);
+      const result = await analyzeAudio(audioBlob, focusArea, mimeType);
       setAnalysis(result);
       setStep("analysis");
       toast({

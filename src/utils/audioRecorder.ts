@@ -699,9 +699,9 @@ function calculatePauseDetails(
 
 export const analyzeAudio = async (
   audioBlob: Blob,
-  actualMimeType: string, // Add this parameter
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all',
-  exerciseText?: string
+  actualMimeType: string = 'application/octet-stream', 
+  exerciseText?: string,
 ): Promise<DetailedAnalysisResult> => {
   try {
     console.log(`Analyzing audio with focus on: ${focusArea}, MIME type: ${actualMimeType}`);

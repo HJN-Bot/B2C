@@ -151,6 +151,7 @@ const Practice = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [mimeType, setMimeType] = useState<string>('application/octet-stream');
   const [isPlaying, setIsPlaying] = useState(false);
   const [analysis, setAnalysis] = useState<DetailedAnalysisResult | null>(null);
   const [analyzingAudio, setAnalyzingAudio] = useState(false);
@@ -223,15 +224,17 @@ const Practice = () => {
     if (!audioRecorder.current.isRecording()) return;
     try {
       const blob = await audioRecorder.current.stop();
+      const actualMimeType = audioRecorder.current.getActualMimeType() || 'application/octet-stream';
       setAudioBlob(blob);
       const url = createAudioUrl(blob);
       setAudioUrl(url);
+      setMimeType(actualMimeType);
       setIsRecording(false); // This will trigger liveRadarData reset via useEffect if needed
       stopTimer();
       toast({ title: "Recording complete", description: "Analyzing your vocal performance..." });
       
       setAnalyzingAudio(true);
-      const result = await analyzeAudio(blob, focusArea); // Ensure analyzeAudio exists and returns DetailedAnalysisResult
+      const result = await analyzeAudio(blob, focusArea, actualMimeType); // Ensure analyzeAudio exists and returns DetailedAnalysisResult
       setAnalysis(result);
       setAnalyzingAudio(false);
       
@@ -239,11 +242,10 @@ const Practice = () => {
         const newFinalRadarData = [
           { subject: 'Pace', score: result.paceScore, fullMark: 100 },
           { subject: 'Tonality', score: result.tonalityScore, fullMark: 100 },
-          { subject: 'Expression', score: Math.floor(50 + Math.random() * 30), fullMark: 100 }, 
+          { subject: 'Expression', score: result.detailedMetrics.pitchVariation, fullMark: 100 }, 
           { subject: 'Energy', score: Math.min(100, Math.floor(result.detailedMetrics.volumeVariation * 1.1 + 10)), fullMark: 100 },
           { subject: 'Fluency', score: Math.floor((result.pausesScore + result.fillerWordsScore) / 2), fullMark: 100 },
           { subject: 'Volume', score: result.detailedMetrics.volumeVariation, fullMark: 100 },
-          { subject: 'Articulation', score: Math.floor(45 + Math.random() * 35), fullMark: 100 },
         ].map(item => ({...item, score: Math.max(0, Math.min(100, Math.round(item.score)))}));
         setFinalRadarData(newFinalRadarData);
       }

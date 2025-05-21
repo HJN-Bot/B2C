@@ -127,7 +127,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
         description: "This may take a moment..."
       });
       
-      const result = await analyzeAudio(audioBlob, actualMimeType, focusArea, exerciseText);
+      const result = await analyzeAudio(audioBlob, focusArea, actualMimeType, exerciseText);
       setAnalysis(result);
       setAnalyzing(false);
       
