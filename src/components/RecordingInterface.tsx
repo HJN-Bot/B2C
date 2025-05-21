@@ -133,7 +133,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
       
       toast({
         title: "Analysis complete",
-        description: `Focus area: ${focusArea.replace('-', ' ')}` 
+        description: `Focus area: ${title}` 
       });
     } catch (error) {
       console.error("Error stopping recording:", error);
@@ -195,7 +195,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
       case "Rate of Speech":
         return analysis.paceScore;
       case "Volume":
-        return analysis.detailedMetrics.volumeVariation;
+        return Math.min(100, Math.floor(analysis.detailedMetrics.volumeVariation * 1.1 + 10));
       case "Pitch":
         return analysis.detailedMetrics.pitchVariation;
       case "Tonality":
@@ -209,6 +209,25 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
     }
   }
 
+  const getScoreTitle = (title: string): string => {
+    switch (title) {
+      case "Rate of Speech":
+        return "Pace";
+      case "Volume":
+        return "Energy";
+      case "Pitch":
+        return "Expression";
+      case "Tonality":
+        return "Tonality";
+      case "Pause":
+        return "Drama";
+      case "Filler Words":
+        return "Fluency";
+      default:
+        return "Score";
+    }
+  }
+  
   return (
     <div className="flex-1 flex flex-col items-center justify-center py-6">
       {!isRecording && !audioUrl && <div className="text-center space-y-4">
@@ -291,7 +310,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
             <div className="bg-gray-50 p-3 rounded-lg mb-4 text-sm">
               <h4 className="font-semibold mb-2">Quick Analysis:</h4>
               <div className="flex justify-between text-xs mb-1">
-                <span>{ title } </span>
+                <span>{ getScoreTitle(title) } </span>
                 <span className="font-medium">
                   { getScore(title, analysis) }/100
                 </span>
