@@ -244,8 +244,8 @@ const Practice = () => {
           { subject: 'Tonality', score: result.tonalityScore, fullMark: 100 },
           { subject: 'Expression', score: result.detailedMetrics.pitchVariation, fullMark: 100 }, 
           { subject: 'Energy', score: Math.min(100, Math.floor(result.detailedMetrics.volumeVariation * 1.1 + 10)), fullMark: 100 },
-          { subject: 'Fluency', score: Math.floor((result.pausesScore + result.fillerWordsScore) / 2), fullMark: 100 },
-          { subject: 'Volume', score: result.detailedMetrics.volumeVariation, fullMark: 100 },
+          { subject: 'Fluency', score: Math.floor(result.fillerWordsScore), fullMark: 100 },
+          { subject: 'Drama', score: Math.floor(result.pausesScore) , fullMark: 100 },
         ].map(item => ({...item, score: Math.max(0, Math.min(100, Math.round(item.score)))}));
         setFinalRadarData(newFinalRadarData);
       }
