@@ -184,35 +184,49 @@ Deno.serve(async (req)=>{
   }
   try {
     const { 
-        audio, 
+        audio,
+        audioMimeType, // MODIFIED: Expect audioMimeType from client
         focusArea, 
         exerciseText, 
         calculatedVolumeVariation, 
         calculatedPitchVariation, 
         clientCalculatedDuration,
-        detectedPauses // New: from client
+        detectedPauses
     } = await req.json();
 
     if (!audio) {
       throw new Error('No audio data provided');
     }
-    console.log("Received request. Focus area:", focusArea, "Detected pauses count:", detectedPauses?.length ?? 'N/A');
+    const receivedMimeType = audioMimeType || 'audio/webm'; // Default if not provided
+    console.log("Received request. Focus area:", focusArea, "Received MIME type:", receivedMimeType, "Detected pauses count:", detectedPauses?.length ?? 'N/A');
 
     const binaryAudio = processBase64Chunks(audio);
+    
+    // Prepare FormData for transcription using the receivedMimeType
     const formData = new FormData();
-    const blob = new Blob([binaryAudio], { type: 'audio/webm' });
-    formData.append('file', blob, 'audio.webm');
+    const blob = new Blob([binaryAudio], { type: receivedMimeType });
+    
+    // Determine file extension from MIME type (basic parsing)
+    let fileExtension = 'dat'; // default fallback extension
+    const mimeParts = receivedMimeType.split(';')[0].split('/');
+    if (mimeParts.length === 2) {
+        fileExtension = mimeParts[1];
+    }
+    const fileName = `audio.${fileExtension}`;
+
+    formData.append('file', blob, fileName);
     formData.append('model', 'whisper-1');
     formData.append('response_format', 'verbose_json');
     formData.append('timestamp_granularities[]', 'word');
     
-    console.log("Calling OpenAI Whisper API for transcription...");
+    console.log(`Calling OpenAI Whisper API with file: ${fileName}, type: ${receivedMimeType}`);
     const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${openAIApiKey}` },
       body: formData
     });
 
+    // ... (rest of the Deno.serve function: error handling, analysis call, response construction remains the same)
     if (!transcriptionResponse.ok) {
       const errorText = await transcriptionResponse.text();
       console.error('OpenAI Transcription API error:', transcriptionResponse.status, errorText);
@@ -220,9 +234,9 @@ Deno.serve(async (req)=>{
     }
     const transcriptionResult = await transcriptionResponse.json();
     const transcription = transcriptionResult.text || "";
-    const whisperDuration = transcriptionResult.duration; // Duration from Whisper
-    const segments = transcriptionResult.segments || []; // Ensure it's an array
-    const words = transcriptionResult.words || []; // Ensure it's an array
+    const whisperDuration = transcriptionResult.duration;
+    const segments = transcriptionResult.segments || [];
+    const words = transcriptionResult.words || [];
     
     console.log("Transcription received. Duration from Whisper:", whisperDuration, "Client duration:", clientCalculatedDuration);
 
@@ -230,9 +244,8 @@ Deno.serve(async (req)=>{
       throw new Error('Failed to transcribe audio or empty transcription result');
     }
     
-    const audioLength = clientCalculatedDuration || whisperDuration || Math.round(audio.length / 10000); // Prioritize client, then Whisper, then fallback
+    const audioLength = clientCalculatedDuration || whisperDuration || Math.round(audio.length / 10000);
 
-    // Calculate pause aggregates from detectedPauses
     let calculatedTotalPauses = 0;
     let calculatedAvgPauseDuration = 0.0;
 
@@ -254,8 +267,8 @@ Deno.serve(async (req)=>{
       {
         calculatedVolumeVariation: calculatedVolumeVariation,
         calculatedPitchVariation: calculatedPitchVariation,
-        totalPauses: calculatedTotalPauses, // Pass calculated value
-        averagePauseDuration: calculatedAvgPauseDuration // Pass calculated value
+        totalPauses: calculatedTotalPauses,
+        averagePauseDuration: calculatedAvgPauseDuration
       }
     );
 
@@ -272,9 +285,9 @@ Deno.serve(async (req)=>{
     const completeAnalysis = {
       paceScore: llmAnalysis.paceScore ?? 70,
       tonalityScore: llmAnalysis.tonalityScore ?? 70,
-      pausesScore: llmAnalysis.pausesScore ?? 70, // From LLM
+      pausesScore: llmAnalysis.pausesScore ?? 70,
       fillerWordsScore: llmAnalysis.fillerWordsScore ?? 70,
-      overallScore: llmAnalysis.overallScore, // Will be recalculated
+      overallScore: llmAnalysis.overallScore,
       detailedMetrics: {
         wordsPerMinute: llmAnalysis.detailedMetrics?.wordsPerMinute ?? wordsPerMinuteValue,
         volumeVariation: llmAnalysis.detailedMetrics?.volumeVariation ?? calculatedVolumeVariation ?? 70,
@@ -295,12 +308,9 @@ Deno.serve(async (req)=>{
         pauses: llmAnalysis.specificSuggestions?.pauses ?? ["Use pauses strategically to allow listeners to absorb information and to add emphasis."]
       },
       transcription: transcription,
-      duration: whisperDuration, // Use duration from Whisper as the canonical audio duration
-      // segments: segments, // Optional: include if your frontend needs them
-      // words: words, // Optional: include if your frontend needs them
+      duration: whisperDuration,
     };
     
-    // Recalculate overallScore based on potentially updated individual scores
     completeAnalysis.overallScore = llmAnalysis.overallScore ?? Math.round(
         (completeAnalysis.paceScore + completeAnalysis.tonalityScore + completeAnalysis.pausesScore + completeAnalysis.fillerWordsScore) / 4
     );
@@ -314,7 +324,7 @@ Deno.serve(async (req)=>{
     console.error('Critical error in analyze-voice function:', error.message, error.stack);
     return new Response(JSON.stringify({
       error: error.message,
-      fallback: true, // Indicate that this is a fallback response
+      fallback: true,
       message: "An error occurred during analysis. Fallback data may be incomplete."
     }), {
       status: 500,

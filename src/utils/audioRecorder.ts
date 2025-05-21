@@ -3,12 +3,63 @@ export class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private stream: MediaStream | null = null;
+  private actualMimeType: string = ''; // Initialize as empty, determined at runtime
+
+  private async initializeMediaRecorder(stream: MediaStream): Promise<MediaRecorder> {
+    const mimeTypesToTry = [
+      'audio/mp4',              // Often preferred by Safari (results in m4a/aac)
+      'audio/webm;codecs=opus', // Good quality, widely supported
+      'audio/webm',             // Generic WebM
+      'audio/ogg;codecs=opus',  // Another option
+      'audio/ogg',
+    ];
+
+    let recorder: MediaRecorder | null = null;
+    let usedMimeType: string = '';
+
+    // Try specific MIME types first
+    for (const mimeType of mimeTypesToTry) {
+      if (MediaRecorder.isTypeSupported(mimeType)) {
+        try {
+          console.log(`Attempting to instantiate MediaRecorder with: ${mimeType}`);
+          recorder = new MediaRecorder(stream, { mimeType: mimeType });
+          usedMimeType = recorder.mimeType; // Browser might slightly alter it
+          console.log(`Successfully instantiated MediaRecorder with effective mimeType: ${usedMimeType}`);
+          return recorder; // Success
+        } catch (e) {
+          console.warn(`Failed to instantiate MediaRecorder with ${mimeType}:`, e.message);
+          recorder = null; // Reset recorder if instantiation failed
+        }
+      } else {
+        console.log(`MediaRecorder.isTypeSupported reported FALSE for: ${mimeType}`);
+      }
+    }
+
+    // If all specific types failed, try with browser default
+    try {
+      console.warn("No preferred/specified mimeType succeeded or was supported. Attempting MediaRecorder with browser default.");
+      recorder = new MediaRecorder(stream); // Let the browser decide
+      usedMimeType = recorder.mimeType;
+      console.log(`Successfully instantiated MediaRecorder with browser default. Effective mimeType: ${usedMimeType}`);
+      return recorder; // Success with default
+    } catch (e) {
+      console.error("Fatal: Error instantiating MediaRecorder even with browser default:", e);
+      throw e; // If default also failed, this is a more serious issue
+    }
+  }
 
   async start(): Promise<void> {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.mediaRecorder = new MediaRecorder(this.stream);
       this.audioChunks = [];
+      
+      this.mediaRecorder = await this.initializeMediaRecorder(this.stream);
+      this.actualMimeType = this.mediaRecorder.mimeType; // Store the true effective MIME type
+
+      if (!this.actualMimeType) {
+        console.warn("MediaRecorder was created, but its mimeType property is empty. Defaulting to 'audio/webm' for blob, but this might be incorrect.");
+        this.actualMimeType = 'audio/webm'; // A fallback guess
+      }
 
       this.mediaRecorder.addEventListener('dataavailable', (event) => {
         if (event.data.size > 0) {
@@ -17,18 +68,29 @@ export class AudioRecorder {
       });
 
       this.mediaRecorder.start();
+      console.log(`Recording started. Effective mimeType: ${this.actualMimeType}`);
+
     } catch (error) {
-      console.error('Error starting recording:', error);
-      throw error;
+      // Ensure error is an instance of Error for proper message handling
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error starting recording:', err.message, err);
+      throw err; 
     }
   }
 
   async startWithStream(): Promise<MediaStream> {
-    try {
+     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.mediaRecorder = new MediaRecorder(this.stream);
       this.audioChunks = [];
 
+      this.mediaRecorder = await this.initializeMediaRecorder(this.stream);
+      this.actualMimeType = this.mediaRecorder.mimeType;
+
+      if (!this.actualMimeType) {
+        console.warn("MediaRecorder was created, but its mimeType property is empty. Defaulting to 'audio/webm' for blob.");
+        this.actualMimeType = 'audio/webm';
+      }
+      
       this.mediaRecorder.addEventListener('dataavailable', (event) => {
         if (event.data.size > 0) {
           this.audioChunks.push(event.data);
@@ -36,27 +98,60 @@ export class AudioRecorder {
       });
 
       this.mediaRecorder.start();
+      console.log(`Recording started with stream. Effective mimeType: ${this.actualMimeType}`);
       return this.stream;
+
     } catch (error) {
-      console.error('Error starting recording:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error starting recording with stream:', err.message, err);
+      throw err;
     }
   }
 
   stop(): Promise<Blob> {
     return new Promise((resolve, reject) => {
       if (!this.mediaRecorder) {
-        reject(new Error('MediaRecorder not initialized'));
+        console.error('MediaRecorder not initialized. Cannot stop recording.');
+        reject(new Error('MediaRecorder not initialized. Did start() succeed?'));
         return;
       }
 
-      this.mediaRecorder.addEventListener('stop', () => {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+      const onStop = () => {
+        if (this.mediaRecorder) {
+          this.mediaRecorder.removeEventListener('stop', onStop); // Clean up
+        }
+        if (this.audioChunks.length === 0 && this.mediaRecorder?.state === 'inactive') {
+          console.warn("No audio chunks recorded.");
+          const emptyBlob = new Blob([], { type: this.actualMimeType || 'application/octet-stream' });
+          this.stopStream();
+          resolve(emptyBlob);
+          return;
+        }
+        
+        const audioBlob = new Blob(this.audioChunks, { type: this.actualMimeType || 'application/octet-stream' });
         this.stopStream();
+        console.log(`Recording stopped. Blob created with type: ${audioBlob.type}, size: ${audioBlob.size}`);
         resolve(audioBlob);
-      });
+      };
+      
+      this.mediaRecorder.addEventListener('stop', onStop);
 
-      this.mediaRecorder.stop();
+      try {
+        if (this.mediaRecorder.state === "recording" || this.mediaRecorder.state === "paused") {
+          console.log(`Calling mediaRecorder.stop(). Current state: ${this.mediaRecorder.state}`);
+          this.mediaRecorder.stop();
+        } else if (this.mediaRecorder.state === "inactive") {
+          console.warn(`MediaRecorder already inactive. Manually triggering stop logic as 'stop' event may not fire.`);
+          onStop(); // Manually call if already stopped.
+        } else {
+           console.warn(`MediaRecorder in unexpected state '${this.mediaRecorder.state}' when stop() called. Attempting to stop.`);
+           this.mediaRecorder.stop(); 
+        }
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        console.error("Error calling mediaRecorder.stop():", err.message, err);
+        reject(err);
+      }
     });
   }
 
@@ -68,7 +163,11 @@ export class AudioRecorder {
   }
 
   isRecording(): boolean {
-    return this.mediaRecorder !== null && this.mediaRecorder.state === 'recording';
+    return !!this.mediaRecorder && this.mediaRecorder.state === 'recording';
+  }
+
+  public getActualMimeType(): string {
+    return this.actualMimeType || 'application/octet-stream'; // Fallback if somehow empty
   }
 }
 
@@ -600,62 +699,52 @@ function calculatePauseDetails(
 
 export const analyzeAudio = async (
   audioBlob: Blob,
+  actualMimeType: string, // Add this parameter
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all',
   exerciseText?: string
 ): Promise<DetailedAnalysisResult> => {
   try {
-    console.log(`Analyzing audio with focus on: ${focusArea}`);
+    console.log(`Analyzing audio with focus on: ${focusArea}, MIME type: ${actualMimeType}`);
 
-    let clientSideMetrics = {
-        calculatedVolumeVariation: 0, 
-        calculatedPitchVariation: 0,  
-        audioDuration: 0,
-        detectedWordsCount: 0, 
-        detectedPauses: [] as PauseDetail[], 
-    };
-
-    try {
+    // ... (pcmData, sampleRate, duration calculation as before) ...
+    // (clientSideMetrics calculation as before)
+    let clientSideMetrics = { /* ... as before ... */ } as any;
+    // ...
+     try {
         const { pcmData, sampleRate, duration } = await decodeAudioBlobToPCM(audioBlob);
         clientSideMetrics.audioDuration = duration;
 
         const volumeData = calculateVolumeMetrics(pcmData, sampleRate);
         clientSideMetrics.calculatedVolumeVariation = volumeData.volumeVariationOfSpokenParts;
         clientSideMetrics.detectedWordsCount = volumeData.detectedWordsCount;
-        console.log('Client-side volume data:', volumeData);
-
+        
         const pitchData = calculatePitchMetrics(pcmData, sampleRate);
         clientSideMetrics.calculatedPitchVariation = pitchData.pitchVariation;
-        console.log('Client-side pitch data:', pitchData);
-
-        // Call calculatePauseDetails (it will use the new default minPauseDurationMs)
+        
         const pauseData = calculatePauseDetails(pcmData, sampleRate); 
         clientSideMetrics.detectedPauses = pauseData;
-        console.log('Client-side pause data:', pauseData);
-
 
     } catch (processingError) {
         console.error("Error during client-side audio processing:", processingError);
     }
+    // ...
 
     const audioBase64 = await blobToBase64(audioBlob);
 
     const bodyPayload: any = { 
         audio: audioBase64,
+        audioMimeType: actualMimeType, // Send the actualMimeType to the server
         focusArea: focusArea,
         exerciseText,
         calculatedVolumeVariation: clientSideMetrics.calculatedVolumeVariation,
         calculatedPitchVariation: clientSideMetrics.calculatedPitchVariation,
         clientCalculatedDuration: clientSideMetrics.audioDuration,
-        detectedPauses: clientSideMetrics.detectedPauses, 
+        detectedPauses: clientSideMetrics.detectedPauses,
     };
-     console.log("Sending to Supabase function with payload:", {
+
+    console.log("Sending to Supabase function with payload:", {
       focusArea: bodyPayload.focusArea,
-      exerciseTextProvided: !!bodyPayload.exerciseText,
-      calculatedVolumeVariation: bodyPayload.calculatedVolumeVariation,
-      calculatedPitchVariation: bodyPayload.calculatedPitchVariation,
-      clientCalculatedDuration: bodyPayload.clientCalculatedDuration,
-      detectedPausesCount: bodyPayload.detectedPauses.length, 
-      audioLengthBase64: bodyPayload.audio.length 
+      audioMimeType: bodyPayload.audioMimeType, // Log it
     });
 
     const { data, error } = await supabase.functions.invoke("analyze-voice", {

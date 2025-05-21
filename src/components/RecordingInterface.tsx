@@ -115,6 +115,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
     try {
       const audioBlob = await audioRecorder.current.stop();
       const url = createAudioUrl(audioBlob);
+      const actualMimeType = audioRecorder.current.getActualMimeType();
       setAudioUrl(url);
       setIsRecording(false);
       stopTimer();
@@ -126,7 +127,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
         description: "This may take a moment..."
       });
       
-      const result = await analyzeAudio(audioBlob, focusArea, exerciseText);
+      const result = await analyzeAudio(audioBlob, actualMimeType, focusArea, exerciseText);
       setAnalysis(result);
       setAnalyzing(false);
       
