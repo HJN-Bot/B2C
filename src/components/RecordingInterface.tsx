@@ -315,7 +315,7 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
                   { getScore(title, analysis) }/100
                 </span>
               </div>
-              <Progress value={analysis.paceScore} className="h-2 mb-3" />
+              <Progress value={getScore(title, analysis)} className="h-2 mb-3" />
               {/* <p className="text-xs">
                 Your speaking rate is approximately {analysis.detailedMetrics.wordsPerMinute} words per minute. {
                   analysis.detailedMetrics.wordsPerMinute > 160 
