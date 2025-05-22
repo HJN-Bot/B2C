@@ -180,15 +180,25 @@ const RecordingInterface = ({ focusArea, exerciseText, onComplete, title }: Reco
   useEffect(() => {
     return () => {
       stopTimer();
-      cleanupVolumeMonitoring();
+      cleanupVolumeMonitoring(); // Stops animation frame, resets UI state for volume
       if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
+        URL.revokeObjectURL(audioUrl); // Clean up blob URL from previous recording
       }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
+  
+      // Handle AudioContext cleanup
+      if (audioContextRef.current) {
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close().then().finally(() => {
+            audioContextRef.current = null;
+            analyzerRef.current = null;
+          });
+        } else {
+          audioContextRef.current = null;
+          analyzerRef.current = null;
+        }
       }
     };
-  }, [audioUrl]);
+  }, [audioUrl]); 
 
   const getScore = (title: string, analysis: DetailedAnalysisResult): number => {
     switch (title) {
