@@ -21,17 +21,17 @@ export class AudioRecorder {
     for (const mimeType of mimeTypesToTry) {
       if (MediaRecorder.isTypeSupported(mimeType)) {
         try {
-          console.log(`Attempting to instantiate MediaRecorder with: ${mimeType}`);
+          console.debug(`Attempting to instantiate MediaRecorder with: ${mimeType}`);
           recorder = new MediaRecorder(stream, { mimeType: mimeType });
           usedMimeType = recorder.mimeType; // Browser might slightly alter it
-          console.log(`Successfully instantiated MediaRecorder with effective mimeType: ${usedMimeType}`);
+          console.debug(`Successfully instantiated MediaRecorder with effective mimeType: ${usedMimeType}`);
           return recorder; // Success
         } catch (e) {
           console.warn(`Failed to instantiate MediaRecorder with ${mimeType}:`, e.message);
           recorder = null; // Reset recorder if instantiation failed
         }
       } else {
-        console.log(`MediaRecorder.isTypeSupported reported FALSE for: ${mimeType}`);
+        console.debug(`MediaRecorder.isTypeSupported reported FALSE for: ${mimeType}`);
       }
     }
 
@@ -40,7 +40,7 @@ export class AudioRecorder {
       console.warn("No preferred/specified mimeType succeeded or was supported. Attempting MediaRecorder with browser default.");
       recorder = new MediaRecorder(stream); // Let the browser decide
       usedMimeType = recorder.mimeType;
-      console.log(`Successfully instantiated MediaRecorder with browser default. Effective mimeType: ${usedMimeType}`);
+      console.debug(`Successfully instantiated MediaRecorder with browser default. Effective mimeType: ${usedMimeType}`);
       return recorder; // Success with default
     } catch (e) {
       console.error("Fatal: Error instantiating MediaRecorder even with browser default:", e);
@@ -68,7 +68,7 @@ export class AudioRecorder {
       });
 
       this.mediaRecorder.start();
-      console.log(`Recording started. Effective mimeType: ${this.actualMimeType}`);
+      console.debug(`Recording started. Effective mimeType: ${this.actualMimeType}`);
 
     } catch (error) {
       // Ensure error is an instance of Error for proper message handling
@@ -98,7 +98,7 @@ export class AudioRecorder {
       });
 
       this.mediaRecorder.start();
-      console.log(`Recording started with stream. Effective mimeType: ${this.actualMimeType}`);
+      console.debug(`Recording started with stream. Effective mimeType: ${this.actualMimeType}`);
       return this.stream;
 
     } catch (error) {
@@ -130,7 +130,7 @@ export class AudioRecorder {
         
         const audioBlob = new Blob(this.audioChunks, { type: this.actualMimeType || 'application/octet-stream' });
         this.stopStream();
-        console.log(`Recording stopped. Blob created with type: ${audioBlob.type}, size: ${audioBlob.size}`);
+        console.debug(`Recording stopped. Blob created with type: ${audioBlob.type}, size: ${audioBlob.size}`);
         resolve(audioBlob);
       };
       
@@ -138,7 +138,7 @@ export class AudioRecorder {
 
       try {
         if (this.mediaRecorder.state === "recording" || this.mediaRecorder.state === "paused") {
-          console.log(`Calling mediaRecorder.stop(). Current state: ${this.mediaRecorder.state}`);
+          console.debug(`Calling mediaRecorder.stop(). Current state: ${this.mediaRecorder.state}`);
           this.mediaRecorder.stop();
         } else if (this.mediaRecorder.state === "inactive") {
           console.warn(`MediaRecorder already inactive. Manually triggering stop logic as 'stop' event may not fire.`);
@@ -506,6 +506,7 @@ function calculatePitchMetrics(pcmData: Float32Array, sampleRate: number): Pitch
   const ABSOLUTE_MIN_RMS_THRESHOLD = 1e-4;
   const MIN_PITCH_FREQ = 75;
   const MAX_PITCH_FREQ = 500;
+  const PITCH_SCORE_SCALE = 20;
 
   const pitchWindowSizeSamples = Math.floor(sampleRate * PITCH_WINDOW_DURATION_S);
   const pitchStepSizeSamples = Math.floor(sampleRate * PITCH_STEP_DURATION_S);
@@ -599,7 +600,7 @@ function calculatePitchMetrics(pcmData: Float32Array, sampleRate: number): Pitch
   });
 
   const stdDevSemitones = calculateStdDev(pitchValuesSemitones);
-  let pitchVariationScore = stdDevSemitones * 10; // Scaling factor
+  let pitchVariationScore = stdDevSemitones * PITCH_SCORE_SCALE; // Scaling factor
   pitchVariationScore = Math.min(100, Math.max(0, pitchVariationScore));
 
   return {
@@ -704,7 +705,7 @@ export const analyzeAudio = async (
   exerciseText?: string,
 ): Promise<DetailedAnalysisResult> => {
   try {
-    console.log(`Analyzing audio with focus on: ${focusArea}, MIME type: ${actualMimeType}`);
+    console.debug(`Analyzing audio with focus on: ${focusArea}, MIME type: ${actualMimeType}`);
 
     // ... (pcmData, sampleRate, duration calculation as before) ...
     // (clientSideMetrics calculation as before)
@@ -727,7 +728,6 @@ export const analyzeAudio = async (
     } catch (processingError) {
         console.error("Error during client-side audio processing:", processingError);
     }
-    // ...
 
     const audioBase64 = await blobToBase64(audioBlob);
 
@@ -742,10 +742,9 @@ export const analyzeAudio = async (
         detectedPauses: clientSideMetrics.detectedPauses,
     };
 
-    console.log("Sending to Supabase function with payload:", {
-      focusArea: bodyPayload.focusArea,
-      audioMimeType: bodyPayload.audioMimeType, // Log it
-    });
+    console.log("Sending to Supabase function with payload:", bodyPayload);
+
+    // let data, error;
 
     const { data, error } = await supabase.functions.invoke("analyze-voice", {
       body: JSON.stringify(bodyPayload),
