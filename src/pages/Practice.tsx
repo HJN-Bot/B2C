@@ -24,11 +24,11 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 const MODEL_NAME = "gemini-1.5-flash-latest";
 const INITIAL_PROMPT_TEXT = `
 You are a helpful and encouraging speech coach.
-Give live feedback on pace, content, and overall delivery. Be gentle and give small suggestions that nudges the speaker to talk better without being too distracting or discouraging.
+Be gentle and give small suggestions that nudges the speaker to talk better without being too distracting or discouraging.
 
 Return results in JSON format only with the following keys:
-"review": "(full feedback as specified above for this phrase)"
-"live": "(in 5 words or less and starting with an emoji, encourage like a coach or an audience might to a live talk, or mirror back what's being said like "**repeat keyword you mentioned**: that's right! / interesting! / woah!", or mirroring with phrases like "you're diving deep", "you're bringing it home". If a question is asked, see if the user is actually asking the coach to give help or tips, and if so then switch roles to a coach giving actionable advice that fully answers the question - using more than 5 words if needed. Only give help or tips when asked."
+"review": "Give feedback on the content's storytelling, structure, and missing points, and suggest improvements based on the target audience and desired emotional impact. Give 3 points in 3 sentences with emojis and keep it short"
+"live": "If the user does not say the word "Coach", then encourage like a coach or an audience might to a live talk in less than 6 words. Use positive reinforcement like "keep calm" if speaking too fast, and other similar encouragements for problems in pace, tone, volume or pitch variation, pausing or overusing filler words,  or by mirroring back what's being said like "**repeat keyword you mentioned**: that's right! / interesting! / tell me more!", or with observations like "you're diving deep", "you're bringing it home," and others like it. Include an emoji.  If the speaker says the word "Coach", the user is asking the coach to give help or tips, so switch roles to a coach giving actionable advice that fully answers the speaker's question - listing 3 ideas and giving examples, but keeping it concise and under 30 words, for example "1. Highlight a problem: Many pet owners struggle to socialize their pets. 2. Showcase solution: Your app connects pets for playdates. 3. Show impact: Happier pets, more social owners!". Only give help or tips when asked, and then go back to giving encouragement"
 "transcript": "(transcription of this phrase)"
 
 Ensure the output is a **single, valid JSON** object. If you cannot provide a valid JSON with these fields for any reason, return a JSON with an "error" field explaining the issue.
@@ -40,6 +40,7 @@ const SILENCE_DURATION_MSEC = 500; // Increased silence duration for processing 
 const TARGET_SAMPLE_RATE = 16000;
 const SCRIPT_PROCESSOR_BUFFER_SIZE = 1024; // 🎤 Using a power of two
 const MIN_DURATION_SECONDS = 3.0; // Reduced minimum duration slightly
+const PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC = 1000;
 
 const baseRadarMetricsConfig = [
   { subject: 'Pace', fullMark: 100 },
@@ -182,6 +183,7 @@ const Practice = () => {
   const firstAudioSentThisSessionRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
   const shortPhraseBufferRef = useRef<Float32Array | null>(null);
+  const initialSilenceToastShownRef = useRef(false); // Added ref for initial silence toast
 
   const isRecordingRef = useRef(isRecording);
   useEffect(() => {
@@ -209,7 +211,7 @@ const Practice = () => {
         } else {
           throw new Error("API key not found in the response.");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching Gemini API Key:", error);
         setStatus("Error: Failed to get API Key.");
         setCurrentLiveFeedback("API Key Error!");
@@ -432,29 +434,45 @@ const Practice = () => {
       for (const sample of inputData) sumSquares += sample * sample;
       const rms = Math.sqrt(sumSquares / inputData.length);
 
-      if (rms > ENERGY_THRESHOLD) {
+      if (rms > ENERGY_THRESHOLD) { // Speech detected
         if (!speakingRef.current) {
-            speakingRef.current = true;
-            console.log("Speech started.");
+          speakingRef.current = true;
+          console.log("Speech started.");
         }
         recordedPhraseChunksRef.current.push(new Float32Array(inputData));
         allRecordedChunksRef.current.push(new Float32Array(inputData));
-        silenceStartRef.current = Date.now();
-      } else if (speakingRef.current) {
-        const currentSilenceDurationMsec = Date.now() - silenceStartRef.current; // Calculate silence duration
-        if (currentSilenceDurationMsec > SILENCE_DURATION_MSEC) {
-          console.log(`Long silence detected (${currentSilenceDurationMsec}ms), processing phrase.`);
-          processCurrentPhrase(false, currentSilenceDurationMsec); // --- MODIFIED: Pass silence duration ---
-        } else {
-          recordedPhraseChunksRef.current.push(new Float32Array(inputData));
-          allRecordedChunksRef.current.push(new Float32Array(inputData));
+        silenceStartRef.current = Date.now(); // Reset silence timer as speech is active
+      } else { // Silence detected (rms <= ENERGY_THRESHOLD)
+        if (speakingRef.current) { // Silence *after* speech (i.e., a pause)
+          const currentSilenceDurationMsec = Date.now() - silenceStartRef.current;
+console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
+          // Display toast if pause is longer than PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC (e.g., 2 seconds)
+          if (currentSilenceDurationMsec > PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC) {
+            toast({ description: "ask 'Coach' what to say" }); // Toast for pause
+          }
+
+          // Process phrase if silence is longer than SILENCE_DURATION_MSEC (original logic, e.g., 0.5 seconds)
+          if (currentSilenceDurationMsec > SILENCE_DURATION_MSEC) {
+            console.log(`Long silence detected (${currentSilenceDurationMsec}ms), processing phrase.`);
+            processCurrentPhrase(false, currentSilenceDurationMsec);
+            // speakingRef.current is set to false inside processCurrentPhrase if !isFinal
+          } else {
+            // Still silent, but not long enough to trigger processing. Buffer this silence as part of the ongoing phrase.
+            recordedPhraseChunksRef.current.push(new Float32Array(inputData));
+            allRecordedChunksRef.current.push(new Float32Array(inputData));
+          }
+        } else { // Silence *before* any speech has started in this session, and recording is active
+          if (isRecordingRef.current && !initialSilenceToastShownRef.current) {
+            toast({ description: "state your audience" });
+            initialSilenceToastShownRef.current = true; // Ensure it's shown only once per recording start
+          }
         }
       }
     };
     microphoneSourceRef.current.connect(analyserRef.current);
     analyserRef.current.connect(scriptProcessorRef.current);
     scriptProcessorRef.current.connect(audioContextRef.current.destination);
-  }, [processCurrentPhrase]);
+  }, [processCurrentPhrase, toast]);
 
   // --- Timer ---
   const startTimer = () => {
@@ -485,6 +503,7 @@ const Practice = () => {
       allRecordedChunksRef.current = [];
       shortPhraseBufferRef.current = null;
       speakingRef.current = false;
+      initialSilenceToastShownRef.current = false; // Reset flag for initial silence toast
       chatSessionRef.current = null;
       firstAudioSentThisSessionRef.current = false;
       setAnalysis(null);
@@ -676,7 +695,7 @@ const Practice = () => {
           </Card>
         )}
 
-        <div className="flex flex-col items-center justify-center py-4 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-inner">
+        <div className="flex flex-col items-center justify-center py-4 rounded-lg">
           {!isRecording && !audioUrl && (
             <div className="text-center space-y-4">
               <div className="record-button mx-auto cursor-pointer p-4 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors" onClick={startRecording}>
