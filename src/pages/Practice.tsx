@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye, MessageSquareQuote } from "lucide-react";
+import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye, ChevronDownSquare } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,8 @@ Be gentle and give small suggestions that nudges the speaker to talk better with
 Return results in JSON format only with the following keys:
 "coach": " If the speaker ever says the word "Coach", the user is asking the coach to give help or tips, so switch roles to a coach giving actionable advice that fully answers the speaker's question - listing 3 ideas with examples in 3 points, but keeping it concise and under 30 words, for example "1. Highlight a problem: Many pet owners struggle to socialize their pets. 2. Showcase solution: Your app connects pets for playdates. 3. Show impact: Happier pets, more social owners!"."
 "live": "If the user does not say the word "Coach", then encourage like a coach or an audience might to a live talk in less than 6 words. Use positive reinforcement like "keep calm" if speaking too fast, and other similar encouragements for problems in pace, tone, volume or pitch variation, pausing or overusing filler words,  or by mirroring back what's being said like "**repeat keyword you mentioned**: that's right! / interesting! / tell me more!", or with observations like "you're diving deep", "you're bringing it home," and others like it. Include an emoji."
+"review": "Give feedback on the content's storytelling, structure, and missing points, and suggest improvements based on the target audience and desired emotional impact. Give 3 points in 3 sentences with emojis and keep it short"
+"transcript": "(transcription of this phrase, skip any instructions to the coach)"
 
 Ensure the output is a **single, valid JSON** object. If you cannot provide a valid JSON with these fields for any reason, return a JSON with an "error" field explaining the issue.
 `;
@@ -396,10 +398,21 @@ const Practice = () => {
         if (feedbackTextToShow && feedbackTextToShow !== 'Processing...' && !result.error) {
           setLiveFeedbackHistory(prev => [...prev, feedbackTextToShow]);
         }
+        let phraseTranscript = "[No transcript provided]";
+        if (result.error) phraseTranscript = "Error processing phrase.";
+        else if (result.transcript && typeof result.transcript === 'string') phraseTranscript = result.transcript;
+
+        let phraseReview = "[No review provided]";
+        if (result.error) phraseReview = result.error;
+        else if (result.review && typeof result.review === 'string') phraseReview = result.review;
+        // Fallback if dedicated review is missing, but coach/live exists
+        else if (isCoachMsg && result.coach) phraseReview = `Coach tip: ${result.coach}`;
+        else if (!isCoachMsg && result.live) phraseReview = `Live feedback: ${result.live}`;
+
         setSessionPhrases(prev => [...prev, {
           id: Date.now(),
-          transcript: result.error ? "Error processing phrase." : (result.transcript || "[No transcript from AI]"),
-          review: result.error || result.review || (isCoachMsg ? result.coach : result.live) || "[No specific review/feedback text]",
+          transcript: phraseTranscript,
+          review: phraseReview,
           error: !!result.error
         }]);
       } else {
@@ -784,85 +797,113 @@ const Practice = () => {
               {/* MODIFICATION: Transcript Tab Content */}
               <TabsContent value="transcript" className="pt-4 space-y-6">
                 {/* MODIFICATION: Moved ReactionGallery here */}
-                {analysis && <ReactionGallery collectedReactions={["🤩", "🎉", "👏", "👍", "💯", "🥳", "🙌", "✨", "🎯", "💡", "🔥", "✅"]} />}
+                {<ReactionGallery collectedReactions={["🤩", "🎉", "👏", "👍", "💯", "🥳", "🙌", "✨", "🎯", "💡", "🔥", "✅"]} />}
 
-                {/* MODIFICATION: Collapsible "Deep Dive" section */}
-                <Accordion type="single" collapsible className="w-full" defaultValue="deep-dive-transcript-item">
-                  <AccordionItem value="deep-dive-transcript-item">
-                    <AccordionTrigger className="text-xl font-semibold hover:no-underline text-gray-800 dark:text-gray-200 flex items-center gap-2 py-3 px-1">
-                      <MessageSquareQuote size={22} className="text-blue-500" />
-                      <span>Deep Dive: Session Review & Content</span>
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-2 pb-0">
-                      <Card className="border-none shadow-none">
-                        {/* CardHeader can be removed if title is in AccordionTrigger, or kept for sub-styling */}
-                        {/* <CardHeader className="pb-2 pt-0">
-                          <CardTitle className="text-md">Session Review & Transcription</CardTitle>
-                        </CardHeader> */}
-                        <CardContent className="p-4 space-y-6">
-                          {sessionPhrases.length > 0 && (
-                            <div>
-                              <h4 className="text-md font-semibold mb-3 text-gray-700 dark:text-gray-300">Live Feedback Phrases</h4>
-                              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                                {sessionPhrases.map((phrase, index) => (
-                                  <div
-                                    key={phrase.id}
-                                    className={`p-3 rounded-md shadow-sm ${phrase.error ? 'bg-red-50 dark:bg-red-900/40 border-l-4 border-red-500' : 'bg-gray-50 dark:bg-gray-700/40 border-l-4 border-blue-500'}`}
-                                  >
-                                    <div className="mb-1">
-                                      <span className="text-xs text-purple-500 dark:text-purple-300 font-mono uppercase tracking-wider">
-                                        Phrase {index + 1}
-                                      </span>
-                                      <p className={`mt-1 text-sm text-gray-800 dark:text-gray-100 leading-relaxed ${phrase.error ? 'italic' : ''}`}>
-                                        {phrase.transcript}
-                                      </p>
+                {analysis && analysis.transcription && (
+                  <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">Full Recording Transcript</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="bg-gray-100 dark:bg-gray-800/50 p-3 rounded text-sm whitespace-pre-wrap max-h-80 overflow-y-auto border dark:border-gray-700 shadow-inner">
+                            {analysis.transcription}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Note: AI-generated transcription, may not be 100% accurate.
+                        </p>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {/* MODIFICATION: "Deep Dive" accordion now only for session phrases */}
+                {(sessionPhrases.length > 0 || (analysis && !analysis.transcription && (!analysis.contentSuggestions || analysis.contentSuggestions.length ===0))) && ( // Show accordion if phrases exist, or if analysis exists but no transcript/suggestions yet to avoid empty tab
+                    <Accordion type="single" collapsible className="w-full" defaultValue={sessionPhrases.length > 0 ? "live-feedback-phrases" : ""}>
+                      <AccordionItem value="live-feedback-phrases">
+                          <AccordionTrigger className="text-lg font-semibold hover:no-underline text-gray-800 dark:text-gray-200 flex items-center gap-2 py-3 px-1">
+                          <ChevronDownSquare size={22} className="text-purple-500" />
+                          <span>Deep Dive: Detailed Improvements</span>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-2 pb-0">
+                            <Card className="border-none shadow-none">
+                              <CardContent className="p-0 md:p-4 space-y-6">
+                                {sessionPhrases.length > 0 ? (
+                                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2"> {/* Increased max-h */}
+                                    {sessionPhrases.map((phrase, index) => (
+                                        <div
+                                          key={phrase.id}
+                                          className={`p-4 rounded-md shadow-sm ${phrase.error ? 'bg-red-50 dark:bg-red-900/50 border-l-4 border-red-500' : 'bg-gray-50 dark:bg-gray-700/50 border-l-4 border-blue-500'}`}
+                                        >
+                                          <div className="mb-3">
+                                            <span className="text-xs text-purple-500 dark:text-purple-300 font-mono uppercase tracking-wider block mb-1">
+                                              Phrase {index + 1}:
+                                            </span>
+                                            <p className={`text-sm text-gray-800 dark:text-gray-100 leading-relaxed ${phrase.error && !phrase.transcript.startsWith("Error") ? 'italic' : ''}`}>
+                                              {phrase.transcript}
+                                            </p>
+                                          </div>
+                                          {/* MODIFICATION: Displaying phrase.review for each phrase */}
+                                          {(phrase.review && !phrase.error) && ( // Only show review if it exists and not an error message already in transcript
+                                            <div className="border-t border-gray-300 dark:border-gray-600 pt-3">
+                                              <span className="text-xs text-yellow-600 dark:text-yellow-300 font-mono uppercase tracking-wider block mb-1">
+                                                Coach's Suggestion
+                                              </span>
+                                              <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-line">
+                                                {phrase.review}
+                                              </p>
+                                            </div>
+                                          )}
+                                          {phrase.error && phrase.review && phrase.review.startsWith("Error") && ( // If review itself is an error message
+                                               <div className="border-t border-gray-300 dark:border-gray-600 pt-3">
+                                                <span className="text-xs text-red-600 dark:text-red-400 font-mono uppercase tracking-wider block mb-1">
+                                                    Processing Note
+                                                </span>
+                                                <p className="text-sm text-red-700 dark:text-red-300 leading-relaxed whitespace-pre-line">
+                                                    {phrase.review}
+                                                </p>
+                                               </div>
+                                          )}
+                                        </div>
+                                    ))}
                                     </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                                ) : (
+                                    <p className="text-gray-500 dark:text-gray-400 italic text-center py-4">
+                                        No live feedback phrases were recorded during this session.
+                                    </p>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                )}
+                {/* Fallback if no content for transcript tab at all */}
+                {!analysis && sessionPhrases.length === 0 && (
+                  <p className="text-gray-500 dark:text-gray-400 italic text-center py-6">
+                      No transcript data or live phrases available for this session yet.
+                  </p>
+                )}
 
-                          {analysis && analysis.transcription && (
-                            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                              <h4 className="text-md font-semibold mb-3 text-gray-700 dark:text-gray-300">Full Recording Transcript</h4>
-                              <div className="bg-gray-100 dark:bg-gray-800/50 p-3 rounded text-sm whitespace-pre-wrap max-h-80 overflow-y-auto border dark:border-gray-700 shadow-inner">
-                                {analysis.transcription}
-                              </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                Note: AI-generated transcription, may not be 100% accurate.
-                              </p>
-                            </div>
-                          )}
-
-                          {/* MODIFICATION: Content Suggestions Section */}
-                          {analysis && analysis.contentSuggestions && analysis.contentSuggestions.length > 0 && (
-                            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                              <h4 className="text-md font-semibold mb-3 text-blue-600 dark:text-blue-400">💡 Content Improvement Ideas</h4>
-                              <ul className="space-y-2 list-disc list-inside pl-1">
-                                {analysis.contentSuggestions.slice(0, 5).map((suggestion, index) => ( // Show up to 5
-                                  <li key={index} className="text-sm text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/30 p-3 rounded shadow-sm border border-blue-200 dark:border-blue-700">
-                                    {suggestion}
-                                  </li>
-                                ))}
-                              </ul>
-                              <div className="text-center mt-5 p-3 bg-green-50 dark:bg-green-900/30 rounded-md border border-green-200 dark:border-green-700">
-                                <p className="text-sm text-green-700 dark:text-green-300">
-                                  Great effort! Why not try incorporating some of these ideas and <Button variant="link" className="p-0 h-auto text-sm text-green-600 dark:text-green-400 hover:underline" onClick={resetRecording}>record again</Button>?
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-                 {(sessionPhrases.length === 0 && !analysis?.transcription) && (
-                    <p className="text-gray-500 dark:text-gray-400 italic text-center py-4">
-                        No transcriptions or live phrases were recorded for the deep dive.
-                    </p>
-                 )}
+                {analysis && analysis.contentSuggestions && analysis.contentSuggestions.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg text-blue-600 dark:text-blue-400">💡 Content Improvement Ideas</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2 list-disc list-inside pl-1">
+                            {analysis.contentSuggestions.slice(0, 5).map((suggestion, index) => (
+                            <li key={index} className="text-sm text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/30 p-3 rounded shadow-sm border border-blue-200 dark:border-blue-700">
+                                {suggestion}
+                            </li>
+                            ))}
+                        </ul>
+                        <div className="text-center mt-5 p-3 bg-green-50 dark:bg-green-900/30 rounded-md border border-green-200 dark:border-green-700">
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                            Great effort! Why not try incorporating some of these ideas and <Button variant="link" className="p-0 h-auto text-sm text-green-600 dark:text-green-400 hover:underline" onClick={resetRecording}>record again</Button>?
+                            </p>
+                        </div>
+                    </CardContent>
+                  </Card>
+                )}
 
               </TabsContent>
 
