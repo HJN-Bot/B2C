@@ -219,6 +219,7 @@ export interface DetailedAnalysisResult extends AnalysisResult {
     fillers: string[];
   };
   transcription: string;
+  contentSuggestions: string[]; 
 }
 
 let audioContext: AudioContext | null = null;
@@ -876,7 +877,8 @@ export const mockAnalyzeAudioDetailed = (
           }
         },
         specificSuggestions,
-        transcription: generateMockTranscription(focusArea)
+        transcription: generateMockTranscription(focusArea),
+        contentSuggestions: generateMockSuggestions(focusArea)
       });
     }, 2000);
   });
@@ -1007,4 +1009,14 @@ function generateMockTranscription(focusArea: 'rate-volume' | 'pitch-tonality' |
             return "The art of communication is the language of leadership. It bridges the gap between confusion and clarity. When we speak, our words carry not just information, but intention and emotion. The best communicators know that it's not just what you say, but how you say it.";
       }
   })();
+}
+
+function generateMockSuggestions(focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all'): string[] {
+  return [
+    "Try to start with a more engaging hook related to your topic.",
+    "Elaborate on your second point with a specific example or data.",
+    "Consider rephrasing your call to action to be clearer.",
+    "Ensure your main message is reiterated in the conclusion.",
+    "Check if the transition between your first and second idea is smooth."
+  ];
 }

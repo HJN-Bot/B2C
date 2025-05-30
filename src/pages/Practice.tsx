@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye } from "lucide-react";
+import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye, MessageSquareQuote } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import LiveReactionFeedback from "@/components/LiveReactionFeedback"; // Keep if needed, or replace with text.
 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 // --- Constants (Merged from App & Practice) ---
 const MODEL_NAME = "gemini-1.5-flash-latest";
@@ -27,7 +28,7 @@ You are a helpful and encouraging speech coach.
 Be gentle and give small suggestions that nudges the speaker to talk better without being too distracting or discouraging.
 
 Return results in JSON format only with the following keys:
-"coach": " If the speaker ever says the word "Coach", the user is asking the coach to give help or tips, so switch roles to a coach giving actionable advice that fully answers the speaker's question - listing 3 ideas with examples in 3 points, but keeping it concise and under 30 words, for example "1. Highlight a problem: Many pet owners struggle to socialize their pets. 2. Showcase solution: Your app connects pets for playdates. 3. Show impact: Happier pets, more social owners!". Use emojis for effect."
+"coach": " If the speaker ever says the word "Coach", the user is asking the coach to give help or tips, so switch roles to a coach giving actionable advice that fully answers the speaker's question - listing 3 ideas with examples in 3 points, but keeping it concise and under 30 words, for example "1. Highlight a problem: Many pet owners struggle to socialize their pets. 2. Showcase solution: Your app connects pets for playdates. 3. Show impact: Happier pets, more social owners!"."
 "live": "If the user does not say the word "Coach", then encourage like a coach or an audience might to a live talk in less than 6 words. Use positive reinforcement like "keep calm" if speaking too fast, and other similar encouragements for problems in pace, tone, volume or pitch variation, pausing or overusing filler words,  or by mirroring back what's being said like "**repeat keyword you mentioned**: that's right! / interesting! / tell me more!", or with observations like "you're diving deep", "you're bringing it home," and others like it. Include an emoji."
 
 Ensure the output is a **single, valid JSON** object. If you cannot provide a valid JSON with these fields for any reason, return a JSON with an "error" field explaining the issue.
@@ -151,7 +152,7 @@ const Practice = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [mimeType, setMimeType] = useState<string>('audio/wav'); // Default to WAV now
+  const [mimeType, setMimeType] = useState<string>('audio/wav');
   const [isPlaying, setIsPlaying] = useState(false);
   const [analysis, setAnalysis] = useState<DetailedAnalysisResult | null>(null);
   const [analyzingAudio, setAnalyzingAudio] = useState(false);
@@ -161,14 +162,13 @@ const Practice = () => {
   const [finalRadarData, setFinalRadarData] = useState<RadarDataPoint[] | null>(null);
   const { toast } = useToast();
 
-  // --- Gemini/VAD State & Refs ---
   const [geminiApiKey, setGeminiApiKey] = useState<string | null>(null);
   const [status, setStatus] = useState('Idle. Ready to record.');
   const [liveFeedbackHistory, setLiveFeedbackHistory] = useState<string[]>([]);
   const [showLiveReactions, setShowLiveReactions] = useState(false);
   const [currentLiveFeedback, setCurrentLiveFeedback] = useState<string>('');
   const [sessionPhrases, setSessionPhrases] = useState<any[]>([]);
-  const [isDisplayingCoachMessage, setIsDisplayingCoachMessage] = useState(false); // MODIFICATION: New state
+  const [isDisplayingCoachMessage, setIsDisplayingCoachMessage] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const microphoneSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -176,15 +176,15 @@ const Practice = () => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const recordedPhraseChunksRef = useRef<Float32Array[]>([]);
   const allRecordedChunksRef = useRef<Float32Array[]>([]);
-  const silenceStartRef = useRef(Date.now()); // Timestamp of last speech activity or start of recording
-  const speakingRef = useRef(false); // VAD state: true if currently accumulating a phrase
+  const silenceStartRef = useRef(Date.now());
+  const speakingRef = useRef(false);
   const genAiRef = useRef<GoogleGenerativeAI | null>(null);
   const chatSessionRef = useRef<any | null>(null);
   const firstAudioSentThisSessionRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
   const shortPhraseBufferRef = useRef<Float32Array | null>(null);
   const initialSilenceToastShownRef = useRef(false);
-  const longPauseToastShownThisPauseRef = useRef(false); // Flag for "ask Coach" toast
+  const longPauseToastShownThisPauseRef = useRef(false);
 
   const isRecordingRef = useRef(isRecording);
   useEffect(() => {
@@ -194,16 +194,13 @@ const Practice = () => {
   const timerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // --- Fetch API Key ---
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
         setStatus("Fetching API key...");
         setCurrentLiveFeedback("Getting Key...");
         const { data } = await supabase.functions.invoke("get-gemini-api-key", {});
-
         const key = data?.geminiApiKey;
-
         if (key) {
           setGeminiApiKey(key);
           genAiRef.current = new GoogleGenerativeAI(key);
@@ -226,7 +223,6 @@ const Practice = () => {
     fetchApiKey();
   }, [toast]);
 
-  // --- WAV Creation Helper Functions ---
   const float32To16BitPCM = useCallback((float32Array: Float32Array) => {
     const pcm16 = new Int16Array(float32Array.length);
     for (let i = 0; i < float32Array.length; i++) {
@@ -248,8 +244,8 @@ const Practice = () => {
     view.setUint32(4, 36 + dataByteLength, true);
     writeString(8, 'WAVE');
     writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
+    view.setUint32(16, 16, true); // PCM
+    view.setUint16(20, 1, true); // AudioFormat = 1 (PCM)
     view.setUint16(22, numChannels, true);
     view.setUint32(24, sampleRate, true);
     view.setUint32(28, byteRate, true);
@@ -287,13 +283,11 @@ const Practice = () => {
     });
   }, []);
 
-  // --- Gemini API Client-Side Processing ---
   const processAudioWithGemini = useCallback(async (wavBlob: Blob) => {
     if (!genAiRef.current) {
       setStatus("Error: Gemini SDK not initialized.");
       return { error: "Gemini SDK not initialized." };
     }
-
     if (!chatSessionRef.current) {
       try {
         const model = genAiRef.current.getGenerativeModel({ model: MODEL_NAME });
@@ -312,27 +306,22 @@ const Practice = () => {
         return { error: `Error starting chat: ${error.message}` };
       }
     }
-
     setStatus("Sending phrase to AI...");
     try {
       const audioBase64 = await blobToBase64(wavBlob);
       const audioPart = { inlineData: { mimeType: 'audio/wav', data: audioBase64 } };
       const messageParts = [];
-
       if (!firstAudioSentThisSessionRef.current) {
         messageParts.push(INITIAL_PROMPT_TEXT);
       }
       messageParts.push(audioPart);
-
       const result = await chatSessionRef.current.sendMessageStream(messageParts);
       let responseText = "";
       for await (const chunk of result.stream) {
         responseText += chunk.text();
       }
-
       console.log("Gemini Raw Response:", responseText);
       if (!firstAudioSentThisSessionRef.current) firstAudioSentThisSessionRef.current = true;
-
       let feedbackJson;
       const trimmedResponse = responseText.trim();
       if (trimmedResponse.startsWith("```json")) {
@@ -353,140 +342,120 @@ const Practice = () => {
     } catch (error: any) {
       console.error("Error communicating with Gemini:", error);
       let userMessage = `Gemini Error: ${error.message}`;
-       if (error.message && (error.message.includes("API key not valid") || error.message.includes("API_KEY_INVALID"))) {
-           userMessage = "API Key is invalid. Live feedback disabled.";
-           setGeminiApiKey(null);
-           genAiRef.current = null;
-           chatSessionRef.current = null;
-       }
+      if (error.message && (error.message.includes("API key not valid") || error.message.includes("API_KEY_INVALID"))) {
+        userMessage = "API Key is invalid. Live feedback disabled.";
+        setGeminiApiKey(null);
+        genAiRef.current = null;
+        chatSessionRef.current = null;
+      }
       setStatus(userMessage);
       return { error: userMessage };
     }
   }, [blobToBase64]);
 
-  // --- Audio Recording & VAD ---
   const processCurrentPhrase = useCallback(async (isFinal = false, silenceDurationMsec = 0) => {
     let allChunksToProcessRaw: Float32Array[] = [];
-
     if (shortPhraseBufferRef.current) {
-        allChunksToProcessRaw.push(shortPhraseBufferRef.current);
-        shortPhraseBufferRef.current = null;
+      allChunksToProcessRaw.push(shortPhraseBufferRef.current);
+      shortPhraseBufferRef.current = null;
     }
     allChunksToProcessRaw = [...allChunksToProcessRaw, ...recordedPhraseChunksRef.current];
-
     if (allChunksToProcessRaw.length === 0) {
-        if (!isFinal) speakingRef.current = false; // VAD phrase ended
-        return;
+      if (!isFinal) speakingRef.current = false;
+      return;
     }
-
     const completePhraseData = concatenateFloat32Arrays(allChunksToProcessRaw);
-    recordedPhraseChunksRef.current = []; // Clear chunks for the next VAD phrase
-    if (!isFinal) speakingRef.current = false; // VAD phrase ended
-
+    recordedPhraseChunksRef.current = [];
+    if (!isFinal) speakingRef.current = false;
     const durationSeconds = completePhraseData.length / TARGET_SAMPLE_RATE;
     const silenceDurationSeconds = silenceDurationMsec / 1000;
-
     const shouldProcessDueToTime = !isFinal && (silenceDurationSeconds + durationSeconds > MIN_DURATION_SECONDS) && (durationSeconds > 0.5);
 
     if (isFinal || durationSeconds >= MIN_DURATION_SECONDS || shouldProcessDueToTime) {
-        console.log(`Processing phrase (${durationSeconds.toFixed(1)}s). Final: ${isFinal}. Silence: ${silenceDurationSeconds.toFixed(1)}s. Reason: ${isFinal ? 'Final' : durationSeconds >= MIN_DURATION_SECONDS ? 'Duration' : 'Time'}`);
-        setStatus('Processing phrase...');
-        setShowLiveReactions(true);
+      console.log(`Processing phrase (${durationSeconds.toFixed(1)}s). Final: ${isFinal}. Silence: ${silenceDurationSeconds.toFixed(1)}s. Reason: ${isFinal ? 'Final' : durationSeconds >= MIN_DURATION_SECONDS ? 'Duration' : 'Time'}`);
+      setStatus('Processing phrase...');
+      setShowLiveReactions(true);
+      const wavBlob = createWavBlob(completePhraseData, TARGET_SAMPLE_RATE);
+      const result = await processAudioWithGemini(wavBlob);
 
-        const wavBlob = createWavBlob(completePhraseData, TARGET_SAMPLE_RATE);
-        const result = await processAudioWithGemini(wavBlob);
-        
-        // MODIFICATION START: Logic for handling 'coach' vs 'live' feedback
-        if (result) {
-            let feedbackTextToShow = '';
-            let isCoachMsg = false;
-
-            if (result.coach && typeof result.coach === 'string' && result.coach.trim() !== '') {
-                feedbackTextToShow = result.coach;
-                isCoachMsg = true;
-            } else if (result.live && typeof result.live === 'string' && result.live.trim() !== '') {
-                feedbackTextToShow = result.live;
-            } else if (result.error) {
-                feedbackTextToShow = `Error: ${result.error}`;
-            } else {
-                feedbackTextToShow = 'Processing...'; // Default message if no specific feedback
-            }
-
-            setCurrentLiveFeedback(feedbackTextToShow);
-            setIsDisplayingCoachMessage(isCoachMsg); // Update based on message type
-
-            if (feedbackTextToShow && feedbackTextToShow !== 'Processing...' && !result.error) {
-               setLiveFeedbackHistory(prev => [...prev, feedbackTextToShow]);
-            }
-
-            setSessionPhrases(prev => [...prev, {
-                id: Date.now(),
-                transcript: result.error ? "Error processing phrase." : (result.transcript || "[No transcript from AI]"),
-                review: result.error || result.review || (isCoachMsg ? result.coach : result.live) || "[No specific review/feedback text]", // Keep original review logic, or use specific feedback
-                error: !!result.error
-            }]);
+      if (result) {
+        let feedbackTextToShow = '';
+        let isCoachMsg = false;
+        if (result.coach && typeof result.coach === 'string' && result.coach.trim() !== '') {
+          feedbackTextToShow = result.coach;
+          isCoachMsg = true;
+        } else if (result.live && typeof result.live === 'string' && result.live.trim() !== '') {
+          feedbackTextToShow = result.live;
+        } else if (result.error) {
+          feedbackTextToShow = `Error: ${result.error}`;
         } else {
-           setCurrentLiveFeedback('Failed to process audio.');
-           setIsDisplayingCoachMessage(false);
-           setSessionPhrases(prev => [...prev, {
-               id: Date.now(),
-               transcript: "[No transcript - processing error]",
-               review: "Failed to get response from AI.",
-               error: true
-           }]);
+          feedbackTextToShow = 'Processing...';
         }
-        // MODIFICATION END
-
+        setCurrentLiveFeedback(feedbackTextToShow);
+        setIsDisplayingCoachMessage(isCoachMsg);
+        if (feedbackTextToShow && feedbackTextToShow !== 'Processing...' && !result.error) {
+          setLiveFeedbackHistory(prev => [...prev, feedbackTextToShow]);
+        }
+        setSessionPhrases(prev => [...prev, {
+          id: Date.now(),
+          transcript: result.error ? "Error processing phrase." : (result.transcript || "[No transcript from AI]"),
+          review: result.error || result.review || (isCoachMsg ? result.coach : result.live) || "[No specific review/feedback text]",
+          error: !!result.error
+        }]);
+      } else {
+        setCurrentLiveFeedback('Failed to process audio.');
+        setIsDisplayingCoachMessage(false);
+        setSessionPhrases(prev => [...prev, {
+          id: Date.now(),
+          transcript: "[No transcript - processing error]",
+          review: "Failed to get response from AI.",
+          error: true
+        }]);
+      }
     } else {
-        console.log(`Phrase too short (${durationSeconds.toFixed(1)}s), buffering. Silence: ${silenceDurationSeconds.toFixed(1)}s.`);
-        shortPhraseBufferRef.current = completePhraseData; 
-        setStatus('Listening...');
-        setShowLiveReactions(true); 
-        return;
+      console.log(`Phrase too short (${durationSeconds.toFixed(1)}s), buffering. Silence: ${silenceDurationSeconds.toFixed(1)}s.`);
+      shortPhraseBufferRef.current = completePhraseData;
+      setStatus('Listening...');
+      setShowLiveReactions(true);
+      return;
     }
-
     if (isRecordingRef.current && !isFinal) {
-        setStatus('Listening...');
+      setStatus('Listening...');
     }
-  }, [concatenateFloat32Arrays, createWavBlob, processAudioWithGemini, setIsDisplayingCoachMessage]); // Added setIsDisplayingCoachMessage to dependencies
+  }, [concatenateFloat32Arrays, createWavBlob, processAudioWithGemini, setIsDisplayingCoachMessage]);
 
   const startVAD = useCallback(() => {
     if (!audioContextRef.current || !microphoneSourceRef.current || !analyserRef.current || !scriptProcessorRef.current) return;
-
     scriptProcessorRef.current.onaudioprocess = (event: AudioProcessingEvent) => {
       if (!isRecordingRef.current) return;
-
       const inputData = event.inputBuffer.getChannelData(0);
       const now = Date.now();
       let sumSquares = 0.0;
       for (const sample of inputData) sumSquares += sample * sample;
       const rms = Math.sqrt(sumSquares / inputData.length);
-
-      if (rms > ENERGY_THRESHOLD) { // Speech detected
-        if (!speakingRef.current) { // Start of a new VAD phrase
+      if (rms > ENERGY_THRESHOLD) {
+        if (!speakingRef.current) {
           speakingRef.current = true;
           console.log("Speech started (VAD phrase).");
         }
         recordedPhraseChunksRef.current.push(new Float32Array(inputData));
         allRecordedChunksRef.current.push(new Float32Array(inputData));
-        silenceStartRef.current = now; // Update time of last speech activity
-        longPauseToastShownThisPauseRef.current = false; // Reset toast flag when speech resumes
-      } else { // Silence detected (rms <= ENERGY_THRESHOLD)
+        silenceStartRef.current = now;
+        longPauseToastShownThisPauseRef.current = false;
+      } else {
         const continuousSilenceSinceLastSpeechMsec = now - silenceStartRef.current;
-
         if (allRecordedChunksRef.current.length > 0 &&
-            continuousSilenceSinceLastSpeechMsec > PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC &&
-            !longPauseToastShownThisPauseRef.current) {
+          continuousSilenceSinceLastSpeechMsec > PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC &&
+          !longPauseToastShownThisPauseRef.current) {
           toast({ description: "ask 'Coach' what to say" });
-          longPauseToastShownThisPauseRef.current = true; 
+          longPauseToastShownThisPauseRef.current = true;
         }
-
-        if (speakingRef.current) { 
+        if (speakingRef.current) {
           if (continuousSilenceSinceLastSpeechMsec > SILENCE_DURATION_MSEC) {
             console.log(`VAD: Long silence detected (${continuousSilenceSinceLastSpeechMsec}ms), processing current phrase.`);
             processCurrentPhrase(false, continuousSilenceSinceLastSpeechMsec);
           } else {
-            recordedPhraseChunksRef.current.push(new Float32Array(inputData)); 
+            recordedPhraseChunksRef.current.push(new Float32Array(inputData));
             allRecordedChunksRef.current.push(new Float32Array(inputData));
           }
         } else {
@@ -502,7 +471,6 @@ const Practice = () => {
     scriptProcessorRef.current.connect(audioContextRef.current.destination);
   }, [processCurrentPhrase, toast]);
 
-  // --- Timer ---
   const startTimer = () => {
     if (timerRef.current) return;
     timerRef.current = window.setInterval(() => setRecordingTime((prev) => prev + 1), 1000);
@@ -515,25 +483,23 @@ const Practice = () => {
     }
   };
 
-  // --- Recording Control ---
   const startRecording = async () => {
     if (isRecording) return;
     if (!geminiApiKey) {
-        toast({ title: "Cannot Record", description: "Gemini API key is missing.", variant: "destructive" });
-        setStatus("Error: Gemini API Key missing.");
-        return;
+      toast({ title: "Cannot Record", description: "Gemini API key is missing.", variant: "destructive" });
+      setStatus("Error: Gemini API Key missing.");
+      return;
     }
-
     try {
       setLiveFeedbackHistory([]);
       setSessionPhrases([]);
       recordedPhraseChunksRef.current = [];
       allRecordedChunksRef.current = [];
       shortPhraseBufferRef.current = null;
-      speakingRef.current = false;      
-      silenceStartRef.current = Date.now(); 
+      speakingRef.current = false;
+      silenceStartRef.current = Date.now();
       initialSilenceToastShownRef.current = false;
-      longPauseToastShownThisPauseRef.current = false; 
+      longPauseToastShownThisPauseRef.current = false;
       chatSessionRef.current = null;
       firstAudioSentThisSessionRef.current = false;
       setAnalysis(null);
@@ -542,21 +508,18 @@ const Practice = () => {
       setFinalRadarData(null);
       setRecordingTime(0);
       setCurrentLiveFeedback('Listening...');
-      setIsDisplayingCoachMessage(false); // MODIFICATION: Reset on new recording
-
+      setIsDisplayingCoachMessage(false);
       streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: TARGET_SAMPLE_RATE });
       microphoneSourceRef.current = audioContextRef.current.createMediaStreamSource(streamRef.current);
       scriptProcessorRef.current = audioContextRef.current.createScriptProcessor(SCRIPT_PROCESSOR_BUFFER_SIZE, 1, 1);
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 2048;
-
       setIsRecording(true);
       setStatus('Listening...');
       startVAD();
       startTimer();
       toast({ title: "Recording started", description: "Speak clearly." });
-
     } catch (err: any) {
       console.error('Error starting recording:', err);
       setStatus(`Error: ${err.message}.`);
@@ -567,27 +530,21 @@ const Practice = () => {
   };
 
   const stopRecording = async () => {
-     if (!isRecordingRef.current && allRecordedChunksRef.current.length === 0) {
-        setStatus("Session already stopped.");
-        setIsRecording(false);
-        return;
-     }
-
+    if (!isRecordingRef.current && allRecordedChunksRef.current.length === 0) {
+      setStatus("Session already stopped.");
+      setIsRecording(false);
+      return;
+    }
     setStatus("Stopping session...");
-    setIsRecording(false); 
+    setIsRecording(false);
     stopTimer();
     setCurrentLiveFeedback('Processing final audio...');
-    // setIsDisplayingCoachMessage(false); // Keep coach message if it was the last one, or clear? Let's clear.
-    // Actually, let currentLiveFeedback handle the "Processing final audio..." message, so coach styling is not applied to it.
     setIsDisplayingCoachMessage(false);
-
-
     console.log("Processing final phrase on stop...");
     await processCurrentPhrase(true, Date.now() - silenceStartRef.current);
-
     if (scriptProcessorRef.current) {
       scriptProcessorRef.current.disconnect();
-      scriptProcessorRef.current.onaudioprocess = null; 
+      scriptProcessorRef.current.onaudioprocess = null;
     }
     if (analyserRef.current) analyserRef.current.disconnect();
     if (microphoneSourceRef.current) microphoneSourceRef.current.disconnect();
@@ -598,62 +555,55 @@ const Practice = () => {
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       await audioContextRef.current.close().catch(e => console.error("Error closing audio context:", e));
     }
-
     audioContextRef.current = null;
     microphoneSourceRef.current = null;
     scriptProcessorRef.current = null;
     analyserRef.current = null;
-
     if (allRecordedChunksRef.current.length === 0) {
-        setStatus('Session ended. Nothing recorded.');
-        setCurrentLiveFeedback('No audio recorded.');
-        toast({ title: "Recording stopped", description: "No audio detected.", variant: "warning" });
-        resetRecording(); 
-        return;
+      setStatus('Session ended. Nothing recorded.');
+      setCurrentLiveFeedback('No audio recorded.');
+      toast({ title: "Recording stopped", description: "No audio detected.", variant: "warning" });
+      resetRecording();
+      return;
     }
-
     setStatus("Analyzing full recording...");
     setCurrentLiveFeedback('Analyzing...');
     toast({ title: "Recording complete", description: "Analyzing your performance..." });
     setAnalyzingAudio(true);
-
     const fullRecordingData = concatenateFloat32Arrays(allRecordedChunksRef.current);
     const finalBlob = createWavBlob(fullRecordingData, TARGET_SAMPLE_RATE);
-    allRecordedChunksRef.current = []; 
-
+    allRecordedChunksRef.current = [];
     setAudioBlob(finalBlob);
     const url = createAudioUrl(finalBlob);
     setAudioUrl(url);
     setMimeType('audio/wav');
-
     try {
-        const result = await analyzeAudio(finalBlob, focusArea, 'audio/wav');
-        setAnalysis(result);
-
-        if (result) {
-            const newFinalRadarData = [
-                { subject: 'Pace', score: result.paceScore, fullMark: 100 },
-                { subject: 'Tonality', score: result.tonalityScore, fullMark: 100 },
-                { subject: 'Expression', score: result.detailedMetrics.pitchVariation, fullMark: 100 },
-                { subject: 'Energy', score: Math.min(100, Math.floor(result.detailedMetrics.volumeVariation * 1.1 + 10)), fullMark: 100 },
-                { subject: 'Fluency', score: Math.floor(result.fillerWordsScore), fullMark: 100 },
-                { subject: 'Drama', score: Math.floor(result.pausesScore), fullMark: 100 },
-            ].map(item => ({ ...item, score: Math.max(0, Math.min(100, Math.round(item.score))) }));
-            setFinalRadarData(newFinalRadarData);
-            toast({ title: "Analysis complete", description: `Overall score: ${result.overallScore}/100` });
-            setCurrentLiveFeedback('');
-        } else {
-             toast({ title: "Analysis Failed", description: "Could not get detailed analysis.", variant: "destructive" });
-             setCurrentLiveFeedback('Analysis failed.');
-        }
+      const result = await analyzeAudio(finalBlob, focusArea, 'audio/wav');
+      setAnalysis(result);
+      if (result) {
+        const newFinalRadarData = [
+          { subject: 'Pace', score: result.paceScore, fullMark: 100 },
+          { subject: 'Tonality', score: result.tonalityScore, fullMark: 100 },
+          { subject: 'Expression', score: result.detailedMetrics.pitchVariation, fullMark: 100 },
+          { subject: 'Energy', score: Math.min(100, Math.floor(result.detailedMetrics.volumeVariation * 1.1 + 10)), fullMark: 100 },
+          { subject: 'Fluency', score: Math.floor(result.fillerWordsScore), fullMark: 100 },
+          { subject: 'Drama', score: Math.floor(result.pausesScore), fullMark: 100 },
+        ].map(item => ({ ...item, score: Math.max(0, Math.min(100, Math.round(item.score))) }));
+        setFinalRadarData(newFinalRadarData);
+        toast({ title: "Analysis complete", description: `Overall score: ${result.overallScore}/100` });
+        setCurrentLiveFeedback('');
+      } else {
+        toast({ title: "Analysis Failed", description: "Could not get detailed analysis.", variant: "destructive" });
+        setCurrentLiveFeedback('Analysis failed.');
+      }
     } catch (error) {
-        console.error("Error during final analysis:", error);
-        toast({ title: "Analysis error", description: "Problem processing your recording.", variant: "destructive" });
-        setCurrentLiveFeedback('Analysis error.');
+      console.error("Error during final analysis:", error);
+      toast({ title: "Analysis error", description: "Problem processing your recording.", variant: "destructive" });
+      setCurrentLiveFeedback('Analysis error.');
     } finally {
-        setAnalyzingAudio(false);
-        setStatus('Session ended. Review results or start again.');
-        setShowLiveReactions(false);
+      setAnalyzingAudio(false);
+      setStatus('Session ended. Review results or start again.');
+      setShowLiveReactions(false);
     }
   };
 
@@ -678,7 +628,7 @@ const Practice = () => {
     setLiveFeedbackHistory([]);
     setSessionPhrases([]);
     setCurrentLiveFeedback('');
-    setIsDisplayingCoachMessage(false); // MODIFICATION: Reset on full reset
+    setIsDisplayingCoachMessage(false);
     setIsPlaying(false);
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
@@ -690,8 +640,7 @@ const Practice = () => {
     recordedPhraseChunksRef.current = [];
     allRecordedChunksRef.current = [];
     shortPhraseBufferRef.current = null;
-    silenceStartRef.current = Date.now(); 
-
+    silenceStartRef.current = Date.now();
     setStatus('Idle. Ready to record.');
   };
 
@@ -702,27 +651,27 @@ const Practice = () => {
   };
 
   useEffect(() => {
-    let currentAudioUrl = audioUrl; 
+    let currentAudioUrl = audioUrl;
     return () => {
-      stopTimer(); 
+      stopTimer();
       if (currentAudioUrl) {
         URL.revokeObjectURL(currentAudioUrl);
       }
       if (streamRef.current) {
-          streamRef.current.getTracks().forEach(t => t.stop());
-          streamRef.current = null;
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
       }
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close().catch(e => console.error("Error closing AudioContext on unmount:", e));
-          audioContextRef.current = null;
+        audioContextRef.current.close().catch(e => console.error("Error closing AudioContext on unmount:", e));
+        audioContextRef.current = null;
       }
       if (scriptProcessorRef.current) {
-          scriptProcessorRef.current.disconnect();
-          scriptProcessorRef.current.onaudioprocess = null;
-          scriptProcessorRef.current = null;
+        scriptProcessorRef.current.disconnect();
+        scriptProcessorRef.current.onaudioprocess = null;
+        scriptProcessorRef.current = null;
       }
     };
-  }, [audioUrl]); 
+  }, [audioUrl]);
 
   return (
     <Layout>
@@ -768,7 +717,6 @@ const Practice = () => {
               <div className="mt-2 min-h-[80px] flex items-center justify-center">
                 <LiveReactionFeedback isActive={showLiveReactions} />
               </div>
-              {/* --- MODIFIED Live Feedback Display --- */}
               <div className={cn(
                 "mt-4 p-4 rounded-md w-11/12 sm:w-3/4 md:w-2/3 lg:w-1/2 mx-auto shadow-sm",
                 "transition-all duration-300 ease-in-out",
@@ -782,13 +730,11 @@ const Practice = () => {
                     ? "text-sky-700 dark:text-sky-200 text-sm md:text-base text-left whitespace-pre-line"
                     : "text-purple-600 dark:text-purple-300 text-lg"
                 )}>
-                    {currentLiveFeedback}
+                  {currentLiveFeedback}
                 </p>
               </div>
-              {/* --- END MODIFICATION --- */}
             </div>
           )}
-
 
           {audioUrl && !isRecording && (
             <div className="w-full space-y-4 mt-4 px-4">
@@ -799,9 +745,7 @@ const Practice = () => {
                 </Button>
               </div>
               <div className="flex justify-center space-x-4">
-                <Button variant="outline" onClick={resetRecording}>
-                  Record again
-                </Button>
+                <Button variant="outline" onClick={resetRecording}> Record again </Button>
               </div>
             </div>
           )}
@@ -822,9 +766,9 @@ const Practice = () => {
               <BarChart size={20} />
               Analysis Results
               {analysis && (
-                 <span className="text-sm font-normal text-gray-500 ml-2">
-                   Focus: {focusArea.replace('-', ' ')}
-                 </span>
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  Focus: {focusArea.replace('-', ' ')}
+                </span>
               )}
             </h2>
 
@@ -837,176 +781,201 @@ const Practice = () => {
                 <TabsTrigger value="feedback">Feedback</TabsTrigger>
               </TabsList>
 
-               <TabsContent value="transcript" className="pt-4">
-                 <Card>
-                   <CardHeader className="pb-2">
-                     <CardTitle className="text-md">Session Review & Transcription</CardTitle>
-                   </CardHeader>
-                   <CardContent className="p-4">
-                     {sessionPhrases.length > 0 ? (
-                       <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 mb-8">
-                          <h4 className="text-md font-semibold mb-3">Live Feedback Phrases</h4>
-                         {sessionPhrases.map((phrase, index) => (
-                           <div
-                             key={phrase.id}
-                             className={`p-4 rounded-md shadow-sm ${
-                               phrase.error ? 'bg-red-50 dark:bg-red-900/50 border-l-4 border-red-500' : 'bg-gray-50 dark:bg-gray-700/50 border-l-4 border-blue-500'
-                             }`}
-                           >
-                             <div className="mb-1"> {/* Reduced mb here as feedback section is removed */}
-                               <span className="text-xs text-purple-500 dark:text-purple-300 font-mono uppercase tracking-wider">
-                                 Phrase {index + 1}
-                               </span>
-                               <p className={`mt-1 text-gray-800 dark:text-gray-100 leading-relaxed ${phrase.error ? 'italic' : ''}`}>
-                                 {phrase.transcript}
-                               </p>
-                             </div>
-                             {/* MODIFICATION: Removed Coach's Feedback section from here
-                             <div className="border-t border-gray-300 dark:border-gray-600 pt-3">
-                               <span className="text-xs text-yellow-600 dark:text-yellow-300 font-mono uppercase tracking-wider">
-                                 Coach's Feedback
-                               </span>
-                               <p className={`mt-1 text-sm ${phrase.error ? 'text-red-600 dark:text-red-200' : 'text-gray-600 dark:text-yellow-100'} leading-relaxed`}>
-                                 {phrase.review}
-                               </p>
-                             </div>
-                             */}
-                           </div>
-                         ))}
-                       </div>
-                     ) : (
-                       <p className="text-gray-500 italic text-center py-4">
-                         No live phrases were recorded.
-                       </p>
-                     )}
+              {/* MODIFICATION: Transcript Tab Content */}
+              <TabsContent value="transcript" className="pt-4 space-y-6">
+                {/* MODIFICATION: Moved ReactionGallery here */}
+                {analysis && <ReactionGallery collectedReactions={["🤩", "🎉", "👏", "👍", "💯", "🥳", "🙌", "✨", "🎯", "💡", "🔥", "✅"]} />}
 
-                     {analysis && analysis.transcription && (
-                        <div className="mt-8 pt-6 border-t border-gray-300 dark:border-gray-600">
-                            <h4 className="text-md font-semibold mb-3">Full Recording Transcript</h4>
-                            <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm whitespace-pre-wrap max-h-80 overflow-y-auto border dark:border-gray-700">
-                                {analysis.transcription}
+                {/* MODIFICATION: Collapsible "Deep Dive" section */}
+                <Accordion type="single" collapsible className="w-full" defaultValue="deep-dive-transcript-item">
+                  <AccordionItem value="deep-dive-transcript-item">
+                    <AccordionTrigger className="text-xl font-semibold hover:no-underline text-gray-800 dark:text-gray-200 flex items-center gap-2 py-3 px-1">
+                      <MessageSquareQuote size={22} className="text-blue-500" />
+                      <span>Deep Dive: Session Review & Content</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 pb-0">
+                      <Card className="border-none shadow-none">
+                        {/* CardHeader can be removed if title is in AccordionTrigger, or kept for sub-styling */}
+                        {/* <CardHeader className="pb-2 pt-0">
+                          <CardTitle className="text-md">Session Review & Transcription</CardTitle>
+                        </CardHeader> */}
+                        <CardContent className="p-4 space-y-6">
+                          {sessionPhrases.length > 0 && (
+                            <div>
+                              <h4 className="text-md font-semibold mb-3 text-gray-700 dark:text-gray-300">Live Feedback Phrases</h4>
+                              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+                                {sessionPhrases.map((phrase, index) => (
+                                  <div
+                                    key={phrase.id}
+                                    className={`p-3 rounded-md shadow-sm ${phrase.error ? 'bg-red-50 dark:bg-red-900/40 border-l-4 border-red-500' : 'bg-gray-50 dark:bg-gray-700/40 border-l-4 border-blue-500'}`}
+                                  >
+                                    <div className="mb-1">
+                                      <span className="text-xs text-purple-500 dark:text-purple-300 font-mono uppercase tracking-wider">
+                                        Phrase {index + 1}
+                                      </span>
+                                      <p className={`mt-1 text-sm text-gray-800 dark:text-gray-100 leading-relaxed ${phrase.error ? 'italic' : ''}`}>
+                                        {phrase.transcript}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-500 mt-3">
+                          )}
+
+                          {analysis && analysis.transcription && (
+                            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                              <h4 className="text-md font-semibold mb-3 text-gray-700 dark:text-gray-300">Full Recording Transcript</h4>
+                              <div className="bg-gray-100 dark:bg-gray-800/50 p-3 rounded text-sm whitespace-pre-wrap max-h-80 overflow-y-auto border dark:border-gray-700 shadow-inner">
+                                {analysis.transcription}
+                              </div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                 Note: AI-generated transcription, may not be 100% accurate.
-                            </p>
-                        </div>
-                     )}
-                   </CardContent>
-                 </Card>
-               </TabsContent>
+                              </p>
+                            </div>
+                          )}
+
+                          {/* MODIFICATION: Content Suggestions Section */}
+                          {analysis && analysis.contentSuggestions && analysis.contentSuggestions.length > 0 && (
+                            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                              <h4 className="text-md font-semibold mb-3 text-blue-600 dark:text-blue-400">💡 Content Improvement Ideas</h4>
+                              <ul className="space-y-2 list-disc list-inside pl-1">
+                                {analysis.contentSuggestions.slice(0, 5).map((suggestion, index) => ( // Show up to 5
+                                  <li key={index} className="text-sm text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/30 p-3 rounded shadow-sm border border-blue-200 dark:border-blue-700">
+                                    {suggestion}
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="text-center mt-5 p-3 bg-green-50 dark:bg-green-900/30 rounded-md border border-green-200 dark:border-green-700">
+                                <p className="text-sm text-green-700 dark:text-green-300">
+                                  Great effort! Why not try incorporating some of these ideas and <Button variant="link" className="p-0 h-auto text-sm text-green-600 dark:text-green-400 hover:underline" onClick={resetRecording}>record again</Button>?
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+                 {(sessionPhrases.length === 0 && !analysis?.transcription) && (
+                    <p className="text-gray-500 dark:text-gray-400 italic text-center py-4">
+                        No transcriptions or live phrases were recorded for the deep dive.
+                    </p>
+                 )}
+
+              </TabsContent>
 
               {analysis && (
-                  <>
-                    <TabsContent value="overview" className="pt-4">
-                        {finalRadarData && (
-                        <Card>
-                            <CardHeader className="pb-2 pt-4">
-                            <CardTitle className="text-lg text-center">Final Performance Radar</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                            <RechartsRadarChartComponent data={finalRadarData} />
-                            </CardContent>
-                        </Card>
-                        )}
-                        <div className="pt-6 border-t mt-6">
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="font-semibold text-md">Overall Score</span>
-                            <span className={cn(
-                            "text-xl font-bold",
-                            analysis.overallScore >= 80 ? "text-green-600" :
+                <>
+                  <TabsContent value="overview" className="pt-4">
+                    {finalRadarData && (
+                      <Card>
+                        <CardHeader className="pb-2 pt-4">
+                          <CardTitle className="text-lg text-center">Final Performance Radar</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <RechartsRadarChartComponent data={finalRadarData} />
+                        </CardContent>
+                      </Card>
+                    )}
+                    <div className="pt-6 border-t mt-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold text-md">Overall Score</span>
+                        <span className={cn(
+                          "text-xl font-bold",
+                          analysis.overallScore >= 80 ? "text-green-600" :
                             analysis.overallScore >= 60 ? "text-yellow-600" :
-                            "text-red-600"
-                            )}>
-                            {analysis.overallScore}/100
-                            </span>
-                        </div>
-                        <Progress value={analysis.overallScore} className="h-3" />
-                        </div>
-                    </TabsContent>
+                              "text-red-600"
+                        )}>
+                          {analysis.overallScore}/100
+                        </span>
+                      </div>
+                      <Progress value={analysis.overallScore} className="h-3" />
+                    </div>
+                  </TabsContent>
 
-                    <TabsContent value="speech" className="space-y-1 pt-4">
-                        <ScoreItem label="Pace" score={analysis.paceScore} description="Speaking rate" highlight={focusArea === 'rate-volume' || focusArea === 'all'} />
-                        <ScoreItem label="Tonality" score={analysis.tonalityScore} description="Tone and feel" highlight={focusArea === 'pitch-tonality' || focusArea === 'all'} />
-                        <ScoreItem label="Expression" score={analysis.detailedMetrics.pitchVariation} description="Pitch variation" highlight={focusArea === 'pitch-tonality' || focusArea === 'all'} />
-                        <ScoreItem label="Energy" score={Math.floor(analysis.detailedMetrics.volumeVariation * 1.1 + 10)} description="Volume variation" highlight={focusArea === 'rate-volume' || focusArea === 'all'} />
-                        <ScoreItem label="Drama" score={analysis.pausesScore} description="Use of pauses" highlight={focusArea === 'pause-fillers' || focusArea === 'all'} />
-                        <ScoreItem label="Fluency" score={analysis.fillerWordsScore} description="Minimizing 'um', 'uh'" highlight={focusArea === 'pause-fillers' || focusArea === 'all'} />
-                    </TabsContent>
+                  <TabsContent value="speech" className="space-y-1 pt-4">
+                    <ScoreItem label="Pace" score={analysis.paceScore} description="Speaking rate" highlight={focusArea === 'rate-volume' || focusArea === 'all'} />
+                    <ScoreItem label="Tonality" score={analysis.tonalityScore} description="Tone and feel" highlight={focusArea === 'pitch-tonality' || focusArea === 'all'} />
+                    <ScoreItem label="Expression" score={analysis.detailedMetrics.pitchVariation} description="Pitch variation" highlight={focusArea === 'pitch-tonality' || focusArea === 'all'} />
+                    <ScoreItem label="Energy" score={Math.floor(analysis.detailedMetrics.volumeVariation * 1.1 + 10)} description="Volume variation" highlight={focusArea === 'rate-volume' || focusArea === 'all'} />
+                    <ScoreItem label="Drama" score={analysis.pausesScore} description="Use of pauses" highlight={focusArea === 'pause-fillers' || focusArea === 'all'} />
+                    <ScoreItem label="Fluency" score={analysis.fillerWordsScore} description="Minimizing 'um', 'uh'" highlight={focusArea === 'pause-fillers' || focusArea === 'all'} />
+                  </TabsContent>
 
-                    <TabsContent value="metrics" className="pt-4">
-                        <div className="space-y-4">
-                        <Card>
-                            <CardHeader className="pb-2"><CardTitle className="text-md">Speaking Metrics</CardTitle></CardHeader>
-                            <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                <p className="text-sm text-gray-500">Words per minute</p>
-                                <p className="text-xl font-semibold">{analysis.detailedMetrics.wordsPerMinute}</p>
-                                <p className="text-xs text-gray-400">{analysis.detailedMetrics.wordsPerMinute > 160 ? "Faster" : analysis.detailedMetrics.wordsPerMinute < 130 ? "Slower" : "Good pace"}</p>
-                                </div>
-                                <div>
-                                <p className="text-sm text-gray-500">Volume variation</p>
-                                <p className="text-xl font-semibold">{Math.floor(analysis.detailedMetrics.volumeVariation * 1.1 + 10)}/100</p>
-                                <p className="text-xs text-gray-400">{analysis.detailedMetrics.volumeVariation > 75 ? "Excellent" : analysis.detailedMetrics.volumeVariation < 50 ? "Monotonous" : "Good"}</p>
-                                </div>
-                            </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="pb-2"><CardTitle className="text-md">Pauses & Filler Words</CardTitle></CardHeader>
-                            <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                <p className="text-sm text-gray-500">Strategic pauses</p>
-                                <p className="text-xl font-semibold">{analysis.detailedMetrics.pauseMetrics.totalPauses}</p>
-                                <p className="text-xs text-gray-400">Avg: {analysis.detailedMetrics.pauseMetrics.averagePauseDuration.toFixed(1)}s</p>
-                                </div>
-                                <div>
-                                <p className="text-sm text-gray-500">Filler words</p>
-                                <p className="text-xl font-semibold">{analysis.detailedMetrics.fillerWordCount.total}</p>
-                                <p className="text-xs text-gray-400">(um: {analysis.detailedMetrics.fillerWordCount.um}, uh: {analysis.detailedMetrics.fillerWordCount.uh}, etc.)</p>
-                                </div>
-                            </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="pb-2"><CardTitle className="text-md">Pitch Analysis</CardTitle></CardHeader>
-                            <CardContent>
+                  <TabsContent value="metrics" className="pt-4">
+                    <div className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2"><CardTitle className="text-md">Speaking Metrics</CardTitle></CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm text-gray-500">Pitch variation</p>
-                                <p className="text-xl font-semibold">{analysis.detailedMetrics.pitchVariation}/100</p>
-                                <p className="text-xs text-gray-400">{analysis.detailedMetrics.pitchVariation > 75 ? "Excellent" : analysis.detailedMetrics.pitchVariation < 50 ? "Monotonous" : "Good"}</p>
+                              <p className="text-sm text-gray-500">Words per minute</p>
+                              <p className="text-xl font-semibold">{analysis.detailedMetrics.wordsPerMinute}</p>
+                              <p className="text-xs text-gray-400">{analysis.detailedMetrics.wordsPerMinute > 160 ? "Faster" : analysis.detailedMetrics.wordsPerMinute < 130 ? "Slower" : "Good pace"}</p>
                             </div>
-                            </CardContent>
-                        </Card>
-                        </div>
-                    </TabsContent>
+                            <div>
+                              <p className="text-sm text-gray-500">Volume variation</p>
+                              <p className="text-xl font-semibold">{Math.floor(analysis.detailedMetrics.volumeVariation * 1.1 + 10)}/100</p>
+                              <p className="text-xs text-gray-400">{analysis.detailedMetrics.volumeVariation > 75 ? "Excellent" : analysis.detailedMetrics.volumeVariation < 50 ? "Monotonous" : "Good"}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="pb-2"><CardTitle className="text-md">Pauses & Filler Words</CardTitle></CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-gray-500">Strategic pauses</p>
+                              <p className="text-xl font-semibold">{analysis.detailedMetrics.pauseMetrics.totalPauses}</p>
+                              <p className="text-xs text-gray-400">Avg: {analysis.detailedMetrics.pauseMetrics.averagePauseDuration.toFixed(1)}s</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Filler words</p>
+                              <p className="text-xl font-semibold">{analysis.detailedMetrics.fillerWordCount.total}</p>
+                              <p className="text-xs text-gray-400">(um: {analysis.detailedMetrics.fillerWordCount.um}, uh: {analysis.detailedMetrics.fillerWordCount.uh}, etc.)</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="pb-2"><CardTitle className="text-md">Pitch Analysis</CardTitle></CardHeader>
+                        <CardContent>
+                          <div>
+                            <p className="text-sm text-gray-500">Pitch variation</p>
+                            <p className="text-xl font-semibold">{analysis.detailedMetrics.pitchVariation}/100</p>
+                            <p className="text-xs text-gray-400">{analysis.detailedMetrics.pitchVariation > 75 ? "Excellent" : analysis.detailedMetrics.pitchVariation < 50 ? "Monotonous" : "Good"}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
 
-                    <TabsContent value="feedback" className="pt-4">
-                        <div className="space-y-5">
-                        <ReactionGallery collectedReactions={["🤩", "🎉", "👏", "👍", "💯", "🥳", "🙌", "✨", "🎯", "💡", "🔥", "✅"]} />
-                        <div className="space-y-3">
-                            <h3 className="text-md font-semibold">General Feedback</h3>
-                            {analysis.feedback.length > 0 ? analysis.feedback.map((item, index) => (<div key={index} className="p-3 bg-gray-100 rounded-lg shadow-sm"><p className="text-sm">{item}</p></div>)) : <p className="text-sm text-gray-500">No general feedback.</p>}
-                        </div>
-                        <div className="space-y-3">
-                            <h3 className="text-md font-semibold">Improvement Suggestions</h3>
-                            <Card><CardContent className="p-4"><h4 className="font-medium mb-2 text-blue-600">Pace</h4>{analysis.specificSuggestions.pace.length > 0 ? (<ul className="space-y-2 list-disc list-inside">{analysis.specificSuggestions.pace.map((suggestion, index) => (<li key={index} className="text-sm bg-gray-50 p-2 rounded">{suggestion}</li>))}</ul>) : <p className="text-sm text-gray-500 italic">No suggestions.</p>}</CardContent></Card>
-                            <Card><CardContent className="p-4"><h4 className="font-medium mb-2 text-blue-600">Pitch</h4>{analysis.specificSuggestions.pitch.length > 0 ? (<ul className="space-y-2 list-disc list-inside">{analysis.specificSuggestions.pitch.map((suggestion, index) => (<li key={index} className="text-sm bg-gray-50 p-2 rounded">{suggestion}</li>))}</ul>) : <p className="text-sm text-gray-500 italic">No suggestions.</p>}</CardContent></Card>
-                            <Card><CardContent className="p-4"><h4 className="font-medium mb-2 text-blue-600">Fillers</h4>{analysis.specificSuggestions.fillers.length > 0 ? (<ul className="space-y-2 list-disc list-inside">{analysis.specificSuggestions.fillers.map((suggestion, index) => (<li key={index} className="text-sm bg-gray-50 p-2 rounded">{suggestion}</li>))}</ul>) : <p className="text-sm text-gray-500 italic">No suggestions.</p>}</CardContent></Card>
-                        </div>
-                        </div>
-                    </TabsContent>
+                  <TabsContent value="feedback" className="pt-4">
+                    <div className="space-y-5">
+                      {/* MODIFICATION: ReactionGallery was moved from here */}
+                      <div className="space-y-3">
+                        <h3 className="text-md font-semibold">General Feedback</h3>
+                        {analysis.feedback.length > 0 ? analysis.feedback.map((item, index) => (<div key={index} className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg shadow-sm border dark:border-gray-600"><p className="text-sm">{item}</p></div>)) : <p className="text-sm text-gray-500 italic">No general feedback.</p>}
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="text-md font-semibold">Improvement Suggestions</h3>
+                        <Card><CardContent className="p-4"><h4 className="font-medium mb-2 text-blue-600 dark:text-blue-400">Pace</h4>{analysis.specificSuggestions.pace.length > 0 ? (<ul className="space-y-2 list-disc list-inside">{analysis.specificSuggestions.pace.map((suggestion, index) => (<li key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded">{suggestion}</li>))}</ul>) : <p className="text-sm text-gray-500 italic">No suggestions.</p>}</CardContent></Card>
+                        <Card><CardContent className="p-4"><h4 className="font-medium mb-2 text-blue-600 dark:text-blue-400">Pitch</h4>{analysis.specificSuggestions.pitch.length > 0 ? (<ul className="space-y-2 list-disc list-inside">{analysis.specificSuggestions.pitch.map((suggestion, index) => (<li key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded">{suggestion}</li>))}</ul>) : <p className="text-sm text-gray-500 italic">No suggestions.</p>}</CardContent></Card>
+                        <Card><CardContent className="p-4"><h4 className="font-medium mb-2 text-blue-600 dark:text-blue-400">Fillers</h4>{analysis.specificSuggestions.fillers.length > 0 ? (<ul className="space-y-2 list-disc list-inside">{analysis.specificSuggestions.fillers.map((suggestion, index) => (<li key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded">{suggestion}</li>))}</ul>) : <p className="text-sm text-gray-500 italic">No suggestions.</p>}</CardContent></Card>
+                      </div>
+                    </div>
+                  </TabsContent>
                 </>
               )}
-
-
             </Tabs>
 
             {analysis && (
-                <div className="pt-4">
+              <div className="pt-4">
                 <Button className="w-full" size="lg">Save to My Progress</Button>
-                </div>
+              </div>
             )}
           </div>
         )}
