@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye, ChevronDownSquare } from "lucide-react";
+import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye, ChevronDownSquare, Lectern } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -325,7 +325,10 @@ const Practice = () => {
       console.log("Gemini Raw Response:", responseText);
       if (!firstAudioSentThisSessionRef.current) firstAudioSentThisSessionRef.current = true;
       let feedbackJson;
-      const trimmedResponse = responseText.trim();
+      let trimmedResponse = responseText.trim();
+
+      trimmedResponse = trimmedResponse.replace(/\u00A0/g, " "); 
+
       if (trimmedResponse.startsWith("```json")) {
         feedbackJson = JSON.parse(trimmedResponse.slice(7, -3).trim());
       } else if (trimmedResponse.startsWith("```")) {
