@@ -40,7 +40,7 @@ async function getVocalFeedback(transcription, focusArea, segments, words, audio
   
   // Safely stringify words if it's an object/array, otherwise use as is if already a string
   const wordsString = (typeof words === 'object' && words !== null) ? JSON.stringify(words) : `"${words}"`;
-  const contentSuggestionInstruction = `- contentSuggestions: Array of 3-5 distinct, actionable suggestions on how the speaker could improve the *content, message, or substance* of their speech to make it more impactful, clear, or engaging. These suggestions should encourage the user to iterate on their speech and try again, with simple examples based on the real content to make it easier.`;
+  const contentSuggestionInstruction = `- contentSuggestions: Array of 3-5 distinct, actionable suggestions with real examples on how the speaker could improve the *content, message, or substance* of their speech to make it more impactful, clear, or engaging. These suggestions MUST include examples, and act to encourage the user to iterate on their speech and try again.`;
 
   const promptMap = {
     'rate-volume': `
