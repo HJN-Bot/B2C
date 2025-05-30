@@ -27,9 +27,8 @@ You are a helpful and encouraging speech coach.
 Be gentle and give small suggestions that nudges the speaker to talk better without being too distracting or discouraging.
 
 Return results in JSON format only with the following keys:
-"review": "Give feedback on the content's storytelling, structure, and missing points, and suggest improvements based on the target audience and desired emotional impact. Give 3 points in 3 sentences with emojis and keep it short"
-"live": "If the user does not say the word "Coach", then encourage like a coach or an audience might to a live talk in less than 6 words. Use positive reinforcement like "keep calm" if speaking too fast, and other similar encouragements for problems in pace, tone, volume or pitch variation, pausing or overusing filler words,  or by mirroring back what's being said like "**repeat keyword you mentioned**: that's right! / interesting! / tell me more!", or with observations like "you're diving deep", "you're bringing it home," and others like it. Include an emoji.  If the speaker says the word "Coach", the user is asking the coach to give help or tips, so switch roles to a coach giving actionable advice that fully answers the speaker's question - listing 3 ideas and giving examples, but keeping it concise and under 30 words, for example "1. Highlight a problem: Many pet owners struggle to socialize their pets. 2. Showcase solution: Your app connects pets for playdates. 3. Show impact: Happier pets, more social owners!". Only give help or tips when asked, and then go back to giving encouragement"
-"transcript": "(transcription of this phrase)"
+"coach": " If the speaker ever says the word "Coach", the user is asking the coach to give help or tips, so switch roles to a coach giving actionable advice that fully answers the speaker's question - listing 3 ideas with examples in 3 points, but keeping it concise and under 30 words, for example "1. Highlight a problem: Many pet owners struggle to socialize their pets. 2. Showcase solution: Your app connects pets for playdates. 3. Show impact: Happier pets, more social owners!". Use emojis for effect."
+"live": "If the user does not say the word "Coach", then encourage like a coach or an audience might to a live talk in less than 6 words. Use positive reinforcement like "keep calm" if speaking too fast, and other similar encouragements for problems in pace, tone, volume or pitch variation, pausing or overusing filler words,  or by mirroring back what's being said like "**repeat keyword you mentioned**: that's right! / interesting! / tell me more!", or with observations like "you're diving deep", "you're bringing it home," and others like it. Include an emoji."
 
 Ensure the output is a **single, valid JSON** object. If you cannot provide a valid JSON with these fields for any reason, return a JSON with an "error" field explaining the issue.
 `;
@@ -169,6 +168,7 @@ const Practice = () => {
   const [showLiveReactions, setShowLiveReactions] = useState(false);
   const [currentLiveFeedback, setCurrentLiveFeedback] = useState<string>('');
   const [sessionPhrases, setSessionPhrases] = useState<any[]>([]);
+  const [isDisplayingCoachMessage, setIsDisplayingCoachMessage] = useState(false); // MODIFICATION: New state
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const microphoneSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -176,14 +176,15 @@ const Practice = () => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const recordedPhraseChunksRef = useRef<Float32Array[]>([]);
   const allRecordedChunksRef = useRef<Float32Array[]>([]);
-  const silenceStartRef = useRef(Date.now());
-  const speakingRef = useRef(false);
+  const silenceStartRef = useRef(Date.now()); // Timestamp of last speech activity or start of recording
+  const speakingRef = useRef(false); // VAD state: true if currently accumulating a phrase
   const genAiRef = useRef<GoogleGenerativeAI | null>(null);
   const chatSessionRef = useRef<any | null>(null);
   const firstAudioSentThisSessionRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
   const shortPhraseBufferRef = useRef<Float32Array | null>(null);
-  const initialSilenceToastShownRef = useRef(false); // Added ref for initial silence toast
+  const initialSilenceToastShownRef = useRef(false);
+  const longPauseToastShownThisPauseRef = useRef(false); // Flag for "ask Coach" toast
 
   const isRecordingRef = useRef(isRecording);
   useEffect(() => {
@@ -364,7 +365,7 @@ const Practice = () => {
   }, [blobToBase64]);
 
   // --- Audio Recording & VAD ---
-  const processCurrentPhrase = useCallback(async (isFinal = false, silenceDurationMsec = 0) => { // ADDED silenceDurationMsec parameter
+  const processCurrentPhrase = useCallback(async (isFinal = false, silenceDurationMsec = 0) => {
     let allChunksToProcessRaw: Float32Array[] = [];
 
     if (shortPhraseBufferRef.current) {
@@ -374,18 +375,17 @@ const Practice = () => {
     allChunksToProcessRaw = [...allChunksToProcessRaw, ...recordedPhraseChunksRef.current];
 
     if (allChunksToProcessRaw.length === 0) {
-        if (!isFinal) speakingRef.current = false;
+        if (!isFinal) speakingRef.current = false; // VAD phrase ended
         return;
     }
 
     const completePhraseData = concatenateFloat32Arrays(allChunksToProcessRaw);
-    recordedPhraseChunksRef.current = [];
-    if (!isFinal) speakingRef.current = false;
+    recordedPhraseChunksRef.current = []; // Clear chunks for the next VAD phrase
+    if (!isFinal) speakingRef.current = false; // VAD phrase ended
 
     const durationSeconds = completePhraseData.length / TARGET_SAMPLE_RATE;
     const silenceDurationSeconds = silenceDurationMsec / 1000;
 
-    // --- MODIFIED CONDITION ---
     const shouldProcessDueToTime = !isFinal && (silenceDurationSeconds + durationSeconds > MIN_DURATION_SECONDS) && (durationSeconds > 0.5);
 
     if (isFinal || durationSeconds >= MIN_DURATION_SECONDS || shouldProcessDueToTime) {
@@ -395,33 +395,60 @@ const Practice = () => {
 
         const wavBlob = createWavBlob(completePhraseData, TARGET_SAMPLE_RATE);
         const result = await processAudioWithGemini(wavBlob);
-
+        
+        // MODIFICATION START: Logic for handling 'coach' vs 'live' feedback
         if (result) {
-            const liveText = result.live || (result.error ? 'Error' : null);
-            if (liveText) {
-                setCurrentLiveFeedback(liveText);
-                setLiveFeedbackHistory(prev => [...prev, liveText]);
+            let feedbackTextToShow = '';
+            let isCoachMsg = false;
+
+            if (result.coach && typeof result.coach === 'string' && result.coach.trim() !== '') {
+                feedbackTextToShow = result.coach;
+                isCoachMsg = true;
+            } else if (result.live && typeof result.live === 'string' && result.live.trim() !== '') {
+                feedbackTextToShow = result.live;
+            } else if (result.error) {
+                feedbackTextToShow = `Error: ${result.error}`;
+            } else {
+                feedbackTextToShow = 'Processing...'; // Default message if no specific feedback
+            }
+
+            setCurrentLiveFeedback(feedbackTextToShow);
+            setIsDisplayingCoachMessage(isCoachMsg); // Update based on message type
+
+            if (feedbackTextToShow && feedbackTextToShow !== 'Processing...' && !result.error) {
+               setLiveFeedbackHistory(prev => [...prev, feedbackTextToShow]);
             }
 
             setSessionPhrases(prev => [...prev, {
                 id: Date.now(),
-                transcript: result.error ? "Error processing phrase." : (result.transcript || "[No transcript]"),
-                review: result.error || result.review || "[No review]",
+                transcript: result.error ? "Error processing phrase." : (result.transcript || "[No transcript from AI]"),
+                review: result.error || result.review || (isCoachMsg ? result.coach : result.live) || "[No specific review/feedback text]", // Keep original review logic, or use specific feedback
                 error: !!result.error
             }]);
+        } else {
+           setCurrentLiveFeedback('Failed to process audio.');
+           setIsDisplayingCoachMessage(false);
+           setSessionPhrases(prev => [...prev, {
+               id: Date.now(),
+               transcript: "[No transcript - processing error]",
+               review: "Failed to get response from AI.",
+               error: true
+           }]);
         }
+        // MODIFICATION END
+
     } else {
         console.log(`Phrase too short (${durationSeconds.toFixed(1)}s), buffering. Silence: ${silenceDurationSeconds.toFixed(1)}s.`);
-        shortPhraseBufferRef.current = completePhraseData;
+        shortPhraseBufferRef.current = completePhraseData; 
         setStatus('Listening...');
-        setShowLiveReactions(true);
+        setShowLiveReactions(true); 
         return;
     }
 
     if (isRecordingRef.current && !isFinal) {
         setStatus('Listening...');
     }
-  }, [concatenateFloat32Arrays, createWavBlob, processAudioWithGemini]);
+  }, [concatenateFloat32Arrays, createWavBlob, processAudioWithGemini, setIsDisplayingCoachMessage]); // Added setIsDisplayingCoachMessage to dependencies
 
   const startVAD = useCallback(() => {
     if (!audioContextRef.current || !microphoneSourceRef.current || !analyserRef.current || !scriptProcessorRef.current) return;
@@ -430,41 +457,42 @@ const Practice = () => {
       if (!isRecordingRef.current) return;
 
       const inputData = event.inputBuffer.getChannelData(0);
+      const now = Date.now();
       let sumSquares = 0.0;
       for (const sample of inputData) sumSquares += sample * sample;
       const rms = Math.sqrt(sumSquares / inputData.length);
 
       if (rms > ENERGY_THRESHOLD) { // Speech detected
-        if (!speakingRef.current) {
+        if (!speakingRef.current) { // Start of a new VAD phrase
           speakingRef.current = true;
-          console.log("Speech started.");
+          console.log("Speech started (VAD phrase).");
         }
         recordedPhraseChunksRef.current.push(new Float32Array(inputData));
         allRecordedChunksRef.current.push(new Float32Array(inputData));
-        silenceStartRef.current = Date.now(); // Reset silence timer as speech is active
+        silenceStartRef.current = now; // Update time of last speech activity
+        longPauseToastShownThisPauseRef.current = false; // Reset toast flag when speech resumes
       } else { // Silence detected (rms <= ENERGY_THRESHOLD)
-        if (speakingRef.current) { // Silence *after* speech (i.e., a pause)
-          const currentSilenceDurationMsec = Date.now() - silenceStartRef.current;
-console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
-          // Display toast if pause is longer than PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC (e.g., 2 seconds)
-          if (currentSilenceDurationMsec > PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC) {
-            toast({ description: "ask 'Coach' what to say" }); // Toast for pause
-          }
+        const continuousSilenceSinceLastSpeechMsec = now - silenceStartRef.current;
 
-          // Process phrase if silence is longer than SILENCE_DURATION_MSEC (original logic, e.g., 0.5 seconds)
-          if (currentSilenceDurationMsec > SILENCE_DURATION_MSEC) {
-            console.log(`Long silence detected (${currentSilenceDurationMsec}ms), processing phrase.`);
-            processCurrentPhrase(false, currentSilenceDurationMsec);
-            // speakingRef.current is set to false inside processCurrentPhrase if !isFinal
+        if (allRecordedChunksRef.current.length > 0 &&
+            continuousSilenceSinceLastSpeechMsec > PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC &&
+            !longPauseToastShownThisPauseRef.current) {
+          toast({ description: "ask 'Coach' what to say" });
+          longPauseToastShownThisPauseRef.current = true; 
+        }
+
+        if (speakingRef.current) { 
+          if (continuousSilenceSinceLastSpeechMsec > SILENCE_DURATION_MSEC) {
+            console.log(`VAD: Long silence detected (${continuousSilenceSinceLastSpeechMsec}ms), processing current phrase.`);
+            processCurrentPhrase(false, continuousSilenceSinceLastSpeechMsec);
           } else {
-            // Still silent, but not long enough to trigger processing. Buffer this silence as part of the ongoing phrase.
-            recordedPhraseChunksRef.current.push(new Float32Array(inputData));
+            recordedPhraseChunksRef.current.push(new Float32Array(inputData)); 
             allRecordedChunksRef.current.push(new Float32Array(inputData));
           }
-        } else { // Silence *before* any speech has started in this session, and recording is active
-          if (isRecordingRef.current && !initialSilenceToastShownRef.current) {
+        } else {
+          if (isRecordingRef.current && !initialSilenceToastShownRef.current && allRecordedChunksRef.current.length === 0) {
             toast({ description: "state your audience" });
-            initialSilenceToastShownRef.current = true; // Ensure it's shown only once per recording start
+            initialSilenceToastShownRef.current = true;
           }
         }
       }
@@ -502,8 +530,10 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
       recordedPhraseChunksRef.current = [];
       allRecordedChunksRef.current = [];
       shortPhraseBufferRef.current = null;
-      speakingRef.current = false;
-      initialSilenceToastShownRef.current = false; // Reset flag for initial silence toast
+      speakingRef.current = false;      
+      silenceStartRef.current = Date.now(); 
+      initialSilenceToastShownRef.current = false;
+      longPauseToastShownThisPauseRef.current = false; 
       chatSessionRef.current = null;
       firstAudioSentThisSessionRef.current = false;
       setAnalysis(null);
@@ -512,6 +542,7 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
       setFinalRadarData(null);
       setRecordingTime(0);
       setCurrentLiveFeedback('Listening...');
+      setIsDisplayingCoachMessage(false); // MODIFICATION: Reset on new recording
 
       streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: TARGET_SAMPLE_RATE });
@@ -543,17 +574,20 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
      }
 
     setStatus("Stopping session...");
-    setIsRecording(false);
+    setIsRecording(false); 
     stopTimer();
     setCurrentLiveFeedback('Processing final audio...');
+    // setIsDisplayingCoachMessage(false); // Keep coach message if it was the last one, or clear? Let's clear.
+    // Actually, let currentLiveFeedback handle the "Processing final audio..." message, so coach styling is not applied to it.
+    setIsDisplayingCoachMessage(false);
+
 
     console.log("Processing final phrase on stop...");
-    await processCurrentPhrase(true); // Process final phrase (isFinal=true)
+    await processCurrentPhrase(true, Date.now() - silenceStartRef.current);
 
-    // Cleanup audio resources
     if (scriptProcessorRef.current) {
       scriptProcessorRef.current.disconnect();
-      scriptProcessorRef.current.onaudioprocess = null;
+      scriptProcessorRef.current.onaudioprocess = null; 
     }
     if (analyserRef.current) analyserRef.current.disconnect();
     if (microphoneSourceRef.current) microphoneSourceRef.current.disconnect();
@@ -574,7 +608,7 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
         setStatus('Session ended. Nothing recorded.');
         setCurrentLiveFeedback('No audio recorded.');
         toast({ title: "Recording stopped", description: "No audio detected.", variant: "warning" });
-        resetRecording();
+        resetRecording(); 
         return;
     }
 
@@ -585,7 +619,7 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
 
     const fullRecordingData = concatenateFloat32Arrays(allRecordedChunksRef.current);
     const finalBlob = createWavBlob(fullRecordingData, TARGET_SAMPLE_RATE);
-    allRecordedChunksRef.current = [];
+    allRecordedChunksRef.current = []; 
 
     setAudioBlob(finalBlob);
     const url = createAudioUrl(finalBlob);
@@ -644,11 +678,20 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
     setLiveFeedbackHistory([]);
     setSessionPhrases([]);
     setCurrentLiveFeedback('');
+    setIsDisplayingCoachMessage(false); // MODIFICATION: Reset on full reset
     setIsPlaying(false);
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.src = '';
     }
+    speakingRef.current = false;
+    initialSilenceToastShownRef.current = false;
+    longPauseToastShownThisPauseRef.current = false;
+    recordedPhraseChunksRef.current = [];
+    allRecordedChunksRef.current = [];
+    shortPhraseBufferRef.current = null;
+    silenceStartRef.current = Date.now(); 
+
     setStatus('Idle. Ready to record.');
   };
 
@@ -659,18 +702,27 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
   };
 
   useEffect(() => {
-    let currentAudioUrl = audioUrl;
+    let currentAudioUrl = audioUrl; 
     return () => {
-      stopTimer();
+      stopTimer(); 
       if (currentAudioUrl) {
         URL.revokeObjectURL(currentAudioUrl);
       }
-      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+      if (streamRef.current) {
+          streamRef.current.getTracks().forEach(t => t.stop());
+          streamRef.current = null;
+      }
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
+          audioContextRef.current.close().catch(e => console.error("Error closing AudioContext on unmount:", e));
+          audioContextRef.current = null;
+      }
+      if (scriptProcessorRef.current) {
+          scriptProcessorRef.current.disconnect();
+          scriptProcessorRef.current.onaudioprocess = null;
+          scriptProcessorRef.current = null;
       }
     };
-  }, [audioUrl]);
+  }, [audioUrl]); 
 
   return (
     <Layout>
@@ -716,9 +768,20 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
               <div className="mt-2 min-h-[80px] flex items-center justify-center">
                 <LiveReactionFeedback isActive={showLiveReactions} />
               </div>
-              {/* --- Live Feedback Display (MODIFIED) --- */}
-              <div className="mt-4 p-4 bg-purple-50 dark:bg-gray-700 rounded-md min-h-[60px] w-11/12 sm:w-3/4 md:w-2/3 lg:w-1/2 mx-auto flex items-center justify-center shadow-sm text-center">
-                <p className="text-lg font-medium text-purple-600 dark:text-purple-300 transition-all duration-200">
+              {/* --- MODIFIED Live Feedback Display --- */}
+              <div className={cn(
+                "mt-4 p-4 rounded-md w-11/12 sm:w-3/4 md:w-2/3 lg:w-1/2 mx-auto shadow-sm",
+                "transition-all duration-300 ease-in-out",
+                isDisplayingCoachMessage
+                  ? "bg-sky-50 dark:bg-sky-800 border border-sky-300 dark:border-sky-700"
+                  : "bg-purple-50 dark:bg-gray-700 min-h-[60px] flex items-center justify-center text-center"
+              )}>
+                <p className={cn(
+                  "font-medium transition-colors duration-200",
+                  isDisplayingCoachMessage
+                    ? "text-sky-700 dark:text-sky-200 text-sm md:text-base text-left whitespace-pre-line"
+                    : "text-purple-600 dark:text-purple-300 text-lg"
+                )}>
                     {currentLiveFeedback}
                 </p>
               </div>
@@ -790,7 +853,7 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
                                phrase.error ? 'bg-red-50 dark:bg-red-900/50 border-l-4 border-red-500' : 'bg-gray-50 dark:bg-gray-700/50 border-l-4 border-blue-500'
                              }`}
                            >
-                             <div className="mb-3">
+                             <div className="mb-1"> {/* Reduced mb here as feedback section is removed */}
                                <span className="text-xs text-purple-500 dark:text-purple-300 font-mono uppercase tracking-wider">
                                  Phrase {index + 1}
                                </span>
@@ -798,6 +861,7 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
                                  {phrase.transcript}
                                </p>
                              </div>
+                             {/* MODIFICATION: Removed Coach's Feedback section from here
                              <div className="border-t border-gray-300 dark:border-gray-600 pt-3">
                                <span className="text-xs text-yellow-600 dark:text-yellow-300 font-mono uppercase tracking-wider">
                                  Coach's Feedback
@@ -806,6 +870,7 @@ console.log('📢 [Practice.tsx:448]', currentSilenceDurationMsec);
                                  {phrase.review}
                                </p>
                              </div>
+                             */}
                            </div>
                          ))}
                        </div>
