@@ -71,7 +71,7 @@ export class AudioRecorder {
         }
       });
 
-      this.mediaRecorder.start();
+      this.mediaRecorder.start(1000);
       console.debug(`Recording started (Legacy Method). Effective mimeType: ${this.actualMimeType}`);
 
     } catch (error) {
@@ -101,7 +101,7 @@ export class AudioRecorder {
             }
         });
 
-        this.mediaRecorder.start();
+        this.mediaRecorder.start(1000);
         console.debug(`Recording started with stream (Legacy Method). Effective mimeType: ${this.actualMimeType}`);
         return this.stream;
 
