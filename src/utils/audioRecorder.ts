@@ -7,7 +7,7 @@ export class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private stream: MediaStream | null = null;
-  private actualMimeType: string = '';
+  private actualMimeType : string | null = null;
 
   // These start/stop/etc. methods won't be used in the new live feedback flow,
   // but we keep them here for potential other uses or if the user wants
@@ -15,11 +15,9 @@ export class AudioRecorder {
 
   private async initializeMediaRecorder(stream: MediaStream): Promise<MediaRecorder> {
     const mimeTypesToTry = [
-      'audio/mp4',
       'audio/webm;codecs=opus',
-      'audio/webm',
-      'audio/ogg;codecs=opus',
-      'audio/ogg',
+      'audio/mp4',
+      'audio/wav'
     ];
 
     let recorder: MediaRecorder | null = null;
@@ -64,8 +62,7 @@ export class AudioRecorder {
       this.actualMimeType = this.mediaRecorder.mimeType;
 
       if (!this.actualMimeType) {
-        console.warn("MediaRecorder was created, but its mimeType property is empty. Defaulting to 'audio/webm' for blob, but this might be incorrect.");
-        this.actualMimeType = 'audio/webm';
+        console.warn("MediaRecorder was created, but its mimeType property is null");
       }
 
       this.mediaRecorder.addEventListener('dataavailable', (event) => {
@@ -95,8 +92,7 @@ export class AudioRecorder {
         this.actualMimeType = this.mediaRecorder.mimeType;
 
         if (!this.actualMimeType) {
-            console.warn("MediaRecorder was created, but its mimeType property is empty. Defaulting to 'audio/webm' for blob.");
-            this.actualMimeType = 'audio/webm';
+            console.warn("MediaRecorder was created, but its mimeType property is null");
         }
 
         this.mediaRecorder.addEventListener('dataavailable', (event) => {
@@ -177,7 +173,7 @@ export class AudioRecorder {
   }
 
   public getActualMimeType(): string {
-    return this.actualMimeType || 'application/octet-stream';
+    return this.actualMimeType;
   }
 }
 
@@ -709,7 +705,7 @@ function calculatePauseDetails(
 export const analyzeAudio = async (
   audioBlob: Blob,
   focusArea: 'rate-volume' | 'pitch-tonality' | 'pause-fillers' | 'all' = 'all',
-  actualMimeType: string = 'audio/wav', // Default to WAV now
+  actualMimeType: string | null, 
   exerciseText?: string,
 ): Promise<DetailedAnalysisResult> => {
   try {

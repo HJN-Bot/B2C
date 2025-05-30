@@ -199,8 +199,8 @@ Deno.serve(async (req)=>{
     if (!audio) {
       throw new Error('No audio data provided');
     }
-    const receivedMimeType = audioMimeType || 'audio/webm'; // Default if not provided
-    console.log("Received request. Focus area:", focusArea, "Received MIME type:", receivedMimeType, "Detected pauses count:", detectedPauses?.length ?? 'N/A');
+    console.log("Received request. Focus area:", focusArea, "Received MIME type:", audioMimeType, "Detected pauses count:", detectedPauses?.length ?? 'N/A');
+    const receivedMimeType = audioMimeType || 'audio/webm'; //Default Mime Type if not specified
 
     const binaryAudio = processBase64Chunks(audio);
     

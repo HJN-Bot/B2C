@@ -23,7 +23,7 @@ const VocalExercise = ({ lessonId, focusArea = 'all', onComplete }: VocalExercis
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [mimeType, setMimeType] = useState<string>('application/octet-stream');
+  const [mimeType, setMimeType] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [analysis, setAnalysis] = useState<DetailedAnalysisResult | null>(null);
