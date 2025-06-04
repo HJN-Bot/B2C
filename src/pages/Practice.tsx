@@ -33,7 +33,14 @@ Return results in JSON format only with the following keys:
 "review": "Give feedback on the content's storytelling, structure, and missing points, and suggest improvements based on the target audience and desired emotional impact. Give 3 points in 3 sentences with emojis and keep it short"
 "transcript": "(transcription of this phrase, skip any instructions to the coach)"
 
-Ensure the output is a **single, valid JSON** object. If you cannot provide a valid JSON with these fields for any reason, return a JSON with an "error" field explaining the issue.
+CRITICAL: Ensure the output is a **single, valid JSON** object. If you cannot provide a valid JSON with these fields for any reason, return a JSON with an "error" field explaining the issue.
+Output JSON Format Rules:
+- Always escape quotes in strings using \"
+- Never use unescaped quotes within string values
+- Keep all text within the JSON structure
+- No trailing commas
+- No comments in JSON
+- Response must be parseable by JSON.parse()
 `;
 
 // VAD Parameters
@@ -292,7 +299,12 @@ const Practice = () => {
     }
     if (!chatSessionRef.current) {
       try {
-        const model = genAiRef.current.getGenerativeModel({ model: MODEL_NAME });
+        const model = genAiRef.current.getGenerativeModel({
+          model: MODEL_NAME,
+          generationConfig: {
+            responseMimeType: "application/json",
+          },
+        });
         chatSessionRef.current = model.startChat({
           history: [],
           safetySettings: [
@@ -302,7 +314,7 @@ const Practice = () => {
         });
         firstAudioSentThisSessionRef.current = false;
         console.log("New Gemini chat session started.");
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error starting Gemini chat:", error);
         setStatus(`Error starting chat: ${error.message}.`);
         return { error: `Error starting chat: ${error.message}` };
@@ -311,40 +323,42 @@ const Practice = () => {
     setStatus("Sending phrase to AI...");
     try {
       const audioBase64 = await blobToBase64(wavBlob);
-      const audioPart = { inlineData: { mimeType: 'audio/wav', data: audioBase64 } };
+      const audioPart = { inlineData: { mimeType: "audio/wav", data: audioBase64 } };
       const messageParts = [];
       if (!firstAudioSentThisSessionRef.current) {
+        // Prompt to guide JSON structure
         messageParts.push(INITIAL_PROMPT_TEXT);
+  
+        firstAudioSentThisSessionRef.current = true;
       }
       messageParts.push(audioPart);
-      const result = await chatSessionRef.current.sendMessageStream(messageParts);
+      const result = await chatSessionRef.current.sendMessageStream(messageParts, {
+        generationConfig: {
+          responseMimeType: "application/json",
+        },
+      });
       let responseText = "";
       for await (const chunk of result.stream) {
         responseText += chunk.text();
       }
       console.log("Gemini Raw Response:", responseText);
-      if (!firstAudioSentThisSessionRef.current) firstAudioSentThisSessionRef.current = true;
+  
+      // Parse JSON response
       let feedbackJson;
-      let trimmedResponse = responseText.trim();
-
-      trimmedResponse = trimmedResponse.replace(/\u00A0/g, " "); 
-
-      if (trimmedResponse.startsWith("```json")) {
-        feedbackJson = JSON.parse(trimmedResponse.slice(7, -3).trim());
-      } else if (trimmedResponse.startsWith("```")) {
-        feedbackJson = JSON.parse(trimmedResponse.slice(3, -3).trim());
-      } else if (trimmedResponse.startsWith("{") && trimmedResponse.endsWith("}")) {
-        feedbackJson = JSON.parse(trimmedResponse);
-      } else {
-        console.warn("Response not JSON, attempting direct parse or using as error.");
-        try {
-          feedbackJson = JSON.parse(trimmedResponse);
-        } catch (e) {
-          feedbackJson = { error: "AI response not in expected JSON format.", live: "Format Issue", transcript: "N/A", review: responseText };
-        }
+      try {
+        feedbackJson = JSON.parse(responseText.trim());
+      } catch (error) {
+        console.error("Failed to parse JSON response:", error);
+        feedbackJson = {
+          error: "AI response not in valid JSON format.",
+          live: "Format Issue",
+          transcript: "N/A",
+          review: responseText,
+        };
       }
+  
       return feedbackJson;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error communicating with Gemini:", error);
       let userMessage = `Gemini Error: ${error.message}`;
       if (error.message && (error.message.includes("API key not valid") || error.message.includes("API_KEY_INVALID"))) {
