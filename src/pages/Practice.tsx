@@ -22,7 +22,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 // --- Constants (Merged from App & Practice) ---
-const MODEL_NAME = "gemini-1.5-flash-latest";
+const MODEL_NAME = "gemini-2.5-flash";
 const INITIAL_PROMPT_TEXT = `
 You are a helpful and encouraging speech coach.
 Be gentle and give small suggestions that nudges the speaker to talk better without being too distracting or discouraging.
@@ -50,6 +50,7 @@ const TARGET_SAMPLE_RATE = 16000;
 const SCRIPT_PROCESSOR_BUFFER_SIZE = 1024; // 🎤 Using a power of two
 const MIN_DURATION_SECONDS = 3.0; // Reduced minimum duration slightly
 const PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC = 1000;
+const MAX_PHRASE_DURATION_SECONDS = 3.0; // Max duration of a single phrase before forcing processing.
 
 const baseRadarMetricsConfig = [
   { subject: 'Pace', fullMark: 100 },
@@ -194,6 +195,8 @@ const Practice = () => {
   const shortPhraseBufferRef = useRef<Float32Array | null>(null);
   const initialSilenceToastShownRef = useRef(false);
   const longPauseToastShownThisPauseRef = useRef(false);
+  const isProcessingPhraseRef = useRef(false);
+  const maxDurationExceededRef = useRef(false);
 
   const isRecordingRef = useRef(isRecording);
   useEffect(() => {
@@ -328,7 +331,7 @@ const Practice = () => {
       if (!firstAudioSentThisSessionRef.current) {
         // Prompt to guide JSON structure
         messageParts.push(INITIAL_PROMPT_TEXT);
-  
+
         firstAudioSentThisSessionRef.current = true;
       }
       messageParts.push(audioPart);
@@ -342,7 +345,7 @@ const Practice = () => {
         responseText += chunk.text();
       }
       console.log("Gemini Raw Response:", responseText);
-  
+
       // Parse JSON response
       let feedbackJson;
       try {
@@ -356,7 +359,7 @@ const Practice = () => {
           review: responseText,
         };
       }
-  
+
       return feedbackJson;
     } catch (error) {
       console.error("Error communicating with Gemini:", error);
@@ -373,96 +376,115 @@ const Practice = () => {
   }, [blobToBase64]);
 
   const processCurrentPhrase = useCallback(async (isFinal = false, silenceDurationMsec = 0) => {
-    let allChunksToProcessRaw: Float32Array[] = [];
-    if (shortPhraseBufferRef.current) {
-      allChunksToProcessRaw.push(shortPhraseBufferRef.current);
-      shortPhraseBufferRef.current = null;
+    if (isProcessingPhraseRef.current && !isFinal) {
+        console.log("Already processing a phrase, skipping this trigger.");
+        return;
     }
-    allChunksToProcessRaw = [...allChunksToProcessRaw, ...recordedPhraseChunksRef.current];
-    if (allChunksToProcessRaw.length === 0) {
-      if (!isFinal) speakingRef.current = false;
-      return;
-    }
-    const completePhraseData = concatenateFloat32Arrays(allChunksToProcessRaw);
-    recordedPhraseChunksRef.current = [];
-    if (!isFinal) speakingRef.current = false;
-    const durationSeconds = completePhraseData.length / TARGET_SAMPLE_RATE;
-    const silenceDurationSeconds = silenceDurationMsec / 1000;
-    const shouldProcessDueToTime = !isFinal && (silenceDurationSeconds + durationSeconds > MIN_DURATION_SECONDS) && (durationSeconds > 0.5);
+    isProcessingPhraseRef.current = true;
+    try {
+        let allChunksToProcessRaw: Float32Array[] = [];
+        if (shortPhraseBufferRef.current) {
+          allChunksToProcessRaw.push(shortPhraseBufferRef.current);
+          shortPhraseBufferRef.current = null;
+        }
+        allChunksToProcessRaw = [...allChunksToProcessRaw, ...recordedPhraseChunksRef.current];
+        if (allChunksToProcessRaw.length === 0) {
+          if (!isFinal) speakingRef.current = false;
+          return;
+        }
+        const completePhraseData = concatenateFloat32Arrays(allChunksToProcessRaw);
+        recordedPhraseChunksRef.current = [];
+        if (!isFinal) speakingRef.current = false;
+        const durationSeconds = completePhraseData.length / TARGET_SAMPLE_RATE;
+        const silenceDurationSeconds = silenceDurationMsec / 1000;
+        const shouldProcessDueToTime = !isFinal && (silenceDurationSeconds + durationSeconds > MIN_DURATION_SECONDS) && (durationSeconds > 0.5);
 
-    if (isFinal || durationSeconds >= MIN_DURATION_SECONDS || shouldProcessDueToTime) {
-      console.log(`Processing phrase (${durationSeconds.toFixed(1)}s). Final: ${isFinal}. Silence: ${silenceDurationSeconds.toFixed(1)}s. Reason: ${isFinal ? 'Final' : durationSeconds >= MIN_DURATION_SECONDS ? 'Duration' : 'Time'}`);
-      setStatus('Processing phrase...');
-      setShowLiveReactions(true);
-      const wavBlob = createWavBlob(completePhraseData, TARGET_SAMPLE_RATE);
-      const result = await processAudioWithGemini(wavBlob);
+        if (isFinal || durationSeconds >= MIN_DURATION_SECONDS || shouldProcessDueToTime) {
+          console.log(`Processing phrase (${durationSeconds.toFixed(1)}s). Final: ${isFinal}. Silence: ${silenceDurationSeconds.toFixed(1)}s. Reason: ${isFinal ? 'Final' : durationSeconds >= MIN_DURATION_SECONDS ? 'Duration' : 'Time'}`);
+          setStatus('Processing phrase...');
+          setShowLiveReactions(true);
+          const wavBlob = createWavBlob(completePhraseData, TARGET_SAMPLE_RATE);
+          const result = await processAudioWithGemini(wavBlob);
 
-      if (result) {
-        let feedbackTextToShow = '';
-        let isCoachMsg = false;
-        if (result.coach && typeof result.coach === 'string' && result.coach.trim() !== '') {
-          feedbackTextToShow = result.coach;
-          isCoachMsg = true;
-        } else if (result.live && typeof result.live === 'string' && result.live.trim() !== '') {
-          feedbackTextToShow = result.live;
-        } else if (result.error) {
-          feedbackTextToShow = `Error: ${result.error}`;
+          if (result) {
+            let feedbackTextToShow = '';
+            let isCoachMsg = false;
+            if (result.coach && typeof result.coach === 'string' && result.coach.trim() !== '') {
+              feedbackTextToShow = result.coach;
+              isCoachMsg = true;
+            } else if (result.live && typeof result.live === 'string' && result.live.trim() !== '') {
+              feedbackTextToShow = result.live;
+            } else if (result.error) {
+              feedbackTextToShow = `Error: ${result.error}`;
+            } else {
+              feedbackTextToShow = 'Processing...';
+            }
+            setCurrentLiveFeedback(feedbackTextToShow);
+            setIsDisplayingCoachMessage(isCoachMsg);
+            if (feedbackTextToShow && feedbackTextToShow !== 'Processing...' && !result.error) {
+              setLiveFeedbackHistory(prev => [...prev, feedbackTextToShow]);
+            }
+            let phraseTranscript = "[No transcript provided]";
+            if (result.error) phraseTranscript = "Error processing phrase.";
+            else if (result.transcript && typeof result.transcript === 'string') phraseTranscript = result.transcript;
+
+            let phraseReview = "[No review provided]";
+            if (result.error) phraseReview = result.error;
+            else if (result.review && typeof result.review === 'string') phraseReview = result.review;
+            // Fallback if dedicated review is missing, but coach/live exists
+            else if (isCoachMsg && result.coach) phraseReview = `Coach tip: ${result.coach}`;
+            else if (!isCoachMsg && result.live) phraseReview = `Live feedback: ${result.live}`;
+
+            setSessionPhrases(prev => [...prev, {
+              id: Date.now(),
+              transcript: phraseTranscript,
+              review: phraseReview,
+              error: !!result.error
+            }]);
+          } else {
+            setCurrentLiveFeedback('Failed to process audio.');
+            setIsDisplayingCoachMessage(false);
+            setSessionPhrases(prev => [...prev, {
+              id: Date.now(),
+              transcript: "[No transcript - processing error]",
+              review: "Failed to get response from AI.",
+              error: true
+            }]);
+          }
         } else {
-          feedbackTextToShow = 'Processing...';
+          console.log(`Phrase too short (${durationSeconds.toFixed(1)}s), buffering. Silence: ${silenceDurationSeconds.toFixed(1)}s.`);
+          shortPhraseBufferRef.current = completePhraseData;
+          setStatus('Listening...');
+          setShowLiveReactions(true);
+          return;
         }
-        setCurrentLiveFeedback(feedbackTextToShow);
-        setIsDisplayingCoachMessage(isCoachMsg);
-        if (feedbackTextToShow && feedbackTextToShow !== 'Processing...' && !result.error) {
-          setLiveFeedbackHistory(prev => [...prev, feedbackTextToShow]);
+        if (isRecordingRef.current && !isFinal) {
+          setStatus('Listening...');
         }
-        let phraseTranscript = "[No transcript provided]";
-        if (result.error) phraseTranscript = "Error processing phrase.";
-        else if (result.transcript && typeof result.transcript === 'string') phraseTranscript = result.transcript;
-
-        let phraseReview = "[No review provided]";
-        if (result.error) phraseReview = result.error;
-        else if (result.review && typeof result.review === 'string') phraseReview = result.review;
-        // Fallback if dedicated review is missing, but coach/live exists
-        else if (isCoachMsg && result.coach) phraseReview = `Coach tip: ${result.coach}`;
-        else if (!isCoachMsg && result.live) phraseReview = `Live feedback: ${result.live}`;
-
-        setSessionPhrases(prev => [...prev, {
-          id: Date.now(),
-          transcript: phraseTranscript,
-          review: phraseReview,
-          error: !!result.error
-        }]);
-      } else {
-        setCurrentLiveFeedback('Failed to process audio.');
-        setIsDisplayingCoachMessage(false);
-        setSessionPhrases(prev => [...prev, {
-          id: Date.now(),
-          transcript: "[No transcript - processing error]",
-          review: "Failed to get response from AI.",
-          error: true
-        }]);
-      }
-    } else {
-      console.log(`Phrase too short (${durationSeconds.toFixed(1)}s), buffering. Silence: ${silenceDurationSeconds.toFixed(1)}s.`);
-      shortPhraseBufferRef.current = completePhraseData;
-      setStatus('Listening...');
-      setShowLiveReactions(true);
-      return;
-    }
-    if (isRecordingRef.current && !isFinal) {
-      setStatus('Listening...');
+    } finally {
+        isProcessingPhraseRef.current = false;
     }
   }, [concatenateFloat32Arrays, createWavBlob, processAudioWithGemini, setIsDisplayingCoachMessage]);
 
   const startVAD = useCallback(() => {
     if (!audioContextRef.current || !microphoneSourceRef.current || !analyserRef.current || !scriptProcessorRef.current) return;
+
     scriptProcessorRef.current.onaudioprocess = (event: AudioProcessingEvent) => {
-      if (!isRecordingRef.current) return;
+      if (!isRecordingRef.current || isProcessingPhraseRef.current) return;
+
       const inputData = event.inputBuffer.getChannelData(0);
       const now = Date.now();
       let sumSquares = 0.0;
       for (const sample of inputData) sumSquares += sample * sample;
       const rms = Math.sqrt(sumSquares / inputData.length);
+
+      const phraseLen = recordedPhraseChunksRef.current.reduce((sum, chunk) => sum + chunk.length, 0);
+      const phraseDurationSec = phraseLen / TARGET_SAMPLE_RATE;
+
+      if (phraseDurationSec > MAX_PHRASE_DURATION_SECONDS) {
+        maxDurationExceededRef.current = true;
+      }
+
       if (rms > ENERGY_THRESHOLD) {
         if (!speakingRef.current) {
           speakingRef.current = true;
@@ -472,30 +494,34 @@ const Practice = () => {
         allRecordedChunksRef.current.push(new Float32Array(inputData));
         silenceStartRef.current = now;
         longPauseToastShownThisPauseRef.current = false;
-      } else {
+      } else { // Silence or background noise
         const continuousSilenceSinceLastSpeechMsec = now - silenceStartRef.current;
+
+        // Process if we were speaking AND (it's a real pause OR we've gone on too long)
+        if (speakingRef.current && (continuousSilenceSinceLastSpeechMsec > SILENCE_DURATION_MSEC || maxDurationExceededRef.current)) {
+            console.log(`VAD: Processing trigger. Reason: ${maxDurationExceededRef.current ? `Max Duration Exceeded (${phraseDurationSec.toFixed(1)}s)` : `Silence Detected (${continuousSilenceSinceLastSpeechMsec}ms)`}`);
+            maxDurationExceededRef.current = false; // Reset the flag
+            processCurrentPhrase(false, continuousSilenceSinceLastSpeechMsec);
+        } else if (speakingRef.current) {
+            // It's a short silence, but we're still "in" a phrase, so buffer it
+            recordedPhraseChunksRef.current.push(new Float32Array(inputData));
+            allRecordedChunksRef.current.push(new Float32Array(inputData));
+        }
+
+        // Handle toasts for long pauses / initial silence
         if (allRecordedChunksRef.current.length > 0 &&
-          continuousSilenceSinceLastSpeechMsec > PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC &&
-          !longPauseToastShownThisPauseRef.current) {
+            continuousSilenceSinceLastSpeechMsec > PAUSE_THRESHOLD_FOR_COACH_TOAST_MSEC &&
+            !longPauseToastShownThisPauseRef.current) {
           toast({ description: "ask 'Coach' what to say" });
           longPauseToastShownThisPauseRef.current = true;
         }
-        if (speakingRef.current) {
-          if (continuousSilenceSinceLastSpeechMsec > SILENCE_DURATION_MSEC) {
-            console.log(`VAD: Long silence detected (${continuousSilenceSinceLastSpeechMsec}ms), processing current phrase.`);
-            processCurrentPhrase(false, continuousSilenceSinceLastSpeechMsec);
-          } else {
-            recordedPhraseChunksRef.current.push(new Float32Array(inputData));
-            allRecordedChunksRef.current.push(new Float32Array(inputData));
-          }
-        } else {
-          if (isRecordingRef.current && !initialSilenceToastShownRef.current && allRecordedChunksRef.current.length === 0) {
-            toast({ description: "state your audience" });
-            initialSilenceToastShownRef.current = true;
-          }
+        if (isRecordingRef.current && !initialSilenceToastShownRef.current && allRecordedChunksRef.current.length === 0) {
+          toast({ description: "state your audience" });
+          initialSilenceToastShownRef.current = true;
         }
       }
     };
+
     microphoneSourceRef.current.connect(analyserRef.current);
     analyserRef.current.connect(scriptProcessorRef.current);
     scriptProcessorRef.current.connect(audioContextRef.current.destination);
@@ -530,6 +556,8 @@ const Practice = () => {
       silenceStartRef.current = Date.now();
       initialSilenceToastShownRef.current = false;
       longPauseToastShownThisPauseRef.current = false;
+      isProcessingPhraseRef.current = false;
+      maxDurationExceededRef.current = false;
       chatSessionRef.current = null;
       firstAudioSentThisSessionRef.current = false;
       setAnalysis(null);
@@ -667,6 +695,7 @@ const Practice = () => {
     speakingRef.current = false;
     initialSilenceToastShownRef.current = false;
     longPauseToastShownThisPauseRef.current = false;
+    maxDurationExceededRef.current = false;
     recordedPhraseChunksRef.current = [];
     allRecordedChunksRef.current = [];
     shortPhraseBufferRef.current = null;
@@ -831,7 +860,7 @@ const Practice = () => {
                     </CardContent>
                   </Card>
                 )}
-                
+
                 {/* MODIFICATION: "Deep Dive" accordion now only for session phrases */}
                 {(sessionPhrases.length > 0 || (analysis && !analysis.transcription && (!analysis.contentSuggestions || analysis.contentSuggestions.length ===0))) && ( // Show accordion if phrases exist, or if analysis exists but no transcript/suggestions yet to avoid empty tab
                     <Accordion type="single" collapsible className="w-full" defaultValue={sessionPhrases.length > 0 ? "live-feedback-phrases" : ""}>
