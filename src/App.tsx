@@ -6,7 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import React from "react";
 import Home from "./pages/Home";
 import PracticeRoom from "./pages/PracticeRoom";
-import SessionEnd from "./pages/SessionEnd";
+import TakeawayPage from "./pages/TakeawayPage";
+import MyPage from "./pages/MyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,7 +23,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/practice" element={<PracticeRoom />} />
-              <Route path="/session-end" element={<SessionEnd />} />
+              <Route path="/session-end" element={<TakeawayPage />} />
+              <Route path="/my" element={<MyPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
