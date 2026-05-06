@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { getGeminiClient } from "@/lib/gemini";
+import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye, ChevronDownSquare, Lectern } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -187,8 +186,7 @@ const Practice = () => {
   const allRecordedChunksRef = useRef<Float32Array[]>([]);
   const silenceStartRef = useRef(Date.now());
   const speakingRef = useRef(false);
-  const genAiRef = useRef<GoogleGenerativeAI | null>(null);
-  const chatSessionRef = useRef<any | null>(null);
+  const aiProxyReadyRef = useRef(true);
   const firstAudioSentThisSessionRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
   const shortPhraseBufferRef = useRef<Float32Array | null>(null);
@@ -206,29 +204,11 @@ const Practice = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const prepareGemini = async () => {
-      try {
-        setStatus("Preparing AI coach...");
-        setCurrentLiveFeedback("Getting ready...");
-        genAiRef.current = await getGeminiClient();
-        setGeminiReady(true);
-        setStatus("Ready to record.");
-        setCurrentLiveFeedback("");
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Unknown error";
-        console.error("Error preparing Gemini client:", error);
-        setGeminiReady(false);
-        setStatus("Error: Failed to prepare AI coach.");
-        setCurrentLiveFeedback("AI Error!");
-        toast({
-          title: "Configuration Error",
-          description: `Could not prepare AI coach: ${message}. Live feedback disabled.`,
-          variant: "destructive",
-        });
-      }
-    };
-    prepareGemini();
-  }, [toast]);
+    aiProxyReadyRef.current = true;
+    setGeminiReady(true);
+    setStatus("Ready to record.");
+    setCurrentLiveFeedback("");
+  }, []);
 
   const float32To16BitPCM = useCallback((float32Array: Float32Array) => {
     const pcm16 = new Int16Array(float32Array.length);
@@ -291,80 +271,42 @@ const Practice = () => {
   }, []);
 
   const processAudioWithGemini = useCallback(async (wavBlob: Blob) => {
-    if (!genAiRef.current) {
-      setStatus("Error: Gemini SDK not initialized.");
-      return { error: "Gemini SDK not initialized." };
-    }
-    if (!chatSessionRef.current) {
-      try {
-        const model = genAiRef.current.getGenerativeModel({
-          model: MODEL_NAME,
-          generationConfig: {
-            responseMimeType: "application/json",
-          },
-        });
-        chatSessionRef.current = model.startChat({
-          history: [],
-          safetySettings: [
-            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-          ],
-        });
-        firstAudioSentThisSessionRef.current = false;
-        console.log("New Gemini chat session started.");
-      } catch (error) {
-        console.error("Error starting Gemini chat:", error);
-        setStatus(`Error starting chat: ${error.message}.`);
-        return { error: `Error starting chat: ${error.message}` };
-      }
+    if (!aiProxyReadyRef.current) {
+      setStatus("Error: AI proxy not ready.");
+      return { error: "AI proxy not ready." };
     }
     setStatus("Sending phrase to AI...");
     try {
       const audioBase64 = await blobToBase64(wavBlob);
-      const audioPart = { inlineData: { mimeType: "audio/wav", data: audioBase64 } };
-      const messageParts = [];
-      if (!firstAudioSentThisSessionRef.current) {
-        // Prompt to guide JSON structure
-        messageParts.push(INITIAL_PROMPT_TEXT);
-
-        firstAudioSentThisSessionRef.current = true;
-      }
-      messageParts.push(audioPart);
-      const result = await chatSessionRef.current.sendMessageStream(messageParts, {
-        generationConfig: {
-          responseMimeType: "application/json",
-        },
+      const parts = firstAudioSentThisSessionRef.current
+        ? [{ inlineData: { mimeType: "audio/wav", data: audioBase64 } }]
+        : [{ text: INITIAL_PROMPT_TEXT }, { inlineData: { mimeType: "audio/wav", data: audioBase64 } }];
+      firstAudioSentThisSessionRef.current = true;
+      const { text } = await callGeminiProxy({
+        model: MODEL_NAME,
+        responseMimeType: "application/json",
+        temperature: 0.7,
+        contents: [{ role: "user", parts }],
       });
-      let responseText = "";
-      for await (const chunk of result.stream) {
-        responseText += chunk.text();
-      }
-      console.log("Gemini Raw Response:", responseText);
 
-      // Parse JSON response
+      console.log("Gemini Raw Response:", text);
       let feedbackJson;
       try {
-        feedbackJson = JSON.parse(responseText.trim());
+        feedbackJson = JSON.parse(text.trim());
       } catch (error) {
         console.error("Failed to parse JSON response:", error);
         feedbackJson = {
           error: "AI response not in valid JSON format.",
           live: "Format Issue",
           transcript: "N/A",
-          review: responseText,
+          review: text,
         };
       }
 
       return feedbackJson;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error communicating with Gemini:", error);
-      let userMessage = `Gemini Error: ${error.message}`;
-      if (error.message && (error.message.includes("API key not valid") || error.message.includes("API_KEY_INVALID"))) {
-        userMessage = "API Key is invalid. Live feedback disabled.";
-        setGeminiApiKey(null);
-        genAiRef.current = null;
-        chatSessionRef.current = null;
-      }
+      const userMessage = `Gemini Error: ${error.message || "Unknown error"}`;
       setStatus(userMessage);
       return { error: userMessage };
     }
@@ -536,7 +478,7 @@ const Practice = () => {
 
   const startRecording = async () => {
     if (isRecording) return;
-    if (!geminiReady || !genAiRef.current) {
+    if (!geminiReady || !aiProxyReadyRef.current) {
       toast({ title: "Cannot Record", description: "AI coach is not ready yet.", variant: "destructive" });
       setStatus("Error: AI coach not ready.");
       return;
@@ -553,7 +495,7 @@ const Practice = () => {
       longPauseToastShownThisPauseRef.current = false;
       isProcessingPhraseRef.current = false;
       maxDurationExceededRef.current = false;
-      chatSessionRef.current = null;
+      firstAudioSentThisSessionRef.current = false;
       firstAudioSentThisSessionRef.current = false;
       setAnalysis(null);
       setAudioUrl(null);
