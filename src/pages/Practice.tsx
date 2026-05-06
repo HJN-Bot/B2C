@@ -1,7 +1,6 @@
-import { supabase } from "@/integrations/supabase/client";
-
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { getGeminiClient } from "@/lib/gemini";
 import { Mic, StopCircle, Play, Pause, X, Headphones, BarChart, Eye, ChevronDownSquare, Lectern } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -172,7 +171,7 @@ const Practice = () => {
   const [finalRadarData, setFinalRadarData] = useState<RadarDataPoint[] | null>(null);
   const { toast } = useToast();
 
-  const [geminiApiKey, setGeminiApiKey] = useState<string | null>(null);
+  const [geminiReady, setGeminiReady] = useState(false);
   const [status, setStatus] = useState('Idle. Ready to record.');
   const [liveFeedbackHistory, setLiveFeedbackHistory] = useState<string[]>([]);
   const [showLiveReactions, setShowLiveReactions] = useState(false);
@@ -207,32 +206,28 @@ const Practice = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const fetchApiKey = async () => {
+    const prepareGemini = async () => {
       try {
-        setStatus("Fetching API key...");
-        setCurrentLiveFeedback("Getting Key...");
-        const { data } = await supabase.functions.invoke("get-gemini-api-key", {});
-        const key = data?.geminiApiKey;
-        if (key) {
-          setGeminiApiKey(key);
-          genAiRef.current = new GoogleGenerativeAI(key);
-          setStatus("Ready to record.");
-          setCurrentLiveFeedback("");
-        } else {
-          throw new Error("API key not found in the response.");
-        }
-      } catch (error: any) {
-        console.error("Error fetching Gemini API Key:", error);
-        setStatus("Error: Failed to get API Key.");
-        setCurrentLiveFeedback("API Key Error!");
+        setStatus("Preparing AI coach...");
+        setCurrentLiveFeedback("Getting ready...");
+        genAiRef.current = await getGeminiClient();
+        setGeminiReady(true);
+        setStatus("Ready to record.");
+        setCurrentLiveFeedback("");
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.error("Error preparing Gemini client:", error);
+        setGeminiReady(false);
+        setStatus("Error: Failed to prepare AI coach.");
+        setCurrentLiveFeedback("AI Error!");
         toast({
           title: "Configuration Error",
-          description: `Could not fetch Gemini API Key: ${error.message}. Live feedback disabled.`,
+          description: `Could not prepare AI coach: ${message}. Live feedback disabled.`,
           variant: "destructive",
         });
       }
     };
-    fetchApiKey();
+    prepareGemini();
   }, [toast]);
 
   const float32To16BitPCM = useCallback((float32Array: Float32Array) => {
@@ -541,9 +536,9 @@ const Practice = () => {
 
   const startRecording = async () => {
     if (isRecording) return;
-    if (!geminiApiKey) {
-      toast({ title: "Cannot Record", description: "Gemini API key is missing.", variant: "destructive" });
-      setStatus("Error: Gemini API Key missing.");
+    if (!geminiReady || !genAiRef.current) {
+      toast({ title: "Cannot Record", description: "AI coach is not ready yet.", variant: "destructive" });
+      setStatus("Error: AI coach not ready.");
       return;
     }
     try {

@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Brain, Clock, MessageCircle, Sparkles, Star, StopCircle, Zap } from "lucide-react";
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
-import { supabase } from "@/integrations/supabase/client";
 import AppTabBar from "@/components/AppTabBar";
+import { getGeminiClient } from "@/lib/gemini";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -748,30 +748,17 @@ export default function PracticeRoom() {
     }
   }, [apiStatus, bumpKtvScore, promotePassiveHighlights, stopLiveCaptions]);
 
-  // ── Fetch Gemini API key ───────────────────────────────────────────────────
+  // ── Fetch Gemini client ────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const cachedKey = window.sessionStorage.getItem("meaningfully.geminiApiKey");
-        if (cachedKey) {
-          genAiRef.current = new GoogleGenerativeAI(cachedKey);
-          setApiStatus("ready");
-          setAiState("AI ready");
-          return;
-        }
-
-        const { data } = await supabase.functions.invoke("get-gemini-api-key", {});
-        const key = data?.geminiApiKey;
-        if (!key) throw new Error("No key returned");
-        window.sessionStorage.setItem("meaningfully.geminiApiKey", key);
-        genAiRef.current = new GoogleGenerativeAI(key);
+        genAiRef.current = await getGeminiClient();
         setApiStatus("ready");
-        setAiState("AI ready");
-      } catch (e) {
-        console.error("Gemini API key fetch failed:", e);
+        setAiState("Coach ready");
+      } catch {
         setApiStatus("error");
-        setAiState("AI offline");
-        setBubble("AI offline - check Supabase");
+        setAiState("Coach offline");
+        setBubble("Coach offline - check Supabase");
       }
     })();
   }, []);

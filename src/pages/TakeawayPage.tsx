@@ -3,10 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory, SchemaType } from "@google/generative-ai";
 import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, Sparkles, Star, TrendingUp } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
-import { supabase } from "@/integrations/supabase/client";
+import { getGeminiClient } from "@/lib/gemini";
 
 const MODEL_NAME = "gemini-2.5-flash";
-const GEMINI_KEY_CACHE = "meaningfully.geminiApiKey";
 const LAST_SESSION_CACHE = "meaningfully.lastSession";
 
 interface KTVScore { flow: number; words: number; sentences: number; story: number }
@@ -314,26 +313,7 @@ export default function TakeawayPage() {
 
   const ensureGemini = useCallback(async () => {
     if (genAiRef.current) return genAiRef.current;
-
-    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (envKey) {
-      window.sessionStorage.setItem(GEMINI_KEY_CACHE, envKey);
-      genAiRef.current = new GoogleGenerativeAI(envKey);
-      return genAiRef.current;
-    }
-
-    const cachedKey = window.sessionStorage.getItem(GEMINI_KEY_CACHE);
-    if (cachedKey) {
-      genAiRef.current = new GoogleGenerativeAI(cachedKey);
-      return genAiRef.current;
-    }
-
-    const { data, error } = await supabase.functions.invoke("get-gemini-api-key", {});
-    if (error) throw new Error(`Gemini key function failed: ${error.message || "Edge Function request failed"}`);
-    const key = data?.geminiApiKey;
-    if (!key) throw new Error("No Gemini API key returned");
-    window.sessionStorage.setItem(GEMINI_KEY_CACHE, key);
-    genAiRef.current = new GoogleGenerativeAI(key);
+    genAiRef.current = await getGeminiClient();
     return genAiRef.current;
   }, []);
 
