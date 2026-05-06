@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory, SchemaType } from "@google/generative-ai";
 import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, Sparkles, Star, TrendingUp } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
-import { getGeminiClient } from "@/lib/gemini";
+import { callGeminiProxy } from "@/lib/gemini-proxy";
 
 const MODEL_NAME = "gemini-2.5-flash";
 const LAST_SESSION_CACHE = "meaningfully.lastSession";
@@ -47,31 +46,21 @@ const KTV_META: Record<KTVMetric, { label: string; icon: string }> = {
   story: { label: "Story", icon: "🧠" },
 };
 
-const TAKEAWAY_SCHEMA = {
-  type: SchemaType.OBJECT,
-  properties: {
-    encouragement: { type: SchemaType.STRING },
-    next_run_plan: {
-      type: SchemaType.OBJECT,
-      properties: {
-        focus: { type: SchemaType.STRING },
-        say_this: { type: SchemaType.STRING },
-        reuse_words: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-        one_move: { type: SchemaType.STRING },
-      },
-      required: ["focus", "say_this", "reuse_words", "one_move"],
-    },
-    what_worked: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-    make_stronger: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+const TAKEAWAY_SCHEMA = `{
+  "encouragement": "one warm sentence",
+  "next_run_plan": {
+    "focus": "one specific focus",
+    "say_this": "one short sentence or frame the student can say next time",
+    "reuse_words": ["2-4 words or phrases"],
+    "one_move": "one tiny action for the next run"
   },
-  required: ["encouragement", "next_run_plan", "what_worked", "make_stronger"],
-};
+  "what_worked": ["2-3 concrete bullets"],
+  "make_stronger": ["2-3 concrete bullets"]
+}`;
 
-const CHAT_SCHEMA = {
-  type: SchemaType.OBJECT,
-  properties: { answer: { type: SchemaType.STRING } },
-  required: ["answer"],
-};
+const CHAT_SCHEMA = `{
+  "answer": "2-5 short lines"
+}`;
 
 const PRESETS = [
   { label: "Vocab upgrade", prompt: "Give me 3 better words or phrases I can use next time, with one easy sentence." },
@@ -274,7 +263,7 @@ ${context}`;
 export default function TakeawayPage() {
   const navigate = useNavigate();
   const { state } = useLocation() as { state: LocationState | null };
-  const genAiRef = useRef<GoogleGenerativeAI | null>(null);
+  const apiReadyRef = useRef(true);
   const cachedSession = useMemo<LocationState | null>(() => {
     if (state) return state;
     try {
@@ -311,26 +300,11 @@ export default function TakeawayPage() {
   const [chatInput, setChatInput] = useState("");
   const [chatStatus, setChatStatus] = useState<"idle" | "thinking" | "error">("idle");
 
-  const ensureGemini = useCallback(async () => {
-    if (genAiRef.current) return genAiRef.current;
-    genAiRef.current = await getGeminiClient();
-    return genAiRef.current;
-  }, []);
+  const ensureGemini = useCallback(async () => apiReadyRef.current, []);
 
-  const getModel = useCallback(async (schema: object) => {
-    const genAi = await ensureGemini();
-    return genAi.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: schema,
-        maxOutputTokens: 900,
-        temperature: 0.68,
-      },
-      safetySettings: [
-        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-      ],
-    });
+  const getModel = useCallback(async () => {
+    await ensureGemini();
+    return null;
   }, [ensureGemini]);
 
   const generateTakeaway = useCallback(async () => {
@@ -343,9 +317,14 @@ export default function TakeawayPage() {
     setTakeawayStatus("thinking");
     setTakeawayError("");
     try {
-      const model = await getModel(TAKEAWAY_SCHEMA);
-      const result = await model.generateContent(buildTakeawayPrompt(sessionContext));
-      const parsed = normalizeTakeaway(parseJson<Partial<AiTakeaway>>(result.response.text()));
+      const { text } = await callGeminiProxy({
+        model: MODEL_NAME,
+        responseMimeType: "application/json",
+        temperature: 0.68,
+        maxOutputTokens: 900,
+        contents: [{ role: "user", parts: [{ text: buildTakeawayPrompt(sessionContext) }] }],
+      });
+      const parsed = normalizeTakeaway(parseJson<Partial<AiTakeaway>>(text));
       if (!parsed) throw new Error("AI returned an unreadable takeaway format");
       setTakeaway(parsed);
       setTakeawayStatus("ready");
@@ -376,9 +355,14 @@ export default function TakeawayPage() {
     setChatStatus("thinking");
     setChatMessages((prev) => [...prev, { id: makeId(), role: "user", text: trimmed }]);
     try {
-      const model = await getModel(CHAT_SCHEMA);
-      const result = await model.generateContent(buildChatPrompt(sessionContext, takeaway, trimmed));
-      const parsed = parseJson<{ answer?: string }>(result.response.text());
+      const { text } = await callGeminiProxy({
+        model: MODEL_NAME,
+        responseMimeType: "application/json",
+        temperature: 0.68,
+        maxOutputTokens: 900,
+        contents: [{ role: "user", parts: [{ text: buildChatPrompt(sessionContext, takeaway, trimmed) }] }],
+      });
+      const parsed = parseJson<{ answer?: string }>(text);
       if (!parsed?.answer?.trim()) throw new Error("AI returned an unreadable chat answer");
       setChatMessages((prev) => [...prev, { id: makeId(), role: "coach", text: parsed.answer!.trim() }]);
       setChatStatus("idle");

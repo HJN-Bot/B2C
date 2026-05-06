@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Brain, Clock, MessageCircle, Sparkles, Star, StopCircle, Zap } from "lucide-react";
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import AppTabBar from "@/components/AppTabBar";
-import { getGeminiClient } from "@/lib/gemini";
+import { callGeminiProxy } from "@/lib/gemini-proxy";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -455,7 +454,7 @@ export default function PracticeRoom() {
   const finalCaptionRef = useRef("");
 
   // Gemini refs
-  const genAiRef        = useRef<GoogleGenerativeAI | null>(null);
+  const apiReadyRef     = useRef(true);
   const chatSessionRef  = useRef<any>(null);
   const firstSentRef    = useRef(false);
 
@@ -748,48 +747,29 @@ export default function PracticeRoom() {
     }
   }, [apiStatus, bumpKtvScore, promotePassiveHighlights, stopLiveCaptions]);
 
-  // ── Fetch Gemini client ────────────────────────────────────────────────────
+  // ── Proxy-ready status ────────────────────────────────────────────────────
   useEffect(() => {
-    (async () => {
-      try {
-        genAiRef.current = await getGeminiClient();
-        setApiStatus("ready");
-        setAiState("Coach ready");
-      } catch {
-        setApiStatus("error");
-        setAiState("Coach offline");
-        setBubble("Coach offline - check Supabase");
-      }
-    })();
+    setApiStatus("ready");
+    setAiState("Coach ready");
   }, []);
 
   // ── Send audio chunk to Gemini ─────────────────────────────────────────────
   const sendToGemini = useCallback(async (wavBlob: Blob): Promise<GeminiResult | null> => {
-    if (!genAiRef.current) return null;
     try {
       setAiState("AI is listening to the last phrase");
-      if (!chatSessionRef.current) {
-        const model = genAiRef.current.getGenerativeModel({
-          model: MODEL_NAME,
-          generationConfig: { responseMimeType: "application/json" },
-        });
-        chatSessionRef.current = model.startChat({
-          history: [],
-          safetySettings: [
-            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-          ],
-        });
-        firstSentRef.current = false;
-      }
-
-      const audioB64  = await blobToBase64(wavBlob);
-      const audioPart = { inlineData: { mimeType: "audio/wav", data: audioB64 } };
-      const parts: any[] = firstSentRef.current ? [audioPart] : [SYSTEM_PROMPT, audioPart];
+      const audioB64 = await blobToBase64(wavBlob);
+      const parts = firstSentRef.current
+        ? [{ inlineData: { mimeType: "audio/wav", data: audioB64 } }]
+        : [{ text: SYSTEM_PROMPT }, { inlineData: { mimeType: "audio/wav", data: audioB64 } }];
       firstSentRef.current = true;
 
-      const result = await chatSessionRef.current.sendMessage(parts);
-      const text   = result.response.text().trim();
-      const parsed = parseGeminiJson(text);
+      const { text } = await callGeminiProxy({
+        model: MODEL_NAME,
+        responseMimeType: "application/json",
+        temperature: 0.7,
+        contents: [{ role: "user", parts }],
+      });
+      const parsed = parseGeminiJson(text.trim());
       setAiState(parsed ? "AI reflected on your words" : "AI response needs retry");
       return parsed;
     } catch (e) {
@@ -801,34 +781,24 @@ export default function PracticeRoom() {
 
   const askGeminiForFollowUp = useCallback(async () => {
     const silenceMs = Date.now() - lastVoiceAtRef.current;
-    if (!genAiRef.current || !isStartedRef.current || processingRef.current || speakingRef.current || silenceMs < BOTTLENECK_SILENCE_MS) return;
+    if (!isStartedRef.current || processingRef.current || speakingRef.current || silenceMs < BOTTLENECK_SILENCE_MS) return;
     processingRef.current = true;
     try {
       setAiState("AI is thinking of a question");
-      if (!chatSessionRef.current) {
-        const model = genAiRef.current.getGenerativeModel({
-          model: MODEL_NAME,
-          generationConfig: { responseMimeType: "application/json" },
-        });
-        chatSessionRef.current = model.startChat({
-          history: [],
-          safetySettings: [
-            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-          ],
-        });
-        firstSentRef.current = false;
-      }
-
       const context = transcriptRef.current
         ? `Transcript so far: "${transcriptRef.current.slice(-900)}"`
         : "The student has not produced a clear transcript yet.";
-      const parts = firstSentRef.current
-        ? [`${FOLLOW_UP_PROMPT}\n\n${context}`]
-        : [SYSTEM_PROMPT, `${FOLLOW_UP_PROMPT}\n\n${context}`];
-      firstSentRef.current = true;
-
-      const result = await chatSessionRef.current.sendMessage(parts);
-      const parsed = parseGeminiJson(result.response.text());
+      const parts = [
+        { text: SYSTEM_PROMPT },
+        { text: `${FOLLOW_UP_PROMPT}\n\n${context}` },
+      ];
+      const { text } = await callGeminiProxy({
+        model: MODEL_NAME,
+        responseMimeType: "application/json",
+        temperature: 0.7,
+        contents: [{ role: "user", parts }],
+      });
+      const parsed = parseGeminiJson(text);
       const question = parsed?.follow_up?.trim();
       if (question) {
         showFollowUpQuestion(question, parsed?.feedback);
@@ -844,7 +814,7 @@ export default function PracticeRoom() {
   const showPendingOrAskFollowUp = useCallback(() => {
     if (pendingFollowUpRef.current && showFollowUpQuestion(pendingFollowUpRef.current)) return;
     const fallback = buildLocalFollowUp(transcriptRef.current, highlightWordsRef.current);
-    if (processingRef.current || !genAiRef.current) {
+    if (processingRef.current) {
       showFollowUpQuestion(fallback, "I saved your thread.");
       return;
     }
