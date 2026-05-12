@@ -325,6 +325,65 @@
 
 ---
 
+## [2026-05-12] Sprint 2 — Gemini Proxy + Cat Animation Fix + End Button
+
+### 背景与原因
+
+- **Remote 更新**：拉取了 5 月初的 7 个提交，核心是把 Gemini API 调用从前端直连改为走 Supabase Edge Function 代理（`/gemini-proxy`），避免 API key 暴露在浏览器。
+- **外部 Review**：朋友提供了带标注的 7 页设计走查 PDF（存入 `Design/iterations/`），整理为 `feedback-2026-05-06.md`，提炼出 5 条高优先级方向。
+- **猫猫动画问题**：sprite sheet 各帧猫的位置不完全居中（AI 生成图常见问题），导致动画"漂移"；同时帧率约 1.5fps，卡顿感明显。
+- **End 按钮失效**：按钮在 session 未开始时 `disabled`，且 `endSession` 没有 try-catch，processPhrase 失败时不会跳转。
+
+### 变更文件
+
+| 文件 | 类型 | 变更说明 |
+|------|------|---------|
+| `src/lib/gemini-proxy.ts` | 新增 | Gemini 调用封装，走 Supabase Edge Function 代理 |
+| `src/lib/gemini.ts` | 新增 | Gemini client 初始化工具 |
+| `supabase/functions/gemini-proxy/index.ts` | 新增 | Supabase Edge Function：接收前端请求、转发到 Gemini、不暴露 key |
+| `src/pages/Practice.tsx` | 更新 | Gemini 调用改走代理 |
+| `src/pages/PracticeRoom.tsx` | 更新 | Gemini 调用改走代理 |
+| `src/pages/TakeawayPage.tsx` | 更新 | Gemini 调用改走代理 |
+| `Design/iterations/feedback-2026-05-06.md` | 新增 | 整理外部 reviewer 的 5 条反馈 + 7 页设计走查 PDF 全文转写 |
+| `Design/iterations/speakspark-labelled-design-walkthrough.pdf` | 新增 | 带标注的设计走查原始 PDF |
+| `src/index.css` | 更新 | 新增 `cat-motion-clip`（96px 圆形 overflow:hidden 裁切容器，解决漂移）；新增 `cat-motion-breathe` 关键帧（4.8s 周期，大部分时间静止，偶发 3 帧微动）；各状态帧率调整：listening 4.8s / thinking 1.3s / coaching 2.0s / excited 1.0s |
+| `src/pages/PracticeRoom.tsx` | 更新 | `cat-motion-frame` 包入 `cat-motion-clip` 容器，中心绝对定位消除漂移 |
+| `src/pages/PracticeRoom.tsx` | 更新 | End 按钮去掉 `disabled`：未 start 时点击返回首页，已 start 时跳转 session-end |
+| `src/pages/PracticeRoom.tsx` | 更新 | `endSession` 加 try-catch：processPhrase / AudioContext 失败也能正常 navigate |
+| `src/pages/PracticeRoom.tsx` | 更新 | 引入 `useLocation`，从路由 state 读取 `topic`；AI is listening 区域顶部显示当前 topic（有值时才显示） |
+
+### 已知问题 / 未完成
+
+| 问题 | 说明 |
+|------|------|
+| 猫猫漂移残留 | clip 容器提供 8px buffer；如果 sprite 偏移量 >8px 仍会可见，需收缩 `--cat-frame-size` 或增大圆框 |
+| 猫猫状态路由未完整 | 目前 speaking 时 mood 不自动切 `listening`；AI 处理中不切 `thinking`；"Use it" 后不切 `excited→listening`，待下次实现 |
+| Karaoke 字幕未改 | 字幕区仍是多行滚动，需改为固定 1-2 行当前行 karaoke 展示 |
+| Chatbox 问题 | TakeawayPage 的 Coach Chatbox 表现不对，待下次单独排查 |
+| Topic 传参未接 | 首页/话题选择页暂无向 PracticeRoom 传递 `topic`，topic header 目前仅占位 |
+
+### 产品方向锁定（来自 feedback-2026-05-06.md）
+
+> SpeakSpark 应该是私人练习教练，而不是评分/比赛工具。
+
+| 优先级 | 改动方向 |
+|--------|----------|
+| 高 | 字幕改为单行 Karaoke，End 按钮固定不随字幕移动 |
+| 高 | 练习中显示当前话题 + 冷启动关键词提示 |
+| 高 | Takeaway 结构：先 "你讲了什么"，每条建议附带原文引用 |
+| 中 | 首页换掉 streak/分数，改为练习证据（"2 phrases saved"）+ 主题活动卡片 |
+| 中 | 音浪降级为极简呼吸指示器 |
+
+### 测试状态
+
+| 测试项 | 结果 |
+|--------|------|
+| TypeScript `tsc --noEmit` | ✅ 通过 |
+| 猫猫动画漂移/卡顿改善 | 🔲 待浏览器验证 |
+| End 按钮 | 🔲 待浏览器验证 |
+
+---
+
 ## 待办（Sprint 2 变更预告）
 
 - [ ] `LiveCaptionLayer` 实时字幕层（SpeechRecognition + Karaoke 两行滚动）

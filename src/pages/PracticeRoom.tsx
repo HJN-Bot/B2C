@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Brain, Clock, MessageCircle, Sparkles, Star, StopCircle, Zap } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
@@ -399,7 +399,9 @@ function AICharacter({ mood, bubble }: { mood: CharacterMood; bubble: string | n
         <span className="cat-motion-glow" />
         <span className="cat-motion-spark cat-motion-spark-one" />
         <span className="cat-motion-spark cat-motion-spark-two" />
-        <span className="cat-motion-frame" />
+        <span className="cat-motion-clip">
+          <span className="cat-motion-frame" />
+        </span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-1.5">
@@ -425,7 +427,9 @@ function AICharacter({ mood, bubble }: { mood: CharacterMood; bubble: string | n
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function PracticeRoom() {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const topic     = (location.state as { topic?: string } | null)?.topic ?? "";
 
   // Audio refs
   const audioCtxRef      = useRef<AudioContext | null>(null);
@@ -1133,12 +1137,15 @@ export default function PracticeRoom() {
 
   // ── End session ────────────────────────────────────────────────────────────
   const endSession = async () => {
-    if (phraseChunksRef.current.length > 0 || shortBufferRef.current) await processPhrase(true);
+    if (!started) { navigate("/"); return; }
+    try {
+      if (phraseChunksRef.current.length > 0 || shortBufferRef.current) await processPhrase(true);
+    } catch { /* best-effort flush */ }
     isStartedRef.current = false;
     stopLiveCaptions();
     cancelAnimationFrame(rafRef.current);
-    scriptProcRef.current?.disconnect();
-    audioCtxRef.current?.close();
+    try { scriptProcRef.current?.disconnect(); } catch { /* noop */ }
+    try { audioCtxRef.current?.close(); } catch { /* noop */ }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     const sessionSummary = {
       timer,
@@ -1207,8 +1214,8 @@ export default function PracticeRoom() {
             <Clock size={13} className="text-gray-400" />
             <span className="font-mono text-sm font-bold text-gray-700">{fmt(timer)}</span>
           </div>
-          <button onClick={endSession} disabled={!started}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform border"
+          <button onClick={endSession}
+            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform border"
             style={{ background: "rgba(255,122,92,0.1)", borderColor: "rgba(255,122,92,0.4)", color: "#EF4444" }}>
             <StopCircle size={13} />End
           </button>
@@ -1286,6 +1293,9 @@ export default function PracticeRoom() {
 
           <div className="relative z-[1] mb-3 flex items-center justify-between">
             <div>
+              {topic ? (
+                <p className="mb-0.5 text-[11px] font-semibold text-gray-400">Topic · {topic}</p>
+              ) : null}
               <p className="text-[11px] font-black uppercase tracking-widest text-blue-500">AI is listening</p>
               <p className="text-xs font-semibold text-gray-400">
                 {started ? (micDenied ? "Demo mode" : "Speech, pauses, and phrases") : "Ready when you are"}

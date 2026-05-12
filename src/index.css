@@ -181,17 +181,28 @@
     user-select: none;
   }
 
-  .cat-motion-frame {
+  .cat-motion-clip {
     position: relative;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    z-index: 2;
+  }
+
+  .cat-motion-frame {
+    position: absolute;
+    left: 50%;
+    top: 50%;
     width: var(--cat-frame-size);
     height: var(--cat-frame-size);
-    z-index: 2;
     background-image: var(--cat-motion-sheet);
     background-repeat: no-repeat;
     background-size: calc(var(--cat-frame-size) * 4) calc(var(--cat-frame-size) * 2);
     background-position: 0 0;
-    animation: cat-motion-eight-fixed 4.8s steps(1, end) infinite;
-    transform: translateZ(0);
+    animation: cat-motion-breathe 4.8s steps(1, end) infinite;
+    transform: translate(-50%, -50%) translateZ(0);
     will-change: background-position;
   }
 
@@ -217,19 +228,26 @@
   .cat-motion-spark-two { right: 0; top: 68px; transform: scale(0.82); }
 
   .cat-motion-coach-listening .cat-motion-frame {
-    animation-duration: 5.4s;
+    animation-name: cat-motion-breathe;
+    animation-duration: 4.8s;
   }
 
+  /* thinking: active 8-frame cycle ~6fps */
   .cat-motion-coach-thinking .cat-motion-frame {
-    animation-duration: 2.8s;
+    animation-name: cat-motion-eight-fixed;
+    animation-duration: 1.3s;
   }
 
+  /* coaching: moderate 8-frame cycle ~4fps */
   .cat-motion-coach-coaching .cat-motion-frame {
-    animation-duration: 3.6s;
+    animation-name: cat-motion-eight-fixed;
+    animation-duration: 2.0s;
   }
 
+  /* excited: fast 8-frame cycle ~8fps */
   .cat-motion-coach-excited .cat-motion-frame {
-    animation-duration: 1.15s;
+    animation-name: cat-motion-eight-fixed;
+    animation-duration: 1.0s;
   }
 
   .cat-motion-coach-excited .cat-motion-spark {
@@ -649,6 +667,15 @@
   75%     { background-position: calc(var(--cat-frame-size) * -2) calc(var(--cat-frame-size) * -1); }
   87.5%,
   100%    { background-position: calc(var(--cat-frame-size) * -3) calc(var(--cat-frame-size) * -1); }
+}
+
+/* Calm idle: mostly still, brief 3-frame wiggle every ~5s */
+@keyframes cat-motion-breathe {
+  0%, 75%   { background-position: 0 0; }
+  81.25%    { background-position: calc(var(--cat-frame-size) * -1) 0; }
+  87.5%     { background-position: calc(var(--cat-frame-size) * -2) 0; }
+  93.75%    { background-position: calc(var(--cat-frame-size) * -1) 0; }
+  100%      { background-position: 0 0; }
 }
 
 @keyframes cat-motion-settle {
