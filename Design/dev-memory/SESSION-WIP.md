@@ -14,6 +14,7 @@
   - `fix: make Takeaway Coach Chatbox a real multi-turn conversation`（chatHistoryRef + systemInstruction，后台 gemini-proxy 已支持，无需改后台）
 - 创建 `Design/dev-memory/`（本文件 + PROJECT-MEMORY + TODO）
 - **Takeaway walkthrough 大部分完成**（`src/pages/TakeawayPage.tsx`，tsc+build 通过）：P4-1 / P4-2 / P4-4 / P5-1 / P5-2 / P5-3 / P5-4 / #4 全部落地。详见 TODO.md。
+- **三个练习 Mode 落地**（Free Talk / Exam Prep / Story）：新建 `src/lib/practice-mode.ts`；Home 选择器；PracticeRoom 顶部标签；TakeawayPage pill + coachStyle 注入 prompt。全英文，默认 Free Talk。tsc+build 通过。
 
 ## 进行中 🔧
 - 提交 Takeaway 改动。

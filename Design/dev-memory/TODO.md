@@ -27,7 +27,11 @@
 ### Takeaway 待跟进
 - [ ] 浏览器用真实 session 数据验证（先练一次再看 `#/session-end`）
 - [ ] P4-3 hero card 置顶（暂缓中）
-- [ ] 「还能加什么 Mode」待定：候选 Gentle mode / Exam-prep(TOEFL-safe) mode / Free-talk mode / Story mode
+- [x] **三个练习 Mode（已实现，2026-05-29）**：**Free Talk / Exam Prep / Story**（全英文）。共享模块 `src/lib/practice-mode.ts`（localStorage `speakspark.practiceMode`，默认 Free Talk）。
+  - Home：greeting 下方新增 3 格 Mode 选择器，持久化。
+  - PracticeRoom：顶部 header 显示当前 Mode 标签（emoji + label）。
+  - TakeawayPage：常驻 pill 显示 `{emoji} {Mode} · practice feedback only`；`coachStyle` 注入 takeaway prompt + chat system prompt。
+  - 待跟进：Mode 选择器以后要和 #5 主题活动卡片在 Home 上排版协调。
 
 ---
 

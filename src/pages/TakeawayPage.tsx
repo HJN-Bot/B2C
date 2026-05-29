@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
+import { getPracticeMode } from "@/lib/practice-mode";
 
 const MODEL_NAME = "gemini-2.5-flash";
 const LAST_SESSION_CACHE = "meaningfully.lastSession";
@@ -268,8 +269,9 @@ function createLocalChatAnswer(request: string, takeaway: AiTakeaway | null, tra
     : "Try one clear claim, one example, and one reason why it matters.";
 }
 
-function buildTakeawayPrompt(context: string) {
+function buildTakeawayPrompt(context: string, coachStyle: string) {
   return `You are SpeakSpark, an AI speaking coach for Chinese middle-school students practicing English science presentations.
+${coachStyle}
 
 Write a SHORT, top-down post-practice takeaway. First capture what the student actually talked about, then give advice tied to their OWN words.
 Rules:
@@ -296,8 +298,9 @@ Session:
 ${context}`;
 }
 
-function buildChatSystemPrompt(context: string, takeaway: AiTakeaway | null) {
+function buildChatSystemPrompt(context: string, takeaway: AiTakeaway | null, coachStyle: string) {
   return `You are SpeakSpark's post-practice coach for a Chinese middle-school student.
+${coachStyle}
 Answer ONLY based on this session. Keep answers short, concrete, and next-run focused.
 Coach mode: practice feedback only. Never write a full speech or a complete answer for the student — coach by asking one question, giving a frame, or offering small reusable pieces (words, examples).
 If the student asks you to "ask me a question", ask exactly ONE short question and do NOT answer it yourself.
@@ -314,6 +317,7 @@ export default function TakeawayPage() {
   const navigate = useNavigate();
   const { state } = useLocation() as { state: LocationState | null };
   const apiReadyRef = useRef(true);
+  const practiceMode = useMemo(() => getPracticeMode(), []);
   const cachedSession = useMemo<LocationState | null>(() => {
     if (state) return state;
     try {
@@ -375,7 +379,7 @@ export default function TakeawayPage() {
         responseMimeType: "application/json",
         temperature: 0.68,
         maxOutputTokens: 900,
-        contents: [{ role: "user", parts: [{ text: buildTakeawayPrompt(sessionContext) }] }],
+        contents: [{ role: "user", parts: [{ text: buildTakeawayPrompt(sessionContext, practiceMode.coachStyle) }] }],
       });
       const parsed = normalizeTakeaway(parseJson<Partial<AiTakeaway>>(text));
       if (!parsed) throw new Error("AI returned an unreadable takeaway format");
@@ -406,7 +410,7 @@ export default function TakeawayPage() {
         { id: makeId(), role: "coach", text: `Next focus: ${localPlan.next_run_plan.focus}` },
       ]);
     }
-  }, [getModel, hasSessionData, sessionContext, timer, wordCount, highlightCount, highlightWords, ktvScore, transcript]);
+  }, [getModel, hasSessionData, sessionContext, timer, wordCount, highlightCount, highlightWords, ktvScore, transcript, practiceMode]);
 
   const askCoach = useCallback(async (request: string) => {
     const trimmed = request.trim();
@@ -425,7 +429,7 @@ export default function TakeawayPage() {
     try {
       const { text } = await callGeminiProxy({
         model: MODEL_NAME,
-        systemInstruction: buildChatSystemPrompt(sessionContext, takeaway),
+        systemInstruction: buildChatSystemPrompt(sessionContext, takeaway, practiceMode.coachStyle),
         responseMimeType: "application/json",
         temperature: 0.68,
         maxOutputTokens: 600,
@@ -451,7 +455,7 @@ export default function TakeawayPage() {
       setChatMessages((prev) => [...prev, { id: makeId(), role: "coach", text: answer }]);
       setChatStatus("idle");
     }
-  }, [chatStatus, hasSessionData, sessionContext, takeaway, transcript, highlightWords]);
+  }, [chatStatus, hasSessionData, sessionContext, takeaway, transcript, highlightWords, practiceMode]);
 
   useEffect(() => {
     void generateTakeaway();
@@ -480,7 +484,7 @@ export default function TakeawayPage() {
         {/* P5-4: coach-mode boundary shown as a persistent trust label */}
         <div className="flex items-center justify-center gap-1.5 rounded-full border border-gray-100 bg-white/70 px-3 py-1.5 text-[11px] font-bold text-gray-400">
           <ShieldCheck size={12} className="text-green-500" />
-          Coach mode · practice feedback only
+          {practiceMode.emoji} {practiceMode.label} · practice feedback only
         </div>
 
         {/* #4: top-down — what you talked about, before any advice */}

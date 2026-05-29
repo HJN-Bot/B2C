@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Brain, Clock, MessageCircle, Sparkles, Star, StopCircle, Zap } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
+import { getPracticeMode } from "@/lib/practice-mode";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -430,6 +431,7 @@ export default function PracticeRoom() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const topic     = (location.state as { topic?: string } | null)?.topic ?? "";
+  const practiceMode = getPracticeMode();
 
   // Audio refs
   const audioCtxRef      = useRef<AudioContext | null>(null);
@@ -1293,6 +1295,7 @@ export default function PracticeRoom() {
 
           <div className="relative z-[1] mb-3 flex items-center justify-between">
             <div>
+              <p className="mb-0.5 text-[11px] font-semibold text-gray-500">{practiceMode.emoji} {practiceMode.label}</p>
               {topic ? (
                 <p className="mb-0.5 text-[11px] font-semibold text-gray-400">Topic · {topic}</p>
               ) : null}

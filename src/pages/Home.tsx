@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Flame, Star, Volume2, ChevronRight, Lightbulb } from "lucide-react";
+import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
 
 const MOCK_USER = { name: "Alex", streak: 5 };
 
@@ -20,6 +22,12 @@ const MOCK_LAST_HIGHLIGHT = {
 export default function Home() {
   const navigate = useNavigate();
   const topic = TOPIC_STARTERS[Math.floor(Math.random() * TOPIC_STARTERS.length)];
+  const [modeId, setModeId] = useState<PracticeModeId>(() => getPracticeMode().id);
+
+  const chooseMode = (id: PracticeModeId) => {
+    setModeId(id);
+    setPracticeMode(id);
+  };
 
   return (
     <div className="min-h-dvh flex flex-col bg-gray-50">
@@ -32,6 +40,29 @@ export default function Home() {
             <Flame size={15} className="text-orange-400" />
             <span className="text-sm text-gray-500">Day {MOCK_USER.streak} streak · keep going!</span>
           </div>
+        </div>
+
+        {/* Practice mode — carried into PracticeRoom + Takeaway */}
+        <div>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Practice mode</span>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {PRACTICE_MODES.map((mode) => {
+              const active = mode.id === modeId;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => chooseMode(mode.id)}
+                  className={`rounded-2xl border p-3 text-center transition active:scale-95 ${active ? "border-blue-300 bg-blue-50 shadow-sm" : "border-gray-100 bg-white"}`}
+                >
+                  <div className="text-lg">{mode.emoji}</div>
+                  <div className={`mt-1 text-xs font-black leading-tight ${active ? "text-blue-600" : "text-gray-700"}`}>
+                    {mode.label.replace(" Mode", "")}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-xs font-semibold text-gray-400">{PRACTICE_MODES.find((m) => m.id === modeId)?.blurb}</p>
         </div>
 
         {/* Topic starter card — solves "no inspiration" pain point */}
