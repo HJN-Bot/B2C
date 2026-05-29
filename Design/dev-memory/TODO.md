@@ -1,7 +1,23 @@
 # TODO — 之前跟你说过的所有修改
 
 > 来源：`Design/iterations/feedback-2026-05-06.md`（5 条反馈 + 7 页设计走查 PDF）+ CHANGELOG 已知问题。
-> 勾掉 = 已落地并验证。优先级：高 🔴 / 中 🟡。
+> 状态标记：`[x]` 已实现并自测(tsc+build 通过)、**🧪待你浏览器验证**；`[ ]` 未做；`⏸` 暂缓。优先级：高 🔴 / 中 🟡。
+
+---
+
+## 📋 明天审阅清单（2026-05-29 当天改动）
+
+> 以下都已 `tsc --noEmit` + `npm run build` 通过，但**未在浏览器人工验证**，请逐项 🧪。
+> dev 启动：`npm run dev` → http://127.0.0.1:5173/（路由带 `#`）。看完整复盘页要先去 `#/practice` 练一次。
+
+| 提交 | 内容 | 看哪里 | 🧪 验证点 |
+|------|------|--------|-----------|
+| `e81c406` | HashRouter + vercel.json | 全站 | 刷新子页面不 404 |
+| `bce2179` | Chatbox 多轮对话 | `#/session-end` | 连续追问是否带上下文 |
+| `fa5b2c2` | Takeaway walkthrough P4-1/2/4、P5-1/2/4、#4 | `#/session-end` | headline 文案 / 去成绩单 / 中性 fallback / 新 preset / What's growing 文字趋势 / Coach mode pill / summary + 原文引用 |
+| `9410ca1` | 三个 Mode | Home → Practice → Takeaway | 选 Mode 是否记住、各页是否显示、复盘语气是否贴合 |
+
+**暂缓 / 待你拍板**：P4-3（Next Run Plan 置顶 hero）；「先录后生成 coaching」概念待当面演示；Mode 与 #5 主题卡片的 Home 排版协调。
 
 ---
 
