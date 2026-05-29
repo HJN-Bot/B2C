@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, Sparkles, TrendingUp } from "lucide-react";
+import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 
@@ -26,11 +26,18 @@ interface NextRunPlan {
   one_move: string;
 }
 
+// Each piece of feedback can point back to something the student actually said.
+interface Evidence {
+  point: string;
+  quote?: string;
+}
+
 interface AiTakeaway {
   encouragement: string;
+  summary: string[];           // top-down: what the student actually talked about
   next_run_plan: NextRunPlan;
-  what_worked: string[];
-  make_stronger: string[];
+  what_worked: Evidence[];
+  make_stronger: Evidence[];
 }
 
 interface CoachMessage {
@@ -48,10 +55,11 @@ const KTV_META: Record<KTVMetric, { label: string; icon: string }> = {
 
 
 const PRESETS = [
-  { label: "Vocab upgrade", prompt: "Give me 3 better words or phrases I can use next time, with one easy sentence." },
-  { label: "Storyline", prompt: "Turn my idea into claim, example, evidence, and impact." },
-  { label: "Go deeper", prompt: "Ask me 3 deeper science questions about my topic." },
-  { label: "More examples", prompt: "Give me 2 simple examples I can add next time." },
+  { label: "Ask me one question", prompt: "Ask me ONE short question about my topic so I can practice answering it next time. Do not answer it for me." },
+  { label: "My highlight", prompt: "What was the single best moment in what I just said, and why did it work?" },
+  { label: "Level up my words", prompt: "Give me 3 stronger words or phrases I can reuse next time, each with one short example sentence." },
+  { label: "Make my story fun", prompt: "Give me one small idea to make my story more interesting next time, based on what I said." },
+  { label: "Shape my story", prompt: "Help me shape my idea into claim, example, and why it matters — using my own words, not a full script." },
 ];
 
 const STOP_WORDS = new Set([
@@ -69,11 +77,31 @@ function formatTime(seconds: number) {
   return mins > 0 ? `${mins}m ${seconds % 60}s` : `${seconds}s`;
 }
 
-function scoreColor(value: number) {
-  if (value < 40) return "#FF7A5C";
-  if (value < 70) return "#FFC947";
-  if (value < 90) return "#7ED957";
-  return "#58A9FF";
+// P4-2: playful, non-scorecard headline for the top of the takeaway.
+const CELEBRATIONS = [
+  (t: string) => `Your spark stayed lit for ${t}! 🎉`,
+  (t: string) => `You kept your idea going for ${t} — that's a real run!`,
+  (t: string) => `${t} of you being brave enough to speak. Love it. 🎉`,
+  (t: string) => `That's ${t} of your own voice. Nice one! ✨`,
+];
+
+function celebrationHeadline(seconds: number) {
+  if (!seconds) return "You showed up to practice. That already counts! 🎉";
+  return CELEBRATIONS[seconds % CELEBRATIONS.length](formatTime(seconds));
+}
+
+// P5-2: word-based growth trend instead of a numeric score map.
+const GROWTH_TREND: Record<KTVMetric, { strong: string; growing: string; start: string }> = {
+  flow: { strong: "Smoother, longer flow", growing: "Flow is getting steadier", start: "Room to keep talking longer" },
+  words: { strong: "Stronger word choices", growing: "Reaching for richer words", start: "Room for bolder words" },
+  sentences: { strong: "Clearer, fuller sentences", growing: "Sentences are filling out", start: "Room for fuller sentences" },
+  story: { strong: "A clear claim with why it matters", growing: "Linking facts to why they matter", start: "Room to add why it matters" },
+};
+
+function trendLevel(value: number): "strong" | "growing" | "start" {
+  if (value >= 70) return "strong";
+  if (value >= 35) return "growing";
+  return "start";
 }
 
 function parseJson<T>(text: string): T | null {
@@ -98,19 +126,38 @@ function normalizeList(value: unknown, fallback: string[]) {
   return list.length ? list.slice(0, 4) : fallback;
 }
 
+// Accepts either plain strings or { point/advice, quote } objects from the model.
+function normalizeEvidence(value: unknown, fallback: Evidence[]): Evidence[] {
+  if (!Array.isArray(value)) return fallback;
+  const list = value
+    .map((item): Evidence | null => {
+      if (typeof item === "string") {
+        const point = item.trim();
+        return point ? { point } : null;
+      }
+      const record = item as { point?: unknown; advice?: unknown; quote?: unknown };
+      const point = String(record?.point ?? record?.advice ?? "").trim();
+      const quote = String(record?.quote ?? "").trim();
+      return point ? { point, quote: quote || undefined } : null;
+    })
+    .filter((item): item is Evidence => Boolean(item));
+  return list.length ? list.slice(0, 3) : fallback;
+}
+
 function normalizeTakeaway(value: Partial<AiTakeaway> | null): AiTakeaway | null {
   const plan = value?.next_run_plan;
   if (!plan?.focus || !plan?.say_this || !plan?.one_move) return null;
   return {
     encouragement: String(value?.encouragement || "You completed a real practice run.").trim(),
+    summary: normalizeList(value?.summary, []),
     next_run_plan: {
       focus: String(plan.focus).trim(),
       say_this: String(plan.say_this).trim(),
       reuse_words: normalizeList(plan.reuse_words, []),
       one_move: String(plan.one_move).trim(),
     },
-    what_worked: normalizeList(value?.what_worked, ["You gave the coach real content to build from."]).slice(0, 3),
-    make_stronger: normalizeList(value?.make_stronger, [String(plan.one_move)]).slice(0, 3),
+    what_worked: normalizeEvidence(value?.what_worked, [{ point: "You gave the coach real content to build from." }]),
+    make_stronger: normalizeEvidence(value?.make_stronger, [{ point: String(plan.one_move) }]),
   };
 }
 
@@ -154,10 +201,16 @@ function createLocalTakeaway(session: {
 
   const mainWord = reuseWords[0];
 
+  const summary: string[] = [];
+  if (session.timer) summary.push(`You kept your idea going for ${formatTime(session.timer)}.`);
+  if (mainWord) summary.push(`You talked about ideas like ${reuseWords.slice(0, 3).join(", ")}.`);
+  if (!summary.length) summary.push("You completed a short practice run.");
+
   return {
     encouragement: session.wordCount > 0
       ? "You finished a real speaking run, so now we can make the next one sharper."
       : "You reached the takeaway page; the next run will give the coach more words to build from.",
+    summary,
     next_run_plan: {
       focus: focusByMetric[weakest],
       say_this: mainWord
@@ -167,14 +220,14 @@ function createLocalTakeaway(session: {
       one_move: moveByMetric[weakest],
     },
     what_worked: [
-      session.timer ? `You stayed with the practice for ${formatTime(session.timer)}.` : "You reached the reflection step.",
+      { point: session.timer ? `You stayed with the practice for ${formatTime(session.timer)}.` : "You reached the reflection step." },
       session.highlightCount || session.highlightWords.length
-        ? "You saved useful moments that can be reused next time."
-        : "You gave the coach a starting point for your next run.",
+        ? { point: "You saved useful moments that can be reused next time.", quote: session.highlightWords[0] }
+        : { point: "You gave the coach a starting point for your next run." },
     ],
     make_stronger: [
-      "Add one concrete example after your main point.",
-      "Use because, for example, and this matters to connect the idea.",
+      { point: "Add one concrete example after your main point.", quote: mainWord },
+      { point: "Use because, for example, and this matters to connect the idea." },
     ],
   };
 }
@@ -193,7 +246,17 @@ function createLocalChatAnswer(request: string, takeaway: AiTakeaway | null, tra
   }
 
   if (lower.includes("question") || lower.includes("deeper") || lower.includes("deep")) {
-    return "Three deeper questions:\n1. What causes this effect?\n2. What evidence would prove it?\n3. How does it change daily life?";
+    return "Here's one to practice with:\nWhat is one real example that proves your main point?\n(Try answering it out loud next run — I won't answer it for you.)";
+  }
+
+  if (lower.includes("highlight") || lower.includes("shine") || lower.includes("best") || lower.includes("good")) {
+    return words.length
+      ? `Your strong moment: when you used "${words[0]}". Keep doing that — name your idea, then back it up.`
+      : "Your strong moment: you kept going and finished the run. Next time, say your best line a little louder.";
+  }
+
+  if (lower.includes("fun") || lower.includes("interesting") || lower.includes("story")) {
+    return "Make it more fun next time:\n- Open with a tiny surprise or a question.\n- Add one real example people can picture.";
   }
 
   if (lower.includes("example")) {
@@ -208,21 +271,25 @@ function createLocalChatAnswer(request: string, takeaway: AiTakeaway | null, tra
 function buildTakeawayPrompt(context: string) {
   return `You are SpeakSpark, an AI speaking coach for Chinese middle-school students practicing English science presentations.
 
-Create a concise post-practice takeaway. Do not repeat the full transcript.
-Focus on what the student should do in the NEXT speaking run.
-Use only ideas supported by the transcript, highlights, and score events.
+Write a SHORT, top-down post-practice takeaway. First capture what the student actually talked about, then give advice tied to their OWN words.
+Rules:
+- Use ONLY ideas supported by the transcript, highlights, and score events.
+- Do NOT repeat the full transcript, and do NOT write a full speech or a complete answer for them. Coach process only.
+- The "encouragement" should be warm and a little playful, not a score.
+- For every "what_worked" and "make_stronger" item, include a SHORT exact quote (3-8 words) copied verbatim from the transcript as "quote". If no fitting quote exists, use "".
 
 Return ONLY valid JSON:
 {
-  "encouragement": "one warm sentence",
+  "encouragement": "one warm, playful sentence",
+  "summary": ["2-3 short bullets describing what the student talked about"],
   "next_run_plan": {
     "focus": "one specific focus",
     "say_this": "one short sentence or frame the student can say next time",
     "reuse_words": ["2-4 words or phrases"],
     "one_move": "one tiny action for the next run"
   },
-  "what_worked": ["2-3 concrete bullets"],
-  "make_stronger": ["2-3 concrete bullets"]
+  "what_worked": [{ "point": "what worked", "quote": "exact short phrase they said, or empty" }],
+  "make_stronger": [{ "point": "one improvement", "quote": "the phrase this refers to, or empty" }]
 }
 
 Session:
@@ -232,6 +299,8 @@ ${context}`;
 function buildChatSystemPrompt(context: string, takeaway: AiTakeaway | null) {
   return `You are SpeakSpark's post-practice coach for a Chinese middle-school student.
 Answer ONLY based on this session. Keep answers short, concrete, and next-run focused.
+Coach mode: practice feedback only. Never write a full speech or a complete answer for the student — coach by asking one question, giving a frame, or offering small reusable pieces (words, examples).
+If the student asks you to "ask me a question", ask exactly ONE short question and do NOT answer it yourself.
 ALWAYS return ONLY valid JSON: { "answer": "2-5 short lines" }
 
 Current takeaway:
@@ -333,7 +402,7 @@ export default function TakeawayPage() {
       setTakeawayError(message);
       setChatStatus("idle");
       setChatMessages([
-        { id: makeId(), role: "system", text: "Gemini is offline right now, so I made a local plan from this run." },
+        { id: makeId(), role: "coach", text: "Coach plan is ready from this run." },
         { id: makeId(), role: "coach", text: `Next focus: ${localPlan.next_run_plan.focus}` },
       ]);
     }
@@ -394,39 +463,46 @@ export default function TakeawayPage() {
     <div className="min-h-dvh bg-gray-50">
       <div className="flex min-h-dvh flex-col gap-4 overflow-y-auto px-4 pb-28 pt-6">
         <section className="rounded-[1.5rem] border border-amber-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-widest text-amber-500">You made it</p>
+          <p className="text-xs font-black uppercase tracking-widest text-amber-500">Practice complete</p>
           <div className="mt-2 flex items-end justify-between gap-3">
             <div>
               <h1 className="text-2xl font-black leading-tight text-gray-900">
-                Your idea stayed alive for {formatTime(timer)}.
+                {celebrationHeadline(timer)}
               </h1>
               <p className="mt-2 text-sm font-semibold text-gray-400">
-                {highlightCount} moments saved · {wordCount || "some"} words captured
+                {(highlightWords.length || highlightCount) ? `${highlightWords.length || highlightCount} phrases saved` : "First steps saved"} · {wordCount || "some"} words spoken
               </p>
             </div>
-            <div className="text-5xl">🏆</div>
+            <div className="text-5xl">🎉</div>
           </div>
         </section>
 
-        <section className="grid grid-cols-4 gap-2">
-          {[
-            { label: "Time", value: formatTime(timer) },
-            { label: "Words", value: wordCount || "--" },
-            { label: "Saved", value: highlightWords.length || highlightCount || "--" },
-            { label: "AI", value: takeawayStatus === "ready" ? "On" : takeawayStatus === "thinking" ? "..." : "--" },
-          ].map((item) => (
-            <div key={item.label} className="rounded-2xl border border-gray-100 bg-white px-2 py-3 text-center shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">{item.label}</p>
-              <p className="mt-1 text-lg font-black text-gray-900">{item.value}</p>
+        {/* P5-4: coach-mode boundary shown as a persistent trust label */}
+        <div className="flex items-center justify-center gap-1.5 rounded-full border border-gray-100 bg-white/70 px-3 py-1.5 text-[11px] font-bold text-gray-400">
+          <ShieldCheck size={12} className="text-green-500" />
+          Coach mode · practice feedback only
+        </div>
+
+        {/* #4: top-down — what you talked about, before any advice */}
+        {takeaway && takeaway.summary.length > 0 && (
+          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">What you talked about</p>
+            <div className="mt-2 space-y-1.5">
+              {takeaway.summary.map((point) => (
+                <div key={point} className="flex gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{point}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </section>
+          </section>
+        )}
 
         <section className="rounded-[1.25rem] border border-green-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-black uppercase tracking-widest text-green-500">Next Run Plan</p>
             <span className="rounded-full bg-green-50 px-2 py-1 text-[10px] font-black text-green-600">
-              {takeawayStatus === "ready" ? "AI thought" : takeawayStatus === "thinking" ? "AI thinking" : takeawayStatus === "idle" ? "Practice first" : "Retry needed"}
+              {takeawayStatus === "thinking" ? "Thinking…" : takeawayStatus === "idle" ? "Practice first" : "From this run"}
             </span>
           </div>
 
@@ -448,11 +524,10 @@ export default function TakeawayPage() {
           )}
 
           {takeawayStatus === "error" && (
-            <div className="rounded-2xl bg-red-50 p-3">
-              <p className="text-sm font-bold text-red-600">AI plan did not load.</p>
-              <p className="mt-1 max-h-14 overflow-y-auto text-xs font-semibold text-red-400">{takeawayError}</p>
-              <button onClick={() => void generateTakeaway()} className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-black text-red-500 shadow-sm">
-                Generate again
+            <div className="rounded-2xl bg-gray-50 p-3">
+              <p className="text-sm font-bold text-gray-700">Coach plan is ready from this run.</p>
+              <button onClick={() => void generateTakeaway()} className="mt-2 rounded-xl border border-gray-100 bg-white px-3 py-2 text-xs font-black text-gray-500 shadow-sm">
+                Refresh plan
               </button>
             </div>
           )}
@@ -488,14 +563,23 @@ export default function TakeawayPage() {
 
         {takeaway && (
           <section className="grid grid-cols-1 gap-3">
-            {[
-              ["What worked", takeaway.what_worked, "text-blue-500"],
-              ["Make stronger", takeaway.make_stronger, "text-orange-500"],
-            ].map(([title, items, color]) => (
-              <div key={title as string} className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-                <p className={`text-xs font-black uppercase tracking-widest ${color}`}>{title as string}</p>
-                <div className="mt-2 max-h-32 space-y-2 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  {(items as string[]).map((item) => <p key={item} className="text-sm font-bold leading-relaxed text-gray-800">{item}</p>)}
+            {([
+              ["What worked", takeaway.what_worked, "text-blue-500", "border-blue-200 bg-blue-50/60"],
+              ["Make stronger", takeaway.make_stronger, "text-orange-500", "border-orange-200 bg-orange-50/60"],
+            ] as const).map(([title, items, color, quoteStyle]) => (
+              <div key={title} className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+                <p className={`text-xs font-black uppercase tracking-widest ${color}`}>{title}</p>
+                <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+                  {items.map((item) => (
+                    <div key={item.point}>
+                      <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
+                      {item.quote && (
+                        <p className={`mt-1 rounded-lg border-l-2 ${quoteStyle} px-2 py-1 text-xs font-semibold italic text-gray-500`}>
+                          You said: “{item.quote}”
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
@@ -509,7 +593,7 @@ export default function TakeawayPage() {
               <p className="text-xs font-black uppercase tracking-widest text-gray-400">Coach chatbox</p>
             </div>
             <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-600">
-              {chatStatus === "thinking" ? "AI thinking" : hasSessionData ? "AI ready" : "Practice first"}
+              {chatStatus === "thinking" ? "Coach thinking…" : hasSessionData ? "Coach ready" : "Practice first"}
             </span>
           </div>
 
@@ -521,7 +605,7 @@ export default function TakeawayPage() {
                   className={message.role === "user"
                     ? "ml-10 rounded-2xl bg-blue-500 px-3 py-2 text-white"
                     : message.role === "system"
-                    ? "rounded-2xl bg-red-50 px-3 py-2 text-red-600"
+                    ? "rounded-2xl bg-amber-50 px-3 py-2 text-amber-700"
                     : "mr-8 rounded-2xl bg-white px-3 py-2 text-gray-800 shadow-sm"}
                 >
                   <p className="whitespace-pre-line text-sm font-semibold leading-relaxed">{message.text}</p>
@@ -555,7 +639,7 @@ export default function TakeawayPage() {
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
               className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-gray-700 outline-none placeholder:text-gray-300"
-              placeholder="Ask for vocab, storyline, depth..."
+              placeholder="Ask for a question, your highlight, better words…"
               disabled={!hasSessionData || chatStatus === "thinking"}
             />
             <button type="submit" disabled={!chatInput.trim() || !hasSessionData || chatStatus === "thinking"} className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 text-white disabled:opacity-45">
@@ -566,20 +650,26 @@ export default function TakeawayPage() {
 
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Progress map</p>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">What's growing</p>
             <TrendingUp size={15} className="text-green-500" />
           </div>
-          <div className="space-y-3">
-            {(["flow", "words", "sentences", "story"] as KTVMetric[]).map((metric) => (
-              <div key={metric} className="flex items-center gap-2">
-                <span className="w-5 text-center text-sm">{KTV_META[metric].icon}</span>
-                <span className="w-20 text-xs font-bold text-gray-500">{KTV_META[metric].label}</span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-                  <div className="h-full rounded-full" style={{ width: `${ktvScore[metric]}%`, background: scoreColor(ktvScore[metric]) }} />
+          <div className="space-y-2.5">
+            {(["flow", "words", "sentences", "story"] as KTVMetric[]).map((metric) => {
+              const level = trendLevel(ktvScore[metric]);
+              const tag = level === "strong" ? "Strong" : level === "growing" ? "Growing" : "Just starting";
+              const tagStyle = level === "strong"
+                ? "bg-green-50 text-green-600"
+                : level === "growing"
+                ? "bg-blue-50 text-blue-600"
+                : "bg-gray-50 text-gray-400";
+              return (
+                <div key={metric} className="flex items-center gap-2">
+                  <span className="w-5 shrink-0 text-center text-sm">{KTV_META[metric].icon}</span>
+                  <span className="flex-1 text-sm font-bold text-gray-700">{GROWTH_TREND[metric][level]}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${tagStyle}`}>{tag}</span>
                 </div>
-                <span className="w-7 text-right font-mono text-xs font-black" style={{ color: scoreColor(ktvScore[metric]) }}>{Math.round(ktvScore[metric])}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
