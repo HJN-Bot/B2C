@@ -81,6 +81,12 @@
     animation: phrase-glow 1.5s ease-out;
   }
 
+  /* Karaoke captions: fade the top so earlier words dissolve upward. */
+  .karaoke-mask {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 45%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 45%);
+  }
+
   .cat-sprite-coach {
     --buddy-accent: #58A9FF;
     position: relative;

@@ -355,6 +355,18 @@ function applyHighlights(text: string, words: string[]) {
   return parts;
 }
 
+// Karaoke: show only the current line (last sentence, capped) so the user
+// is not flooded with the whole transcript while speaking.
+function lastLine(transcript: string): string {
+  const t = transcript.replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const sentences = t.match(/[^.!?]+[.!?]*/g) || [t];
+  let line = (sentences[sentences.length - 1] || t).trim();
+  const words = line.split(" ");
+  if (words.length > 16) line = words.slice(-16).join(" ");
+  return line;
+}
+
 // ─── AI Character ─────────────────────────────────────────────────────────────
 
 function AICharacter({ mood, bubble }: { mood: CharacterMood; bubble: string | null }) {
@@ -762,7 +774,7 @@ export default function PracticeRoom() {
   // ── Send audio chunk to Gemini ─────────────────────────────────────────────
   const sendToGemini = useCallback(async (wavBlob: Blob): Promise<GeminiResult | null> => {
     try {
-      setAiState("AI is listening to the last phrase");
+      setAiState("Following your last phrase");
       const audioB64 = await blobToBase64(wavBlob);
       const parts = firstSentRef.current
         ? [{ inlineData: { mimeType: "audio/wav", data: audioB64 } }]
@@ -1299,9 +1311,9 @@ export default function PracticeRoom() {
               {topic ? (
                 <p className="mb-0.5 text-[11px] font-semibold text-gray-400">Topic · {topic}</p>
               ) : null}
-              <p className="text-[11px] font-black uppercase tracking-widest text-blue-500">AI is listening</p>
+              <p className="text-[11px] font-black uppercase tracking-widest text-blue-500">Coach is following your story</p>
               <p className="text-xs font-semibold text-gray-400">
-                {started ? (micDenied ? "Demo mode" : "Speech, pauses, and phrases") : "Ready when you are"}
+                {started ? (micDenied ? "Demo mode" : "I'm with your idea — keep going") : "Ready when you are"}
               </p>
             </div>
             <span
@@ -1356,40 +1368,35 @@ export default function PracticeRoom() {
           )}
 
           {started ? (
-            <div className="relative z-[1] mt-3 flex min-h-0 flex-1 flex-col rounded-2xl border border-gray-100 bg-white/90 px-3.5 py-3 shadow-sm">
-              <div className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-gray-400">
-                <MessageCircle size={12} />Live Transcript
+            <div className="relative z-[1] mt-3 flex min-h-0 flex-1 flex-col justify-end rounded-2xl border border-gray-100 bg-white/90 px-3.5 py-3 shadow-sm">
+              <div className="mb-1.5 flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-gray-400">
+                <MessageCircle size={12} />Now saying
                 <span className="ml-auto h-1.5 w-1.5 rounded-full"
                   style={{ background: captionStatus === "listening" ? "#58A9FF" : "#D1D5DB" }} />
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto pr-1 text-[15px] leading-relaxed text-gray-700">
-                {applyHighlights(transcript, highlightWords).map((p, i) =>
-                  p.hl ? (
-                    <mark key={i} className="phrase-highlight rounded px-0.5 font-semibold"
-                      style={{ background: "rgba(88,169,255,0.18)", color: "#2563EB" }}>{p.str}</mark>
-                  ) : <span key={i}>{p.str}</span>
-                )}
-                {interimTranscript && (
-                  <span className="font-semibold text-blue-500">
-                    {transcript ? " " : ""}
-                    {applyHighlights(interimTranscript, highlightWords).map((p, i) =>
-                      p.hl ? (
-                        <mark key={`interim-${i}`} className="phrase-highlight rounded px-0.5 font-bold"
-                          style={{ background: "rgba(88,169,255,0.2)", color: "#2563EB" }}>{p.str}</mark>
-                      ) : <span key={`interim-${i}`}>{p.str}</span>
-                    )}
-                  </span>
-                )}
-                {!transcript && !interimTranscript && (
-                  <span className="italic text-gray-300">
-                    {captionStatus === "unsupported"
-                      ? "Live captions need Chrome or Edge..."
-                      : captionStatus === "error"
-                      ? "Live captions paused..."
-                      : "Your words will appear here..."}
-                  </span>
-                )}
-                <div ref={transcriptEndRef} />
+              {/* Single-line Karaoke: only the current line, earlier words fade up */}
+              <div className="karaoke-mask flex max-h-[3.6rem] items-end overflow-hidden text-[17px] font-semibold leading-snug text-gray-800">
+                <p className="w-full">
+                  {applyHighlights(lastLine(transcript), highlightWords).map((p, i) =>
+                    p.hl ? (
+                      <mark key={i} className="phrase-highlight rounded px-0.5 font-bold"
+                        style={{ background: "rgba(88,169,255,0.18)", color: "#2563EB" }}>{p.str}</mark>
+                    ) : <span key={i}>{p.str}</span>
+                  )}
+                  {interimTranscript && (
+                    <span className="text-blue-500">{lastLine(transcript) ? " " : ""}{interimTranscript}</span>
+                  )}
+                  {!transcript && !interimTranscript && (
+                    <span className="italic text-gray-300">
+                      {captionStatus === "unsupported"
+                        ? "Live captions need Chrome or Edge…"
+                        : captionStatus === "error"
+                        ? "Live captions paused…"
+                        : "Your words will appear here…"}
+                    </span>
+                  )}
+                  <span ref={transcriptEndRef} />
+                </p>
               </div>
             </div>
           ) : (
@@ -1415,15 +1422,14 @@ export default function PracticeRoom() {
           )}
         </section>
 
-        {/* ── Bottom waveform ── */}
-        <section className="rounded-[1.25rem] border border-gray-100 bg-white/88 px-3 py-2.5 shadow-sm">
-          <div className="mb-1 flex items-center justify-between">
-            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Voice wave</p>
-            <p className="text-xs font-bold text-gray-400">
-              {!started ? "Tap Start to begin" : micDenied ? "Demo mode" : "Listening..."}
-            </p>
-          </div>
-          <canvas ref={canvasRef} width={420} height={126} style={{ width: "100%", height: 104 }} />
+        {/* ── Bottom waveform — kept as a calm breathing indicator, not a focal point ── */}
+        <section className="px-2">
+          <canvas
+            ref={canvasRef}
+            width={420}
+            height={126}
+            style={{ width: "100%", height: 34, opacity: started && !micDenied ? 0.45 : 0.25 }}
+          />
         </section>
 
         {started && (
