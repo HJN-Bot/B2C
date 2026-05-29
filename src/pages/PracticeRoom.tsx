@@ -355,6 +355,20 @@ function applyHighlights(text: string, words: string[]) {
   return parts;
 }
 
+// Cold-start helper: pull a few content keywords from the topic so the user
+// has something to grab onto before they start (feedback #3).
+const TOPIC_STOPWORDS = new Set([
+  "how", "why", "what", "does", "make", "makes", "the", "are", "and", "for", "its",
+  "our", "can", "you", "your", "that", "this", "with", "into", "when", "they", "from", "about",
+]);
+function topicKeywords(topic: string): string[] {
+  if (!topic) return [];
+  return Array.from(new Set(
+    topic.toLowerCase().replace(/[^a-z\s-]/g, " ").split(/\s+/)
+      .filter((w) => w.length > 3 && !TOPIC_STOPWORDS.has(w)),
+  )).slice(0, 5);
+}
+
 // Karaoke: show only the current line (last sentence, capped) so the user
 // is not flooded with the whole transcript while speaking.
 function lastLine(transcript: string): string {
@@ -444,6 +458,7 @@ export default function PracticeRoom() {
   const location  = useLocation();
   const topic     = (location.state as { topic?: string } | null)?.topic ?? "";
   const practiceMode = getPracticeMode();
+  const coldStartKeywords = topicKeywords(topic);
 
   // Audio refs
   const audioCtxRef      = useRef<AudioContext | null>(null);
@@ -1326,6 +1341,25 @@ export default function PracticeRoom() {
               {started ? "Live" : apiStatus === "loading" ? "Loading" : "Ready"}
             </span>
           </div>
+
+          {coldStartKeywords.length > 0 && (
+            <div className="relative z-[1] -mt-1 mb-2 flex flex-wrap gap-1.5">
+              {coldStartKeywords.map((kw) => {
+                const used = transcript.toLowerCase().includes(kw.toLowerCase());
+                return (
+                  <span
+                    key={kw}
+                    className="rounded-full px-2 py-0.5 text-[11px] font-bold transition-colors"
+                    style={used
+                      ? { background: "rgba(126,217,87,0.18)", color: "#16A34A" }
+                      : { background: "rgba(148,163,184,0.14)", color: "#64748B" }}
+                  >
+                    {used ? "✓ " : "💡 "}{kw}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
           <div className="relative z-[1] flex justify-center py-1">
             <AICharacter

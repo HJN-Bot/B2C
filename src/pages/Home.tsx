@@ -76,7 +76,7 @@ export default function Home() {
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate("/practice")}
+              onClick={() => navigate("/practice", { state: { topic } })}
               className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
               style={{ background: "linear-gradient(135deg, #58A9FF, #7ED957)" }}
             >

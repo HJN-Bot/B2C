@@ -57,8 +57,8 @@
 - [x] **#1** **End 按钮**：结构上本就在独立顶部栏（与字幕区分离），不会被字幕挤动 → 已满足，无需改 🧪确认
 - [x] **P3 文案** "AI is listening" → **"Coach is following your story"**；`aiState` 那句也改 "Following your last phrase" 🧪
 - [x] **#2** 音浪**弱化**：去掉卡片框/标签，slim 34px + opacity 0.45/0.25，保留波动但不抢注意力 🧪
-- [ ] **#3** 🔴 顶部**常驻 TopicHeader**：目前 topic 只在路由 state 有值时显示，Home 还没传 topic → 需 Home 选话题时带过来 + header 常驻
-- [ ] **#3** 🔴 冷启动**关键词提示**；讲过的关键词**微微变色**（现有 highlightWords chips + 蓝色高亮算半个，缺"冷启动建议关键词"）
+- [x] **#3** 顶部 **TopicHeader**：Home "Use this topic" 现在用 `navigate(state:{topic})` 传过来，练习页 header 显示 `Topic · …` 🧪（"My own"/底部 CTA 不传 topic）
+- [x] **#3** 冷启动**关键词提示**：`topicKeywords()` 从 topic 抽 ≤5 个内容词，header 下方 💡 chips；讲到后变绿 ✓（`transcript.includes`）🧪
 - [ ] 猫猫动画 🔴 **保留且重要**：做得好看、**消除漂移风险**、**状态自动切换**（speaking→listening / 处理中→thinking / Use it→excited→listening）—— 下一步做
 - [ ] **P3 指标** 🟡 说话中隐藏详细 KTV 指标，结束后才作为 private evidence
 - [ ] **P3 加载** 🟡 「先录后生成 coaching，AI 就绪不阻塞」= 用户开口就能录音/出字幕，AI 反馈晚点到也不挡练习；不要"等 AI ready 才能说"。**用户说没太看懂，下次当面演示这条**
