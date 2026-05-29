@@ -15,6 +15,8 @@
 - 创建 `Design/dev-memory/`（本文件 + PROJECT-MEMORY + TODO）
 - **Takeaway walkthrough 大部分完成**（`src/pages/TakeawayPage.tsx`，tsc+build 通过）：P4-1 / P4-2 / P4-4 / P5-1 / P5-2 / P5-3 / P5-4 / #4 全部落地。详见 TODO.md。
 - **三个练习 Mode 落地**（Free Talk / Exam Prep / Story）：新建 `src/lib/practice-mode.ts`；Home 选择器；PracticeRoom 顶部标签；TakeawayPage pill + coachStyle 注入 prompt。全英文，默认 Free Talk。tsc+build 通过。
+- **PracticeRoom 批次大部分完成**（commits `9e8cb75` + topic + cat）：单行 Karaoke 字幕（`lastLine`+`.karaoke-mask`）/ End 已结构分离 / 音浪弱化 / 文案 "Coach is following your story" / TopicHeader + 冷启动关键词(讲到变绿) / 猫猫 thinking 状态 + 漂移容差 88px。剩"彻底消除漂移=重做 sprite 资产"待拍板。
+- **新建 Skill** `~/.claude/skills/dev-memory-and-todos/`（未做 subagent 压力测试，待授权）。
 
 ## 进行中 🔧
 - 提交 Takeaway 改动。

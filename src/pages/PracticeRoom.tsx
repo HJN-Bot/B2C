@@ -894,6 +894,8 @@ export default function PracticeRoom() {
         return;
       }
 
+      // Show the coach "thinking" while we wait on Gemini (auto state switch).
+      setMood("thinking");
       const wav    = createWavBlob(combined, sampleRateRef.current);
       const result = await sendToGemini(wav);
       if (!result) return;

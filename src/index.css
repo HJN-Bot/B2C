@@ -189,8 +189,11 @@
 
   .cat-motion-clip {
     position: relative;
-    width: 96px;
-    height: 96px;
+    /* Tighter window vs the 112px frame = ~12px hidden margin each side,
+       so more per-frame sprite offset is clipped away (less visible drift).
+       Fully removing drift needs re-centered sprite frames (asset fix). */
+    width: 88px;
+    height: 88px;
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;

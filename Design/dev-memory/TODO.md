@@ -16,6 +16,9 @@
 | `bce2179` | Chatbox 多轮对话 | `#/session-end` | 连续追问是否带上下文 |
 | `fa5b2c2` | Takeaway walkthrough P4-1/2/4、P5-1/2/4、#4 | `#/session-end` | headline 文案 / 去成绩单 / 中性 fallback / 新 preset / What's growing 文字趋势 / Coach mode pill / summary + 原文引用 |
 | `9410ca1` | 三个 Mode | Home → Practice → Takeaway | 选 Mode 是否记住、各页是否显示、复盘语气是否贴合 |
+| `9e8cb75` | 单行 Karaoke 字幕 + 音浪弱化 + coach 文案 | `#/practice` | 字幕是否单行淡出、End 不动、音浪是否变弱、文案是否变温和 |
+| (topic) | TopicHeader + 冷启动关键词 | Home"Use this topic"→`#/practice` | 顶部显示话题、💡关键词、讲到后变✓绿 |
+| (cat) | 猫猫 thinking 状态 + 漂移容差收紧 | `#/practice` 说话时 | 处理中是否切 thinking、漂移是否更轻（重点看你眼睛） |
 
 **暂缓 / 待你拍板**：P4-3（Next Run Plan 置顶 hero）；「先录后生成 coaching」概念待当面演示；Mode 与 #5 主题卡片的 Home 排版协调。
 
@@ -59,7 +62,9 @@
 - [x] **#2** 音浪**弱化**：去掉卡片框/标签，slim 34px + opacity 0.45/0.25，保留波动但不抢注意力 🧪
 - [x] **#3** 顶部 **TopicHeader**：Home "Use this topic" 现在用 `navigate(state:{topic})` 传过来，练习页 header 显示 `Topic · …` 🧪（"My own"/底部 CTA 不传 topic）
 - [x] **#3** 冷启动**关键词提示**：`topicKeywords()` 从 topic 抽 ≤5 个内容词，header 下方 💡 chips；讲到后变绿 ✓（`transcript.includes`）🧪
-- [ ] 猫猫动画 🔴 **保留且重要**：做得好看、**消除漂移风险**、**状态自动切换**（speaking→listening / 处理中→thinking / Use it→excited→listening）—— 下一步做
+- [x] 猫猫动画 🔴 **状态自动切换**：大部分本就接好（excited/thinking/listening/coaching + 3s 回落 + Use it→listening）；本次补上**AI 处理中→thinking**（`processPhrase` 发 Gemini 前 `setMood("thinking")`）🧪
+- [x] 猫猫动画 🔴 **漂移容差**：clip 96→88px（容差 8→12px，藏掉更多偏移）🧪
+- [ ] 猫猫动画 ⏸ **彻底消除漂移**：需重新居中 sprite 各帧（美术资产层面，CSS 治标不治本）—— 待你拍板是否重做资产
 - [ ] **P3 指标** 🟡 说话中隐藏详细 KTV 指标，结束后才作为 private evidence
 - [ ] **P3 加载** 🟡 「先录后生成 coaching，AI 就绪不阻塞」= 用户开口就能录音/出字幕，AI 反馈晚点到也不挡练习；不要"等 AI ready 才能说"。**用户说没太看懂，下次当面演示这条**
 
