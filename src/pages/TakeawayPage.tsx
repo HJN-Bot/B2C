@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, Sparkles, Star, TrendingUp } from "lucide-react";
+import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, Sparkles, TrendingUp } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 
@@ -46,21 +46,6 @@ const KTV_META: Record<KTVMetric, { label: string; icon: string }> = {
   story: { label: "Story", icon: "🧠" },
 };
 
-const TAKEAWAY_SCHEMA = `{
-  "encouragement": "one warm sentence",
-  "next_run_plan": {
-    "focus": "one specific focus",
-    "say_this": "one short sentence or frame the student can say next time",
-    "reuse_words": ["2-4 words or phrases"],
-    "one_move": "one tiny action for the next run"
-  },
-  "what_worked": ["2-3 concrete bullets"],
-  "make_stronger": ["2-3 concrete bullets"]
-}`;
-
-const CHAT_SCHEMA = `{
-  "answer": "2-5 short lines"
-}`;
 
 const PRESETS = [
   { label: "Vocab upgrade", prompt: "Give me 3 better words or phrases I can use next time, with one easy sentence." },
@@ -244,19 +229,15 @@ Session:
 ${context}`;
 }
 
-function buildChatPrompt(context: string, takeaway: AiTakeaway | null, request: string) {
-  return `You are SpeakSpark's post-practice coach. Answer the student's request with concrete next-run help.
-Keep it short and usable. Do not pretend to know anything outside this session.
-
-Return ONLY valid JSON:
-{ "answer": "2-5 short lines" }
-
-Request: ${request}
+function buildChatSystemPrompt(context: string, takeaway: AiTakeaway | null) {
+  return `You are SpeakSpark's post-practice coach for a Chinese middle-school student.
+Answer ONLY based on this session. Keep answers short, concrete, and next-run focused.
+ALWAYS return ONLY valid JSON: { "answer": "2-5 short lines" }
 
 Current takeaway:
 ${takeaway ? JSON.stringify(takeaway, null, 2) : "Not generated yet."}
 
-Session:
+Session data:
 ${context}`;
 }
 
@@ -300,6 +281,9 @@ export default function TakeawayPage() {
   const [chatInput, setChatInput] = useState("");
   const [chatStatus, setChatStatus] = useState<"idle" | "thinking" | "error">("idle");
 
+  // Multi-turn conversation history (Gemini format)
+  const chatHistoryRef = useRef<{ role: "user" | "model"; parts: [{ text: string }] }[]>([]);
+
   const ensureGemini = useCallback(async () => apiReadyRef.current, []);
 
   const getModel = useCallback(async () => {
@@ -328,6 +312,14 @@ export default function TakeawayPage() {
       if (!parsed) throw new Error("AI returned an unreadable takeaway format");
       setTakeaway(parsed);
       setTakeawayStatus("ready");
+      const openingLines = [
+        parsed.encouragement,
+        `Next focus: ${parsed.next_run_plan.focus}`,
+      ];
+      // Seed history so follow-up questions have context of what the coach already said
+      chatHistoryRef.current = [
+        { role: "model", parts: [{ text: JSON.stringify({ answer: openingLines.join("\n") }) }] },
+      ];
       setChatMessages([
         { id: makeId(), role: "coach", text: parsed.encouragement },
         { id: makeId(), role: "coach", text: `Next focus: ${parsed.next_run_plan.focus}` },
@@ -354,24 +346,43 @@ export default function TakeawayPage() {
     setChatInput("");
     setChatStatus("thinking");
     setChatMessages((prev) => [...prev, { id: makeId(), role: "user", text: trimmed }]);
+
+    // Append user turn to multi-turn history
+    chatHistoryRef.current = [
+      ...chatHistoryRef.current,
+      { role: "user", parts: [{ text: trimmed }] },
+    ];
+
     try {
       const { text } = await callGeminiProxy({
         model: MODEL_NAME,
+        systemInstruction: buildChatSystemPrompt(sessionContext, takeaway),
         responseMimeType: "application/json",
         temperature: 0.68,
-        maxOutputTokens: 900,
-        contents: [{ role: "user", parts: [{ text: buildChatPrompt(sessionContext, takeaway, trimmed) }] }],
+        maxOutputTokens: 600,
+        contents: chatHistoryRef.current,
       });
       const parsed = parseJson<{ answer?: string }>(text);
       if (!parsed?.answer?.trim()) throw new Error("AI returned an unreadable chat answer");
-      setChatMessages((prev) => [...prev, { id: makeId(), role: "coach", text: parsed.answer!.trim() }]);
+      const answer = parsed.answer!.trim();
+      // Append model turn so next message has full context
+      chatHistoryRef.current = [
+        ...chatHistoryRef.current,
+        { role: "model", parts: [{ text: JSON.stringify({ answer }) }] },
+      ];
+      setChatMessages((prev) => [...prev, { id: makeId(), role: "coach", text: answer }]);
       setChatStatus("idle");
-    } catch (error) {
+    } catch {
       const answer = createLocalChatAnswer(trimmed, takeaway, transcript, highlightWords);
+      // Still append a stub so the conversation thread stays coherent
+      chatHistoryRef.current = [
+        ...chatHistoryRef.current,
+        { role: "model", parts: [{ text: JSON.stringify({ answer }) }] },
+      ];
       setChatMessages((prev) => [...prev, { id: makeId(), role: "coach", text: answer }]);
       setChatStatus("idle");
     }
-  }, [chatStatus, getModel, hasSessionData, sessionContext, takeaway, transcript, highlightWords]);
+  }, [chatStatus, hasSessionData, sessionContext, takeaway, transcript, highlightWords]);
 
   useEffect(() => {
     void generateTakeaway();
