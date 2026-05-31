@@ -1,6 +1,6 @@
 # Spec — 练习页活态打磨（A2）
 
-> 2026-05-31 · 对应 TODO：[A2](../dev-memory/TODO.md) · 文件：`src/pages/PracticeRoom.tsx` + `src/index.css` · 状态：待审阅
+> 2026-05-31 · 对应 TODO：[A2](../dev-memory/TODO.md) · 文件：`src/pages/PracticeRoom.tsx` + `src/index.css` · 状态：✅ 已实现，🧪 待验证（点3：reply 卡 pin 住手动关，已确认）
 
 ## 修改建议
 试用截图发现 4 个练习中状态的小问题：

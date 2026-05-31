@@ -241,22 +241,22 @@
     animation-duration: 4.8s;
   }
 
-  /* thinking: active 8-frame cycle ~6fps */
+  /* thinking: calmer 8-frame cycle (slowed so it doesn't grab attention) */
   .cat-motion-coach-thinking .cat-motion-frame {
     animation-name: cat-motion-eight-fixed;
-    animation-duration: 1.3s;
+    animation-duration: 2.4s;
   }
 
-  /* coaching: moderate 8-frame cycle ~4fps */
+  /* coaching: gentle 8-frame cycle */
   .cat-motion-coach-coaching .cat-motion-frame {
     animation-name: cat-motion-eight-fixed;
-    animation-duration: 2.0s;
+    animation-duration: 3.0s;
   }
 
-  /* excited: fast 8-frame cycle ~8fps */
+  /* excited: lively but not frantic */
   .cat-motion-coach-excited .cat-motion-frame {
     animation-name: cat-motion-eight-fixed;
-    animation-duration: 1.0s;
+    animation-duration: 1.8s;
   }
 
   .cat-motion-coach-excited .cat-motion-spark {

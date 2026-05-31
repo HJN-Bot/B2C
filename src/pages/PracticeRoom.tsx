@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Brain, Clock, MessageCircle, Sparkles, Star, StopCircle, Zap } from "lucide-react";
+import { Clock, MessageCircle, Sparkles, Star, StopCircle, Zap } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { getPracticeMode } from "@/lib/practice-mode";
@@ -377,16 +377,14 @@ function topicKeywords(topic: string): string[] {
   )).slice(0, 5);
 }
 
-// Karaoke: show only the current line (last sentence, capped) so the user
-// is not flooded with the whole transcript while speaking.
-function lastLine(transcript: string): string {
+// Karaoke: show the recent tail of the transcript so it fills the caption
+// box (bottom-aligned, top fades out via .karaoke-mask). The full
+// single-line + scrollable history treatment is a later sub-project (B).
+function recentTail(transcript: string, maxWords = 45): string {
   const t = transcript.replace(/\s+/g, " ").trim();
   if (!t) return "";
-  const sentences = t.match(/[^.!?]+[.!?]*/g) || [t];
-  let line = (sentences[sentences.length - 1] || t).trim();
-  const words = line.split(" ");
-  if (words.length > 16) line = words.slice(-16).join(" ");
-  return line;
+  const words = t.split(" ");
+  return words.length > maxWords ? words.slice(-maxWords).join(" ") : t;
 }
 
 // ─── AI Character ─────────────────────────────────────────────────────────────
@@ -549,6 +547,9 @@ export default function PracticeRoom() {
 
   const showBottleneckRef = useRef(showBottleneck);
   useEffect(() => { showBottleneckRef.current = showBottleneck; }, [showBottleneck]);
+
+  const bottleneckPhaseRef = useRef(bottleneckPhase);
+  useEffect(() => { bottleneckPhaseRef.current = bottleneckPhase; }, [bottleneckPhase]);
 
   const followUpQRef = useRef(followUpQ);
   useEffect(() => { followUpQRef.current = followUpQ; }, [followUpQ]);
@@ -1036,11 +1037,12 @@ export default function PracticeRoom() {
         pauseHandledRef.current = false;
         // Cancel bottleneck timer on resumed speech
         if (bottleneckTimerRef.current) { clearTimeout(bottleneckTimerRef.current); bottleneckTimerRef.current = null; }
-        if (showBottleneckRef.current) {
-          collapseFollowUpToTag();
+        // Only auto-dismiss while still "thinking" (no real reply yet). Once a
+        // reply is shown, keep it pinned until the user taps Use it / Skip.
+        if (showBottleneckRef.current && bottleneckPhaseRef.current === "thinking") {
           showBottleneckRef.current = false;
+          setShowBottleneck(false);
         }
-        setShowBottleneck(false);
         if (maxExceededRef.current) {
           maxExceededRef.current = false;
           if (!processingRef.current) {
@@ -1288,12 +1290,6 @@ export default function PracticeRoom() {
           </button>
         </div>
 
-        <div className="mb-2 flex items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm">
-          <Brain size={15} className={apiStatus === "ready" ? "text-blue-500" : "text-gray-300"} />
-          <span className="text-xs font-bold text-gray-700">{aiState}</span>
-          <span className="ml-auto h-2 w-2 rounded-full"
-            style={{ background: apiStatus === "ready" ? "#7ED957" : apiStatus === "loading" ? "#58A9FF" : "#FF7A5C" }} />
-        </div>
 
         {/* KTV bars — purposeful event score */}
         <div className="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 space-y-2">
@@ -1465,16 +1461,16 @@ export default function PracticeRoom() {
                   style={{ background: captionStatus === "listening" ? "#58A9FF" : "#D1D5DB" }} />
               </div>
               {/* Single-line Karaoke: only the current line, earlier words fade up */}
-              <div className="karaoke-mask flex max-h-[3.6rem] items-end overflow-hidden text-[17px] font-semibold leading-snug text-gray-800">
+              <div className="karaoke-mask flex min-h-0 flex-1 items-end overflow-hidden text-[17px] font-semibold leading-relaxed text-gray-800">
                 <p className="w-full">
-                  {applyHighlights(lastLine(transcript), highlightWords).map((p, i) =>
+                  {applyHighlights(recentTail(transcript), highlightWords).map((p, i) =>
                     p.hl ? (
                       <mark key={i} className="phrase-highlight rounded px-0.5 font-bold"
                         style={{ background: "rgba(88,169,255,0.18)", color: "#2563EB" }}>{p.str}</mark>
                     ) : <span key={i}>{p.str}</span>
                   )}
                   {interimTranscript && (
-                    <span className="text-blue-500">{lastLine(transcript) ? " " : ""}{interimTranscript}</span>
+                    <span className="text-blue-500">{recentTail(transcript) ? " " : ""}{interimTranscript}</span>
                   )}
                   {!transcript && !interimTranscript && (
                     <span className="italic text-gray-300">
