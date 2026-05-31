@@ -47,15 +47,22 @@ Rules:
 
 const FOLLOW_UP_PROMPT = `The student has paused for several seconds during their English science presentation practice.
 
+React like a real coach: based on WHAT THEY ACTUALLY SAID, either ask one question OR point one direction to improve.
+
 Respond ONLY with valid JSON:
 {
-  "follow_up": "one short, content-aware question that helps them continue",
-  "feedback": "one short supportive observation",
+  "kind": "question" | "nudge",
+  "follow_up": "if kind=question, one question; if kind=nudge, one improvement direction. <=16 words, MUST reference something they said.",
+  "feedback": "one short human observation tied to their own words",
   "mood": "thinking"
 }
 
-Use the transcript/context from this chat. If there is little context, ask a useful starter question about cause, example, evidence, or impact. Avoid generic praise.
+Use the transcript/context from this chat. Reference the student's own words; avoid generic praise. If there is little context, ask a useful starter question about cause, example, evidence, or impact.
 `;
+
+// Tiny human "I'm here, thinking" beats shown the instant the user pauses,
+// before the real content-aware reply arrives.
+const THINKING_ACKS = ["mm… let me think", "okay, hold on", "I'm with you…", "got it, one sec"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,6 +73,7 @@ interface GeminiResult {
   feedback?: string;
   highlight_words?: string[];
   follow_up?: string;
+  kind?: "question" | "nudge";
   mood?: string;
   highlight_moment?: boolean;
   score_delta?: Partial<KTVScore>;
@@ -516,7 +524,11 @@ export default function PracticeRoom() {
   const [highlightWords, setHighlightWords] = useState<string[]>([]);
   const [phraseSparks, setPhraseSparks]     = useState<PhraseSpark[]>([]);
   const [showBottleneck, setShowBottleneck] = useState(false);
+  const [bottleneckPhase, setBottleneckPhase] = useState<"thinking" | "reply">("thinking");
   const [followUpQ, setFollowUpQ]           = useState("");
+  const [followUpKind, setFollowUpKind]     = useState<"question" | "nudge">("question");
+  const [followUpFeedback, setFollowUpFeedback] = useState("");
+  const [thinkingAck, setThinkingAck]       = useState("");
   const [miniCoachTip, setMiniCoachTip]     = useState("");
   const [apiStatus, setApiStatus]           = useState<"loading" | "ready" | "error">("loading");
   const [aiState, setAiState]               = useState("Warming up AI");
@@ -605,21 +617,17 @@ export default function PracticeRoom() {
     setAiState(source === "ai" ? "AI found a phrase highlight" : "Phrase highlight captured");
   }, [bumpKtvScore, triggerPhraseSpark]);
 
-  const showFollowUpQuestion = useCallback((question: string, feedback?: string) => {
-    const silenceMs = Date.now() - lastVoiceAtRef.current;
-    if (!question.trim() || speakingRef.current || silenceMs < BOTTLENECK_SILENCE_MS) return false;
-    lastFollowUpAtRef.current = Date.now();
-    pauseHandledRef.current = true;
-    pendingFollowUpRef.current = "";
-    if (miniCoachTipTimerRef.current) clearTimeout(miniCoachTipTimerRef.current);
-    setMiniCoachTip("");
+  // Phase 2: fill the open bottleneck card with the real reply. Bails if the
+  // student already resumed speaking or the card was dismissed.
+  const enterReply = useCallback((question: string, feedback: string, kind: "question" | "nudge") => {
+    if (!question.trim() || !showBottleneckRef.current || speakingRef.current) return;
     setFollowUpQ(question.trim());
-    showBottleneckRef.current = true;
-    setShowBottleneck(true);
+    setFollowUpKind(kind);
+    setFollowUpFeedback(feedback.trim());
+    setBottleneckPhase("reply");
     setMood("coaching");
-    setBubble(feedback?.trim() || "I saved your thread.");
-    setAiState("AI noticed a real pause");
-    return true;
+    setBubble(feedback.trim() || "Here's a thought.");
+    setAiState("Coach has a suggestion");
   }, []);
 
   const collapseFollowUpToTag = useCallback(() => {
@@ -812,52 +820,80 @@ export default function PracticeRoom() {
     }
   }, []);
 
-  const askGeminiForFollowUp = useCallback(async () => {
-    const silenceMs = Date.now() - lastVoiceAtRef.current;
-    if (!isStartedRef.current || processingRef.current || speakingRef.current || silenceMs < BOTTLENECK_SILENCE_MS) return;
-    processingRef.current = true;
+  // Ask Gemini for a real, content-aware pause reply. Returns parsed result
+  // (question or nudge) or null; does NOT touch the UI directly.
+  const fetchFollowUpReply = useCallback(async (): Promise<{ follow_up: string; feedback: string; kind: "question" | "nudge" } | null> => {
+    if (!isStartedRef.current) return null;
+    const context = transcriptRef.current
+      ? `Transcript so far: "${transcriptRef.current.slice(-900)}"`
+      : "The student has not produced a clear transcript yet.";
+    const { text } = await callGeminiProxy({
+      model: MODEL_NAME,
+      responseMimeType: "application/json",
+      temperature: 0.7,
+      contents: [{ role: "user", parts: [{ text: SYSTEM_PROMPT }, { text: `${FOLLOW_UP_PROMPT}\n\n${context}` }] }],
+    });
+    const parsed = parseGeminiJson(text);
+    if (!parsed?.follow_up?.trim()) return null;
+    return {
+      follow_up: parsed.follow_up.trim(),
+      feedback: parsed.feedback?.trim() || "",
+      kind: parsed.kind === "nudge" ? "nudge" : "question",
+    };
+  }, []);
+
+  // Resolve the reply for the open thinking card: real Gemini reply, or a
+  // neutral local fallback only on error / after ~4s.
+  const resolvePauseReply = useCallback(async () => {
+    let settled = false;
+    const localReply = () => enterReply(
+      buildLocalFollowUp(transcriptRef.current, highlightWordsRef.current),
+      "Here's one way to keep going.",
+      "nudge",
+    );
+    const fallbackTimer = window.setTimeout(() => {
+      if (settled || !showBottleneckRef.current || speakingRef.current) return;
+      settled = true;
+      localReply();
+    }, 4000);
     try {
-      setAiState("AI is thinking of a question");
-      const context = transcriptRef.current
-        ? `Transcript so far: "${transcriptRef.current.slice(-900)}"`
-        : "The student has not produced a clear transcript yet.";
-      const parts = [
-        { text: SYSTEM_PROMPT },
-        { text: `${FOLLOW_UP_PROMPT}\n\n${context}` },
-      ];
-      const { text } = await callGeminiProxy({
-        model: MODEL_NAME,
-        responseMimeType: "application/json",
-        temperature: 0.7,
-        contents: [{ role: "user", parts }],
-      });
-      const parsed = parseGeminiJson(text);
-      const question = parsed?.follow_up?.trim();
-      if (question) {
-        showFollowUpQuestion(question, parsed?.feedback);
-      }
+      const reply = await fetchFollowUpReply();
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(fallbackTimer);
+      if (!showBottleneckRef.current || speakingRef.current) return;
+      if (reply) enterReply(reply.follow_up, reply.feedback, reply.kind);
+      else localReply();
     } catch (e) {
       console.error("Gemini follow-up error:", e);
-      setAiState("AI follow-up paused");
-    } finally {
-      processingRef.current = false;
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(fallbackTimer);
+      localReply();
     }
-  }, [showFollowUpQuestion]);
+  }, [enterReply, fetchFollowUpReply]);
 
-  const showPendingOrAskFollowUp = useCallback(() => {
-    if (pendingFollowUpRef.current && showFollowUpQuestion(pendingFollowUpRef.current)) return;
-    const fallback = buildLocalFollowUp(transcriptRef.current, highlightWordsRef.current);
-    if (processingRef.current) {
-      showFollowUpQuestion(fallback, "I saved your thread.");
-      return;
-    }
-    void askGeminiForFollowUp();
-    window.setTimeout(() => {
-      if (isStartedRef.current && !showBottleneckRef.current && !speakingRef.current) {
-        showFollowUpQuestion(fallback, "I saved your thread.");
-      }
-    }, 900);
-  }, [askGeminiForFollowUp, showFollowUpQuestion]);
+  // Phase 1: the instant the student pauses, show the "thinking" beat, then
+  // fetch the real reply.
+  const beginPauseCoaching = useCallback(() => {
+    if (showBottleneckRef.current) return;
+    const silenceMs = Date.now() - lastVoiceAtRef.current;
+    if (speakingRef.current || silenceMs < BOTTLENECK_SILENCE_MS) return;
+    lastFollowUpAtRef.current = Date.now();
+    pauseHandledRef.current = true;
+    pendingFollowUpRef.current = "";
+    if (miniCoachTipTimerRef.current) clearTimeout(miniCoachTipTimerRef.current);
+    setMiniCoachTip("");
+    setFollowUpQ("");
+    setFollowUpFeedback("");
+    setThinkingAck(THINKING_ACKS[Math.floor(Math.random() * THINKING_ACKS.length)]);
+    setBottleneckPhase("thinking");
+    showBottleneckRef.current = true;
+    setShowBottleneck(true);
+    setMood("thinking");
+    setAiState("Coach is thinking about your pause");
+    void resolvePauseReply();
+  }, [resolvePauseReply]);
 
   useEffect(() => {
     if (!started) return;
@@ -867,11 +903,11 @@ export default function PracticeRoom() {
       const hasContext = transcriptRef.current.length > 12 || highlightWordsRef.current.length > 0 || allChunksRef.current.length > 0;
       if (hasContext && silenceMs >= BOTTLENECK_SILENCE_MS) {
         speakingRef.current = false;
-        showPendingOrAskFollowUp();
+        beginPauseCoaching();
       }
     }, 250);
     return () => window.clearInterval(id);
-  }, [showPendingOrAskFollowUp, started]);
+  }, [beginPauseCoaching, started]);
 
   // ── Process audio phrase ───────────────────────────────────────────────────
   const processPhrase = useCallback(async (isFinal = false) => {
@@ -1033,7 +1069,7 @@ export default function PracticeRoom() {
         if (allChunksRef.current.length > 0 && silenceMs > BOTTLENECK_SILENCE_MS && canAskFollowUp && !bottleneckTimerRef.current && !showBottleneckRef.current) {
           bottleneckTimerRef.current = setTimeout(() => {
             if (!processingRef.current && phraseChunksRef.current.length > 0) processPhrase(false);
-            else if (!processingRef.current) showPendingOrAskFollowUp();
+            else if (!processingRef.current) beginPauseCoaching();
             else setAiState("AI analyzing; pause helper waiting");
             bottleneckTimerRef.current = null;
           }, 0);
@@ -1044,7 +1080,7 @@ export default function PracticeRoom() {
     micSrcRef.current.connect(analyserRef.current);
     analyserRef.current.connect(scriptProcRef.current);
     scriptProcRef.current.connect(audioCtxRef.current.destination);
-  }, [collapseFollowUpToTag, processPhrase, showPendingOrAskFollowUp]);
+  }, [collapseFollowUpToTag, processPhrase, beginPauseCoaching]);
 
   // ── Canvas waveform (bigger) ───────────────────────────────────────────────
   const drawWaveform = useCallback(() => {
@@ -1370,28 +1406,46 @@ export default function PracticeRoom() {
             />
           </div>
 
-          {started && showBottleneck && followUpQ && (
+          {started && showBottleneck && (
             <div
               className="relative z-[1] mt-3 rounded-2xl border border-blue-100 bg-white p-3.5 shadow-md"
               style={{ animation: "slide-up 0.35s cubic-bezier(0.16,1,0.3,1) forwards" }}
             >
-              <p className="mb-1 text-xs font-black uppercase tracking-widest text-blue-500">Pause helper</p>
-              <p className="text-[15px] font-black leading-snug text-gray-900">{followUpQ}</p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => { collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setMood("listening"); setBubble("That's it. Keep building it."); }}
-                  className="flex-1 rounded-xl py-2 text-sm font-black text-white active:scale-95"
-                  style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)" }}
-                >
-                  Use it
-                </button>
-                <button
-                  onClick={() => { setMiniCoachTip(""); showBottleneckRef.current = false; setShowBottleneck(false); setMood("listening"); setBubble("No worries. I am still listening."); }}
-                  className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-gray-500 active:scale-95"
-                >
-                  Skip
-                </button>
-              </div>
+              {bottleneckPhase === "thinking" ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-gray-600">{thinkingAck || "let me think…"}</span>
+                  <span className="flex gap-0.5">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "0ms" }} />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "150ms" }} />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <p className="mb-1 text-xs font-black uppercase tracking-widest text-blue-500">
+                    {followUpKind === "nudge" ? "Try this next" : "Coach asks"}
+                  </p>
+                  {followUpFeedback && (
+                    <p className="mb-1.5 text-xs font-semibold italic text-gray-400">{followUpFeedback}</p>
+                  )}
+                  <p className="text-[15px] font-black leading-snug text-gray-900">{followUpQ}</p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => { collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); setBubble("That's it. Keep building it."); }}
+                      className="flex-1 rounded-xl py-2 text-sm font-black text-white active:scale-95"
+                      style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)" }}
+                    >
+                      Use it
+                    </button>
+                    <button
+                      onClick={() => { setMiniCoachTip(""); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); setBubble("No worries. I am still listening."); }}
+                      className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-gray-500 active:scale-95"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

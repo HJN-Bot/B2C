@@ -10,7 +10,7 @@
 
 | Spec | 对应 TODO | 状态 |
 |------|-----------|------|
-| [2026-05-31 停顿 AI 反馈](../specs/2026-05-31-pause-ai-feedback.md) | R1 | spec 待审阅 |
+| [2026-05-31 停顿 AI 反馈](../specs/2026-05-31-pause-ai-feedback.md) | R1 | ✅ 已实现 🧪 待验证 |
 
 ---
 
@@ -37,7 +37,7 @@
 
 > 用户原话整理，按其口述的轻重排。用户明确：**停顿 AI 反馈这块"比较严重"，先改**。
 
-**🔴 R1 — 停顿状态没有真实 AI 反馈（用户说"比较严重，先改"）** · 📄 Spec：[2026-05-31-pause-ai-feedback](../specs/2026-05-31-pause-ai-feedback.md) · 状态：spec 待审阅
+**🔴 R1 — 停顿状态没有真实 AI 反馈（用户说"比较严重，先改"）** · 📄 Spec：[2026-05-31-pause-ai-feedback](../specs/2026-05-31-pause-ai-feedback.md) · 状态：✅ 已实现 🧪 待验证（删 900ms 抢先兜底 / thinking→reply 两阶段 / kind question·nudge）
 - "停顿下来的状态，目前没有一个真实的 AI 反馈，就像真人的效果一样。它能够根据我提出的问题，或者提示我往哪个方向去改进。"
 - = bottleneck/follow-up 要走真实 Gemini、基于我刚说的内容，给"问题 or 改进方向"，不要本地兜底套话。
 

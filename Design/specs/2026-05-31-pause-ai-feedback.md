@@ -1,6 +1,6 @@
 # Spec — 停顿时的真实 AI 反馈
 
-> 2026-05-31 · 对应 TODO：[R1](../dev-memory/TODO.md) · 文件：`src/pages/PracticeRoom.tsx` · 状态：待开工
+> 2026-05-31 · 对应 TODO：[R1](../dev-memory/TODO.md) · 文件：`src/pages/PracticeRoom.tsx` · 状态：✅ 已实现，🧪 待浏览器验证
 
 ## 修改建议
 停顿 ≥4.8s 时，教练要基于我刚说的内容反应（追问 or 指方向），别套话。手感：**先应一声，再真问**。
