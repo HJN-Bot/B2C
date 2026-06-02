@@ -26,6 +26,12 @@
 - 多轮 Chatbox 在真实 session 数据下连续追问是否带上下文。
 - HashRouter 后各页路由 / 刷新是否正常。
 
+## 2026-06-02 — 全面反馈，TODO 已重排
+- 用户给了大量练习页/Takeaway 抱怨，并要求"结合 PDF 重排 TODO、对准抱怨方向"。
+- [TODO.md](./TODO.md) 已重写为：北极星（转录稳/KTV真/AI实时懂）→ 按页主计划（P2/P3/P4/P1/跨页/后台）→ 建议执行顺序 → 已完成 → 原话归档。
+- **下一步等用户确认从哪个开始**（建议顺序：转录卡顿 → KTV真实化 → 布局/字幕 → AI实时感 → Takeaway拆块+落库）。
+- 待复查：A2 的"删顶部状态条/字幕填满"用户说仍有问题，可能没生效或方案不对。
+
 ## 暂缓 / 待决定 ⏸️
 - **P4-3**：Next Run Plan 提为 hero card 置顶 —— 用户说先放着再说。
 - **加什么 Mode**：候选 Gentle / Exam-prep(TOEFL-safe) / Free-talk / Story mode，待用户定。

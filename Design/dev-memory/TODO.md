@@ -1,157 +1,140 @@
-# TODO — 之前跟你说过的所有修改
+# Roadmap / TODO — SpeakSpark
 
-> 来源：`Design/iterations/feedback-2026-05-06.md`（5 条反馈 + 7 页设计走查 PDF）+ CHANGELOG 已知问题。
-> 状态标记：`[x]` 已实现并自测(tsc+build 通过)、**🧪待你浏览器验证**；`[ ]` 未做；`⏸` 暂缓。优先级：高 🔴 / 中 🟡。
-> 约定：每个改动点先在 `Design/specs/` 写四板块 Spec（修改建议/解决思路/技术方案/验证测试），并和本 TODO 双向 link。
-
----
-
-## 📄 Specs 索引（改动 ↔ 方案文档 ↔ 版本）
-
-| Spec | 对应 TODO | 状态 |
-|------|-----------|------|
-| [2026-05-31 停顿 AI 反馈](../specs/2026-05-31-pause-ai-feedback.md) | R1 | ✅ 已实现 🧪 待验证 |
-| [2026-05-31 练习页活态打磨](../specs/2026-05-31-practice-live-polish.md) | A2（删顶部状态条/字幕填满/反馈不自动消失/猫猫放慢） | ✅ 已实现 🧪 待验证 |
+> 状态图例：`✅`已实现+自测(tsc/build)、`🧪`待浏览器验证、`⬜`待 spec、`⏸`暂缓。优先级 🔴高 / 🟡中 / 🟢低。
+> 约定：每个改动点先在 `Design/specs/` 写四板块 Spec（修改建议/解决思路/技术方案/验证测试），spec ↔ 本 TODO 双向 link。
+> 原始反馈原话见底部「📦 归档」；本表是经过整理的执行计划。
 
 ---
 
-## 📋 明天审阅清单（2026-05-29 当天改动）
+## 🧭 北极星（核心痛点 · 2026-06-02）
 
-> 以下都已 `tsc --noEmit` + `npm run build` 通过，但**未在浏览器人工验证**，请逐项 🧪。
-> dev 启动：`npm run dev` → http://127.0.0.1:5173/（路由带 `#`）。看完整复盘页要先去 `#/practice` 练一次。
+> 用户原话精炼：**"说和交互时重点会偏移，不知道该看哪里。真实的 KTV 指标、语音转录、AI 实时听懂——这些核心都没做好，没有眼前一亮的感觉。"**
 
-| 提交 | 内容 | 看哪里 | 🧪 验证点 |
-|------|------|--------|-----------|
-| `e81c406` | HashRouter + vercel.json | 全站 | 刷新子页面不 404 |
-| `bce2179` | Chatbox 多轮对话 | `#/session-end` | 连续追问是否带上下文 |
-| `fa5b2c2` | Takeaway walkthrough P4-1/2/4、P5-1/2/4、#4 | `#/session-end` | headline 文案 / 去成绩单 / 中性 fallback / 新 preset / What's growing 文字趋势 / Coach mode pill / summary + 原文引用 |
-| `9410ca1` | 三个 Mode | Home → Practice → Takeaway | 选 Mode 是否记住、各页是否显示、复盘语气是否贴合 |
-| `9e8cb75` | 单行 Karaoke 字幕 + 音浪弱化 + coach 文案 | `#/practice` | 字幕是否单行淡出、End 不动、音浪是否变弱、文案是否变温和 |
-| (topic) | TopicHeader + 冷启动关键词 | Home"Use this topic"→`#/practice` | 顶部显示话题、💡关键词、讲到后变✓绿 |
-| (cat) | 猫猫 thinking 状态 + 漂移容差收紧 | `#/practice` 说话时 | 处理中是否切 thinking、漂移是否更轻（重点看你眼睛） |
-
-**暂缓 / 待你拍板**：P4-3（Next Run Plan 置顶 hero）；「先录后生成 coaching」概念待当面演示；Mode 与 #5 主题卡片的 Home 排版协调。
+**北极星 = 练习中「我一眼知道该看哪 + 它真的听懂了我说的」。** 下面所有事都服务这一句。三根支柱：
+1. **转录稳**（说快了也不卡、不一次性吐字）
+2. **KTV 真**（指标含义清楚、和我说的内容强相关、有丝滑的分值冲击）
+3. **AI 实时懂**（反应快、像真人、多层 fallback）
 
 ---
 
-## 🆕 2026-05-31 用户反馈（原话捕获，待规划）
+## 📄 Specs 索引（改动 ↔ 方案 ↔ 状态）
 
-> 用户原话整理，按其口述的轻重排。用户明确：**停顿 AI 反馈这块"比较严重"，先改**。
-
-### 子项目总览（照这张表跟踪 / 逐个做）
-
-| 子项目 | = 反馈 | 内容 | Spec | 状态 |
-|--------|--------|------|------|------|
-| **A** | R1 | 停顿真实 AI 反馈（先应一声再真问） | [pause-ai-feedback](../specs/2026-05-31-pause-ai-feedback.md) | ✅ 已实现 🧪 待验证 |
-| **A2** | 试用 | 练习页活态打磨：删顶部状态条 / 字幕填满 / 反馈不自动消失 / 猫猫放慢 | [practice-live-polish](../specs/2026-05-31-practice-live-polish.md) | ✅ 已实现 🧪 待验证 |
-| **B** | R2 | 字幕融合成一个面板：单行高亮+可上滚+非说话态毛玻璃 | — | ⬜ 待 spec |
-| **C** | R3 | "好的部分/高光"效果加强 | — | ⬜ 待 spec |
-| **D** | R4 | 猫猫去圆框 / 精确居中（别被裁） | — | ⬜ 待 spec |
-| **E** | R5 | 整体更跟手/灵动、按情景对应效果 | — | ⬜ 待规划 |
-| **F** | R6 | KTV 卡拉OK 分值冲击丝滑 + 首页露出 KTV + 练习页导航 | — | ⬜ 待规划 |
-| **G** | R7 | Takeaway 拆 4 块（鼓励→分值→Coach→再试） | — | ⬜ 待 spec |
-| **H** | R8 | 历史回放/Last Library 听不到（低优先） | — | ⬜ 待规划 |
-
-> 做每块前先写四板块 Spec（见上面「📄 Specs 索引」），spec ↔ TODO 双向 link。
-
-**🔴 R1 — 停顿状态没有真实 AI 反馈（用户说"比较严重，先改"）** · 📄 Spec：[2026-05-31-pause-ai-feedback](../specs/2026-05-31-pause-ai-feedback.md) · 状态：✅ 已实现 🧪 待验证（删 900ms 抢先兜底 / thinking→reply 两阶段 / kind question·nudge）
-- "停顿下来的状态，目前没有一个真实的 AI 反馈，就像真人的效果一样。它能够根据我提出的问题，或者提示我往哪个方向去改进。"
-- = bottleneck/follow-up 要走真实 Gemini、基于我刚说的内容，给"问题 or 改进方向"，不要本地兜底套话。
-
-**🔴 R2 — 字幕融合成一个板块 + 可滚动 + 毛玻璃**
-- "可以只保留一行高亮的字幕，但整体上字幕是要能够滚动上去的。"
-- "现在字幕在下面那一栏被吸收，然后在上面才显现，逻辑有点奇怪，最好融合成一个板块。"
-- "如何让页面只在我说的那个状态下被显现，其他时候用不透明的毛玻璃效果覆盖一下。"
-- = 单行高亮当前句 + 历史可向上滚动，合并到同一个面板；非说话态用不透明毛玻璃盖住。
-
-**🔴 R3 — "好的部分/高光"效果太弱，要加强**
-- "关于'好的部分'的效果显示太弱了，这一点也需要加强。"
-
-**🔴 R4 — 猫猫被圆形框遮住**
-- "猫猫的位置还是有点问题，被圆形框框遮住了。建议把圆形框框去掉，或者调整猫猫位置让它正好在圆形中间，这样它动的时候不会被背景圆形模板遮掉。"
-- 注：上一轮我把 clip 收到 88px 反而遮更多 → 需重新评估（去框 or 居中）。
-
-**🟡 R5 — 整体卡、不灵动、不能按情景对应效果**
-- "目前的逻辑还是有点卡，不太灵动。没有办法根据我具体的那个情景去对应那个效果。"
-
-**🟡 R6 — KTV 卡拉OK 式分值冲击不丝滑**
-- "本意是像卡拉OK 一样有分值的冲击，目前的充电不是很丝滑。"
-- KTV 指标在**首页没展示**；开始练习时**没有导航栏**，不知道自己在哪。
-
-**🟡 R7 — Takeaway 内容太多，分块走**
-- 用户期望分 4 块：① 这一次的鼓励话语 → ② 分值部分（进步多少/冲击了多少分）→ ③ AI Coach（可调整、追问）→ ④ 再试一次。
-
-**🟢 R8 — 历史回放 / Last Library 听不到（优先级低）**
-- "从毕业开始，那个 last library，历史的部分好像都没办法听到。"
-- 设想："做一个历史评分的实时演播界面"；MyPage(第四页) 的 history 也存续一下。优先级不高。
+| Spec | 对应 | 状态 |
+|------|------|------|
+| [2026-05-31 停顿 AI 反馈](../specs/2026-05-31-pause-ai-feedback.md) | A / R1 | ✅🧪 |
+| [2026-05-31 练习页活态打磨](../specs/2026-05-31-practice-live-polish.md) | A2 | ✅🧪 |
 
 ---
 
-## 🎯 Takeaway walkthrough（`src/pages/TakeawayPage.tsx`）—— 2026-05-29 完成大部分
+## 🗺️ 主计划（按页 · 含优先级）
 
-来自 PDF Page 4（顶部）/ Page 5（下半部）+ feedback #4。
+### P2 · 练习页（问题最集中，先攻这里）
 
-### Page 4 — Takeaway 顶部
-- [x] **P4-1** 奖杯 🏆 → 祝贺 emoji 🎉 + eyebrow "Practice complete"
-- [x] **P4-2** 去掉 4 格成绩单；headline 改 `celebrationHeadline()` 可爱轮换文案（"Your spark stayed lit for 41s! 🎉" 等）
-- [ ] **P4-3** 🔴 Next Run Plan 提为 hero card 置顶 —— **用户先放着，再说（暂缓）**
-- [x] **P4-4** 红色 fallback → 中性 "Coach plan is ready from this run"；去掉 raw provider error；badge 改 "From this run"；离线提示气泡由红 system 改中性 coach/amber
+**转录质量（🔴 最底层，先修）**
+- [ ] 🔴 **转录卡顿**：说快一点会停 20–30s 再一次性吐字。查 VAD/分块/`MAX_PHRASE_SECONDS`/识别链路；保证连续讲话也实时出字。`⬜ spec`
+- [ ] 🔴 **AI 实时感慢**：用**多层 fallback**——常见上下文用本地秒答，深度思考留到第三页交互再处理。`⬜ spec`
 
-### Page 5 — Takeaway 下半部
-- [x] **P5-1** preset 扩为教练式短提问：Ask me one question / My highlight / Level up my words / Make my story fun / Shape my story（system prompt 加 "coach 只问不答、不写完整稿"）
-- [x] **P5-2** Progress map → "What's growing" 文字趋势 + Strong/Growing/Just starting 标签（去掉分数条和数字）
-- [x] **P5-3** 保留 Practice Again CTA（双按钮循环不动）
-- [x] **P5-4** 顶部加常驻 pill "Coach mode · practice feedback only"（ShieldCheck 图标）
+**KTV（🔴 核心"眼前一亮"）**
+- [ ] 🔴 **指标定义不明**：四个 KTV 只有 sentence 会动，其它变化极慢，story 不知道怎么算。要把每个指标的**触发规则讲清楚 + 和我说的内容强相关 + 露出"为什么涨"**。`⬜ spec`
+- [ ] 🟡 **卡拉OK 分值冲击不丝滑**（F/R6）：涨分要有顺滑的视觉冲击。
+- [ ] 🟡 KTV 在**首页也要露出**；练习时要有**导航**知道身处哪页（F/R6）。
+- [ ] 🟡 说话中隐藏细节指标、结束后作为 private evidence（PDF P3）——与"露出"权衡，待定。
 
-### feedback #4 — 自上而下 + 原文引用
-- [x] **#4** 新增 "What you talked about" summary 区放在建议之前；what_worked/make_stronger 改 `Evidence{point,quote}`，每条附 "You said: '…'" 原文引用（schema/prompt/normalize/local fallback 全改）
+**布局 / 注意力（🔴 不知道看哪）**
+- [ ] 🔴 **中间大白区 90% 浪费**：猫猫下面那块大多数时候空着，是给 AI 提示预留的，但 90% 时间没内容。要让这块被字幕/反馈**用满**，形成主视觉。`⬜ spec`（与 B 合并）
+- [ ] 🔴 **B 字幕**（R2）：合并成一个面板——单行高亮当前句 + 历史可上滚 + 非说话态毛玻璃；并真正**铺满**框，不要只在窄边操作。`⬜ spec`
+- [ ] 🟡 **顶部 Coach 栏还在动**：确认 A2"删顶部状态条"是否已生效（可能需硬刷新）；若是 mood 标签/圆点的动效残留，一并稳住。`⬜ 待确认`
 
-### Takeaway 待跟进
-- [ ] 浏览器用真实 session 数据验证（先练一次再看 `#/session-end`）
-- [ ] P4-3 hero card 置顶（暂缓中）
-- [x] **三个练习 Mode（已实现，2026-05-29）**：**Free Talk / Exam Prep / Story**（全英文）。共享模块 `src/lib/practice-mode.ts`（localStorage `speakspark.practiceMode`，默认 Free Talk）。
-  - Home：greeting 下方新增 3 格 Mode 选择器，持久化。
-  - PracticeRoom：顶部 header 显示当前 Mode 标签（emoji + label）。
-  - TakeawayPage：常驻 pill 显示 `{emoji} {Mode} · practice feedback only`；`coachStyle` 注入 takeaway prompt + chat system prompt。
-  - 待跟进：Mode 选择器以后要和 #5 主题活动卡片在 Home 上排版协调。
+**高光 & 猫猫**
+- [ ] 🔴 **C 高光加强**（R3）：好的部分/高光效果太弱，要更有存在感。`⬜ spec`
+- [ ] 🔴 **D 猫猫去圈/居中**（R4）：被圆形框遮住 → 去框 或 精确居中；上轮 clip 收到 88px 反而更糟，需重做（可能要重新居中 sprite 资产）。`⬜ spec`
+- [ ] 🟡 **E 更跟手/灵动**（R5）：能按我具体情景对应效果。
 
----
+### P3 · 结束页 Takeaway（很杂、不言之有物）
 
-## 练习页 PracticeRoom（进行中，2026-05-29）
+- [ ] 🔴 **G 拆 4 块**（R7）：① 鼓励话 → ② 分值（进步多少/冲击多少分）→ ③ AI Coach 追问 → ④ 再试一次。`⬜ spec`
+- [ ] 🔴 **针对每个 KTV 指标给具体建议**（现在没有）。
+- [ ] 🔴 **真正引用原始对话 + 框架**：#4 已加 summary/引用，但还要更实、更"懂我过去说了什么"。
+- [ ] 🔴 **"下一次尝试"要给高分句式/高级词汇**，不要复述原话（现在太像、太简单）。
+- [ ] 🔴 **保存本次**：transcript + 评分要落库，成为第四页 Library 的一项（和 P4 + 后台联动）。
+- [ ] ⏸ P4-3 Next Run Plan 置顶 hero（之前暂缓，拆 4 块时一起定）。
 
-- [x] **#1 / P3** 字幕：多行滚动 → **单行 Karaoke**（`lastLine()` 取最后一句、上方 `.karaoke-mask` 渐隐淡出）🧪
-- [x] **#1** **End 按钮**：结构上本就在独立顶部栏（与字幕区分离），不会被字幕挤动 → 已满足，无需改 🧪确认
-- [x] **P3 文案** "AI is listening" → **"Coach is following your story"**；`aiState` 那句也改 "Following your last phrase" 🧪
-- [x] **#2** 音浪**弱化**：去掉卡片框/标签，slim 34px + opacity 0.45/0.25，保留波动但不抢注意力 🧪
-- [x] **#3** 顶部 **TopicHeader**：Home "Use this topic" 现在用 `navigate(state:{topic})` 传过来，练习页 header 显示 `Topic · …` 🧪（"My own"/底部 CTA 不传 topic）
-- [x] **#3** 冷启动**关键词提示**：`topicKeywords()` 从 topic 抽 ≤5 个内容词，header 下方 💡 chips；讲到后变绿 ✓（`transcript.includes`）🧪
-- [x] 猫猫动画 🔴 **状态自动切换**：大部分本就接好（excited/thinking/listening/coaching + 3s 回落 + Use it→listening）；本次补上**AI 处理中→thinking**（`processPhrase` 发 Gemini 前 `setMood("thinking")`）🧪
-- [x] 猫猫动画 🔴 **漂移容差**：clip 96→88px（容差 8→12px，藏掉更多偏移）🧪
-- [ ] 猫猫动画 ⏸ **彻底消除漂移**：需重新居中 sprite 各帧（美术资产层面，CSS 治标不治本）—— 待你拍板是否重做资产
-- [ ] **P3 指标** 🟡 说话中隐藏详细 KTV 指标，结束后才作为 private evidence
-- [ ] **P3 加载** 🟡 「先录后生成 coaching，AI 就绪不阻塞」= 用户开口就能录音/出字幕，AI 反馈晚点到也不挡练习；不要"等 AI ready 才能说"。**用户说没太看懂，下次当面演示这条**
+### P4 · 资料库 / 历史
 
----
+- [ ] 🔴 **数据落库**：本次 transcript+评分保存为 Library 项（支撑 P3 保存 + 首页钩子）。
+- [ ] 🟢 **H 历史回放**（R8）：Last Library/history 听不到 → 历史评分演播；MyPage 历史存续。
 
-## 首页 Home（下一批，用户已确认方向）
+### P1 · 首页
 
-- [ ] **#5 / P2** 🟡 新增「主题活动」卡片区：科普英语 / TOEFL / 旅游 / 日常对话（用户赞同新增）
-- [ ] **P2** 🔴 情感钩子改为**学习证据 / 历史 / 一条 Coach Note**，和 Takeaway 最后那些东西**闭环**起来（用户明确：首页 ↔ 结束页打通）
-- [ ] **P2** 🟡 CTA "Start Speaking"（比赛感）→ 测 "Start Practice" / "Practice this topic"
+- [ ] 🟡 **#5/P2 主题活动卡**：科普英语 / TOEFL / 旅游 / 日常对话。
+- [ ] 🔴 **P2 情感钩子**：streak/分数 → 学习证据 / 历史 / 一条 Coach Note，与 Takeaway **闭环**。
+- [ ] 🟡 CTA "Start Speaking" → 测 "Start Practice"。
+- [ ] 🟡 首页露出 KTV（见 P2·KTV）。
 
----
+### 跨页原则（PDF 7 页走查）
 
-## 成长 / 设置页 MyPage（之后做）
+- [ ] 🔴 coach not scorer：全程去评分化/比赛化文案。
+- [ ] 🔴 MyPage "User Management" → "Settings"（P7）；🟡 "Ability Portrait" → "Practice growth"（P6）。
+- [ ] 🟡 常驻 coach-mode 边界标签（Takeaway 已有，推广到全 app）。
 
-- [ ] **P6** 🟡 "Ability Portrait"（成绩单感）→ "Practice growth"，偏叙述证据
-- [ ] **P7** 🔴 "User Management"（内部感）→ "Settings"
-- [ ] **P6/P7** 🟡 Trying Point 概念推广到全 app；coach-mode 边界显式化 "Practice feedback only" / "Contest-safe coaching on"
+### 工程 / 后台
+
+- [ ] 🔴 Supabase `sessions` + `highlights` 落库（与 P3/P4 联动）。
+- [ ] 🟡 PracticeRoom 拆子组件（字幕层 / KTV 条 / Bottleneck 卡 / 猫猫）——文件已很大，借重构同时改。
+- [ ] 🟡 `usePracticeSession` hook 抽录音逻辑。
+- [ ] 🟢 E2E（Playwright）核心流程。
 
 ---
 
-## 工程 / 后台（积压）
+## ▶️ 建议执行顺序（待你确认）
 
-- [ ] Supabase 数据写入（sessions + highlights 表）
-- [ ] PracticeRoom 拆子组件（WaveformCompanion / KTVScoreBar / BottleneckCard …）
-- [ ] `usePracticeSession` hook 抽象录音逻辑
-- [ ] E2E 测试（Playwright）覆盖核心流程
+1. **P2 转录卡顿**（🔴 bug，最底层，其它都依赖words稳）
+2. **P2 KTV 真实化**（核心"眼前一亮" + 解决"不知道看哪"）
+3. **P2 布局/字幕 B + 中间区用满 + C 高光**（注意力聚焦）
+4. **P2 AI 实时感 / 多层 fallback**
+5. **P3 Takeaway 拆 4 块 + 落库** → 带出 **P4 Library**
+6. **P1 首页 / 跨页文案 / 后台**
+
+---
+
+## ✅ 已完成（自测过 🧪 待你浏览器验证）
+
+| 提交 | 内容 | 看哪里 |
+|------|------|--------|
+| `e81c406` | HashRouter + vercel.json | 全站刷新不 404 |
+| `bce2179` | Chatbox 多轮对话 | `#/session-end` |
+| `fa5b2c2` | Takeaway walkthrough（P4-1/2/4、P5-1/2/4、#4） | `#/session-end` |
+| `9410ca1` | 三个 Mode（Free Talk/Exam Prep/Story） | Home→Practice→Takeaway |
+| `9e8cb75` | 单行 Karaoke 字幕 + 音浪弱化 + coach 文案 | `#/practice` |
+| `dee6b0f` | TopicHeader + 冷启动关键词 | `#/practice` |
+| `a2f2af1` | 猫猫 thinking 状态 + 漂移容差 88px | `#/practice` |
+| `0c9d4d7` | **A** 停顿真实 AI 反馈（应一声→真问，删 900ms 兜底） | `#/practice` 停顿 |
+| `10bcc8f` | **A2** 删顶部状态条 / 字幕填满 / 反馈 pin 住 / 猫猫放慢 | `#/practice` |
+
+> 注：A2 的"字幕填满 / 删顶部状态条"用户反馈仍有问题（见 P2），需复查是否生效或方案不对。
+
+---
+
+## 📦 归档 · 原始反馈原话（可追溯）
+
+### PDF 7 页走查 + 5 条反馈
+见 `Design/iterations/feedback-2026-05-06.md`（#1 单行字幕 / #2 去音浪 / #3 话题提示 / #4 自上而下+引用 / #5 主题活动；7 页：coach not scorer 等）。
+
+### 2026-05-31（R1–R8 原话）
+- **R1** 停顿没真实 AI 反馈，要像真人、基于内容给问题/方向 → ✅A
+- **R2** 字幕融合一个面板、单行高亮+可上滚、非说话态毛玻璃 → B
+- **R3** "好的部分/高光"太弱 → C
+- **R4** 猫猫被圆框遮，去框或居中 → D
+- **R5** 整体卡、不灵动、不能按情景对应 → E
+- **R6** 卡拉OK 分值冲击不丝滑；首页没 KTV；练习没导航 → F
+- **R7** Takeaway 拆 4 块 → G
+- **R8** 历史回放/Last Library 听不到（低优先） → H
+
+### 2026-06-02（本次抱怨原话）
+- 顶部 Coach 栏还在动。
+- 中间字幕最严重：不是铺满全屏，只在窄边框操作；猫猫下面那块大白区 90% 没内容、利用不到（是给 AI 提示预留的吗？）。
+- 转录速度卡顿：说快了会停 20–30s 再一次性吐字。
+- AI Coaching 实时感慢：能不能做多层 fallback？常见上下文本地快速答，深度的留到第三页交互。
+- 四个 KTV 指标定义非常不明确：只有一直说 sentence 才有动静，其它变化非常慢，不确定评分标准；story 到底怎么算？
+- Takeaway 没针对指标/评分给建议；"下一次尝试"太像、太简单，没有高分句式/词汇；很杂乱不知道看哪；不直接引用原对话和框架；不像懂我过去说了什么；内容没保存/转录成第四页 Library 一项。
+- 核心：说/交互时重点偏移、不知道看哪；真实 KTV + 转录 + AI 实时听懂这三个核心没做出眼前一亮。
