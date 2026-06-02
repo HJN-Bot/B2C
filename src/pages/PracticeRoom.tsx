@@ -523,6 +523,8 @@ export default function PracticeRoom() {
   const [bubble, setBubble]                 = useState<string | null>("Ready to listen 👂");
   const [transcript, setTranscript]         = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
+  const [speakingActive, setSpeakingActive] = useState(false);
+  const speakingActiveRef = useRef(false);
   const [highlightWords, setHighlightWords] = useState<string[]>([]);
   const [phraseSparks, setPhraseSparks]     = useState<PhraseSpark[]>([]);
   const [showBottleneck, setShowBottleneck] = useState(false);
@@ -1055,6 +1057,7 @@ export default function PracticeRoom() {
 
       if (rms > ENERGY_THRESHOLD) {
         speakingRef.current = true;
+        if (!speakingActiveRef.current) { speakingActiveRef.current = true; setSpeakingActive(true); }
         phraseChunksRef.current.push(new Float32Array(input));
         allChunksRef.current.push(new Float32Array(input));
         silenceStartRef.current = now;
@@ -1078,6 +1081,7 @@ export default function PracticeRoom() {
         }
       } else {
         const silenceMs = now - lastVoiceAtRef.current;
+        if (speakingActiveRef.current && silenceMs > 1200) { speakingActiveRef.current = false; setSpeakingActive(false); }
         if (speakingRef.current && (silenceMs > SILENCE_DURATION_MSEC || maxExceededRef.current)) {
           maxExceededRef.current = false;
           speakingRef.current = false;
@@ -1168,6 +1172,8 @@ export default function PracticeRoom() {
     lastFlowBumpAtRef.current = 0;
     lastStoryBumpAtRef.current = 0;
     prevAnalysisLenRef.current = 0;
+    speakingActiveRef.current = false;
+    setSpeakingActive(false);
     durationMilestoneRef.current = 0;
     pauseHandledRef.current = false;
     pendingFollowUpRef.current = "";
@@ -1483,36 +1489,59 @@ export default function PracticeRoom() {
           )}
 
           {started ? (
-            <div className="relative z-[1] mt-3 flex min-h-0 flex-1 flex-col justify-end rounded-2xl border border-gray-100 bg-white/90 px-3.5 py-3 shadow-sm">
+            // B: one merged caption panel that fills the central area — full
+            // history scrolls, the current line stays highlighted at the
+            // bottom, and a frosted glass covers it while you're not speaking.
+            <div className="relative z-[1] mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white/90 px-3.5 py-3 shadow-sm">
               <div className="mb-1.5 flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-gray-400">
                 <MessageCircle size={12} />Now saying
                 <span className="ml-auto h-1.5 w-1.5 rounded-full"
-                  style={{ background: captionStatus === "listening" ? "#58A9FF" : "#D1D5DB" }} />
+                  style={{ background: speakingActive ? "#7ED957" : captionStatus === "listening" ? "#58A9FF" : "#D1D5DB" }} />
               </div>
-              {/* Single-line Karaoke: only the current line, earlier words fade up */}
-              <div className="karaoke-mask flex min-h-0 flex-1 items-end overflow-hidden text-[17px] font-semibold leading-relaxed text-gray-800">
-                <p className="w-full">
-                  {applyHighlights(recentTail(transcript), highlightWords).map((p, i) =>
-                    p.hl ? (
-                      <mark key={i} className="phrase-highlight rounded px-0.5 font-bold"
-                        style={{ background: "rgba(88,169,255,0.18)", color: "#2563EB" }}>{p.str}</mark>
-                    ) : <span key={i}>{p.str}</span>
-                  )}
-                  {interimTranscript && (
-                    <span className="text-blue-500">{recentTail(transcript) ? " " : ""}{interimTranscript}</span>
-                  )}
-                  {!transcript && !interimTranscript && (
-                    <span className="italic text-gray-300">
-                      {captionStatus === "unsupported"
-                        ? "Live captions need Chrome or Edge…"
-                        : captionStatus === "error"
-                        ? "Live captions paused…"
-                        : "Your words will appear here…"}
-                    </span>
-                  )}
-                  <span ref={transcriptEndRef} />
-                </p>
+
+              <div className="min-h-0 flex-1 overflow-y-auto pr-1 text-[17px] leading-relaxed" style={{ scrollbarWidth: "thin" }}>
+                {(() => {
+                  const current = lastLine(transcript);
+                  const history = current && transcript.length > current.length
+                    ? transcript.slice(0, transcript.length - current.length).trim()
+                    : "";
+                  return (
+                    <p className="w-full">
+                      {history && <span className="font-medium text-gray-400">{history} </span>}
+                      {applyHighlights(current, highlightWords).map((p, i) =>
+                        p.hl ? (
+                          <mark key={i} className="phrase-highlight rounded px-0.5 font-bold"
+                            style={{ background: "rgba(88,169,255,0.18)", color: "#2563EB" }}>{p.str}</mark>
+                        ) : <span key={i} className="font-semibold text-gray-900">{p.str}</span>
+                      )}
+                      {interimTranscript && (
+                        <span className="font-semibold text-blue-500">{transcript ? " " : ""}{interimTranscript}</span>
+                      )}
+                      {!transcript && !interimTranscript && (
+                        <span className="italic text-gray-300">
+                          {captionStatus === "unsupported"
+                            ? "Live captions need Chrome or Edge…"
+                            : captionStatus === "error"
+                            ? "Live captions paused…"
+                            : "Your words will appear here…"}
+                        </span>
+                      )}
+                      <span ref={transcriptEndRef} />
+                    </p>
+                  );
+                })()}
               </div>
+
+              {/* Frosted glass while not actively speaking — keeps the panel calm
+                  and only "reveals" the captions when you're talking. */}
+              {!speakingActive && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl"
+                  style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", background: "rgba(255,255,255,0.72)" }}>
+                  <p className="px-6 text-center text-sm font-bold text-gray-400">
+                    {transcript ? "Keep going — I'm following your story" : "Speak when you're ready"}
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="relative z-[1] mt-auto flex flex-col items-center gap-3 pt-8">
