@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight, ClipboardList, Settings, ShieldCheck, Sparkles, TrendingUp, UserRound } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
+import { getSessions, type SessionRecord } from "@/lib/session-history";
 
 const ability = [
   { label: "Flow", value: 64, change: "+12", color: "#58A9FF" },
@@ -8,11 +10,21 @@ const ability = [
   { label: "Story", value: 71, change: "+15", color: "#FF7A5C" },
 ];
 
-const history = [
-  { title: "Renewable energy", time: "Today", gain: "Added one example" },
-  { title: "AI in healthcare", time: "Yesterday", gain: "Used 3 stronger words" },
-  { title: "Climate change", time: "May 1", gain: "Spoke 22s longer" },
-];
+function relativeDay(iso: string): string {
+  const d = new Date(iso);
+  const today = new Date();
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((startOf(today) - startOf(d)) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function sessionTitle(s: SessionRecord): string {
+  const words = s.transcript.trim().split(/\s+/).filter(Boolean).slice(0, 6).join(" ");
+  return words ? `${words}${s.transcript.trim().split(/\s+/).length > 6 ? "…" : ""}` : "Practice run";
+}
 
 const tryingPoints = [
   "Add one real example after your first claim",
@@ -21,6 +33,9 @@ const tryingPoints = [
 ];
 
 export default function MyPage() {
+  const [sessions, setSessions] = useState<SessionRecord[]>([]);
+  useEffect(() => { setSessions(getSessions()); }, []);
+
   return (
     <div className="min-h-dvh bg-gray-50">
       <div className="flex min-h-dvh flex-col gap-4 overflow-y-auto px-4 pb-28 pt-6">
@@ -89,14 +104,21 @@ export default function MyPage() {
             <CalendarDays size={16} className="text-gray-400" />
           </div>
           <div className="space-y-2">
-            {history.map((item) => (
-              <button key={`${item.title}-${item.time}`} className="flex w-full items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-left">
+            {sessions.length === 0 && (
+              <p className="rounded-2xl bg-gray-50 px-3 py-4 text-center text-xs font-semibold text-gray-400">
+                No practice runs saved yet. Finish a practice and it shows up here.
+              </p>
+            )}
+            {sessions.map((item) => (
+              <button key={item.id} className="flex w-full items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-left">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-500">
                   <ClipboardList size={17} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-gray-900">{item.title}</p>
-                  <p className="mt-0.5 truncate text-xs font-semibold text-gray-400">{item.time} · {item.gain}</p>
+                  <p className="truncate text-sm font-black text-gray-900">{sessionTitle(item)}</p>
+                  <p className="mt-0.5 truncate text-xs font-semibold text-gray-400">
+                    {relativeDay(item.createdAt)} · {item.mode} · {item.durationSeconds}s · {item.wordCount} words
+                  </p>
                 </div>
                 <ChevronRight size={15} className="text-gray-300" />
               </button>

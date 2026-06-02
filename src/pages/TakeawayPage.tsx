@@ -4,6 +4,7 @@ import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sp
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { getPracticeMode } from "@/lib/practice-mode";
+import { saveSession } from "@/lib/session-history";
 
 const MODEL_NAME = "gemini-2.5-flash";
 const LAST_SESSION_CACHE = "meaningfully.lastSession";
@@ -463,6 +464,21 @@ export default function TakeawayPage() {
   useEffect(() => {
     void generateTakeaway();
   }, [generateTakeaway]);
+
+  // Persist this run to the local Library once (dedupes internally).
+  const savedRef = useRef(false);
+  useEffect(() => {
+    if (savedRef.current || !hasSessionData) return;
+    savedRef.current = true;
+    saveSession({
+      mode: practiceMode.label,
+      durationSeconds: timer,
+      wordCount,
+      highlightWords,
+      ktvScore,
+      transcript,
+    });
+  }, [hasSessionData, practiceMode, timer, wordCount, highlightWords, ktvScore, transcript]);
 
   const plan = takeaway?.next_run_plan;
 
