@@ -1280,22 +1280,26 @@ export default function PracticeRoom() {
         <div key={f.id} className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
           <div className="absolute inset-0" style={{
             background: f.tone === "milestone"
-              ? "radial-gradient(ellipse at center,rgba(126,217,87,0.2) 0%,transparent 66%)"
-              : "radial-gradient(ellipse at center,rgba(255,201,71,0.22) 0%,transparent 65%)",
+              ? "radial-gradient(ellipse at center,rgba(126,217,87,0.34) 0%,transparent 64%)"
+              : "radial-gradient(ellipse at center,rgba(255,201,71,0.4) 0%,transparent 62%)",
             animation: "highlight-pop 1.2s ease-out forwards",
           }} />
-          <div className="flex flex-col items-center gap-1">
+          {/* expanding burst ring */}
+          <span className="absolute h-32 w-32 rounded-full animate-ping"
+            style={{ border: `4px solid ${f.tone === "milestone" ? "rgba(126,217,87,0.55)" : "rgba(245,158,11,0.6)"}` }} />
+          <div className="flex flex-col items-center gap-2">
             <span
-              className="text-2xl font-black drop-shadow"
+              className="text-5xl font-black"
               style={{
                 color: f.tone === "milestone" ? "#16A34A" : "#F59E0B",
+                textShadow: f.tone === "milestone" ? "0 0 18px rgba(126,217,87,0.6)" : "0 0 18px rgba(245,158,11,0.65)",
                 animation: "score-jump 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards",
               }}
             >
               +{f.points} ⭐
             </span>
             {f.label && (
-              <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-black uppercase tracking-widest text-gray-500 shadow-sm">
+              <span className="rounded-full bg-white px-3.5 py-1.5 text-sm font-black uppercase tracking-widest text-gray-600 shadow-lg">
                 {f.label}
               </span>
             )}

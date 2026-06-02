@@ -189,13 +189,11 @@
 
   .cat-motion-clip {
     position: relative;
-    /* Tighter window vs the 112px frame = ~12px hidden margin each side,
-       so more per-frame sprite offset is clipped away (less visible drift).
-       Fully removing drift needs re-centered sprite frames (asset fix). */
-    width: 88px;
-    height: 88px;
-    border-radius: 50%;
-    overflow: hidden;
+    /* No circular crop: show the full alpha sprite cell so the cat is never
+       cut off by a circular frame (D / R4). Sprites are transparent PNGs, so
+       there's no visible box around the cat. */
+    width: 112px;
+    height: 112px;
     flex-shrink: 0;
     z-index: 2;
   }
