@@ -503,6 +503,7 @@ export default function PracticeRoom() {
   const lastFollowUpAtRef = useRef(0);
   const lastPassiveHighlightAtRef = useRef(0);
   const lastSentencePatternAtRef = useRef(0);
+  const lastCaptionAnalysisAtRef = useRef(0);
   const durationMilestoneRef = useRef(0);
   const pauseHandledRef = useRef(false);
   const pendingFollowUpRef = useRef("");
@@ -742,16 +743,23 @@ export default function PracticeRoom() {
         setTranscript(finalCaptionRef.current);
       }
 
+      // Fast path: captions update on every event, no heavy work here.
       const interimText = interimParts.join(" ").replace(/\s+/g, " ").trim();
       setInterimTranscript(interimText);
       setCaptionStatus("listening");
       if (apiStatus === "ready") setAiState("Live captions on");
 
-      const captionSnapshot = [finalCaptionRef.current, interimText].filter(Boolean).join(" ");
-      if (captionSnapshot.length > 18) promotePassiveHighlights(captionSnapshot);
-      const sentencePattern = detectSentencePattern(captionSnapshot);
-      if (sentencePattern && Date.now() - lastSentencePatternAtRef.current > 4500) {
-        lastSentencePatternAtRef.current = Date.now();
+      // Slow path: throttle analysis (>=700ms or on a final) and only scan the
+      // recent tail, so fast continuous speech doesn't choke the main thread.
+      const now = Date.now();
+      if (!(finalParts.length > 0) && now - lastCaptionAnalysisAtRef.current < 700) return;
+      lastCaptionAnalysisAtRef.current = now;
+
+      const tail = [finalCaptionRef.current, interimText].filter(Boolean).join(" ").slice(-200);
+      if (tail.length > 18) promotePassiveHighlights(tail);
+      const sentencePattern = detectSentencePattern(tail);
+      if (sentencePattern && now - lastSentencePatternAtRef.current > 4500) {
+        lastSentencePatternAtRef.current = now;
         bumpKtvScore("sentences", sentencePattern.delta, `Used a ${sentencePattern.label}`);
       }
     };
