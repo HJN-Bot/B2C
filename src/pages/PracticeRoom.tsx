@@ -327,20 +327,22 @@ function detectSentencePattern(text: string) {
   return SENTENCE_PATTERNS.find(({ pattern }) => pattern.test(text));
 }
 
-function buildLocalFollowUp(transcript: string, words: string[]) {
-  const recentWords = words.slice(-3);
-  if (recentWords.length > 0) {
-    return `You used "${recentWords[recentWords.length - 1]}". Can you add one real example?`;
+// Layer-1 fast local pause reply: content-aware (not canned), so it can show
+// instantly while a deeper Gemini reply is still loading.
+function localPauseReply(transcript: string, words: string[]): { follow_up: string; feedback: string; kind: "question" | "nudge" } {
+  const tail = transcript.replace(/\s+/g, " ").trim();
+  if (/\b(because|so|therefore|for example|for instance|this shows|this means)\b/i.test(tail.slice(-90))) {
+    return { kind: "nudge", feedback: "You started to explain your point.", follow_up: "Finish that thought — what's the example, or the why?" };
   }
-  const recent = transcript
-    .split(/[.?!]/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .pop();
-  if (recent && recent.length > 24) {
-    return `Can you explain why "${recent.slice(0, 48)}..." matters?`;
+  const lastWord = words[words.length - 1];
+  if (lastWord) {
+    return { kind: "question", feedback: `You used "${lastWord}".`, follow_up: `Can you give one real example of ${lastWord}?` };
   }
-  return "Can you give one example, one reason, or one impact?";
+  const lastSentence = (tail.match(/[^.!?]+[.!?]*/g) || [tail]).pop()?.trim();
+  if (lastSentence && lastSentence.length > 24) {
+    return { kind: "question", feedback: "Good start.", follow_up: `Why does "${lastSentence.slice(0, 40)}…" matter?` };
+  }
+  return { kind: "question", feedback: "Let's keep it going.", follow_up: "What's one example, one reason, or one impact you can add?" };
 }
 
 // ─── Helper: highlight vocab in transcript text ───────────────────────────────
@@ -870,35 +872,29 @@ export default function PracticeRoom() {
     };
   }, []);
 
-  // Resolve the reply for the open thinking card: real Gemini reply, or a
-  // neutral local fallback only on error / after ~4s.
+  // Multi-layer reply: Layer 1 = fast content-aware LOCAL reply (~700ms) for
+  // a real-time feel; Layer 2 = Gemini upgrade within a short budget (2.5s).
+  // Deep coaching is deferred to the Takeaway page, not blocked on here.
   const resolvePauseReply = useCallback(async () => {
-    let settled = false;
-    const localReply = () => enterReply(
-      buildLocalFollowUp(transcriptRef.current, highlightWordsRef.current),
-      "Here's one way to keep going.",
-      "nudge",
-    );
-    const fallbackTimer = window.setTimeout(() => {
-      if (settled || !showBottleneckRef.current || speakingRef.current) return;
-      settled = true;
-      localReply();
-    }, 4000);
-    try {
-      const reply = await fetchFollowUpReply();
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(fallbackTimer);
+    const showLocal = () => {
       if (!showBottleneckRef.current || speakingRef.current) return;
-      if (reply) enterReply(reply.follow_up, reply.feedback, reply.kind);
-      else localReply();
+      const local = localPauseReply(transcriptRef.current, highlightWordsRef.current);
+      enterReply(local.follow_up, local.feedback, local.kind);
+    };
+    const fastTimer = window.setTimeout(showLocal, 700);
+    let gemini: { follow_up: string; feedback: string; kind: "question" | "nudge" } | null = null;
+    try {
+      gemini = await Promise.race([
+        fetchFollowUpReply(),
+        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
+      ]);
     } catch (e) {
       console.error("Gemini follow-up error:", e);
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(fallbackTimer);
-      localReply();
     }
+    window.clearTimeout(fastTimer);
+    if (!showBottleneckRef.current || speakingRef.current) return;
+    if (gemini) enterReply(gemini.follow_up, gemini.feedback, gemini.kind);
+    else showLocal();
   }, [enterReply, fetchFollowUpReply]);
 
   // Phase 1: the instant the student pauses, show the "thinking" beat, then
