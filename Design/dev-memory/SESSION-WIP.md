@@ -26,6 +26,13 @@
 - 多轮 Chatbox 在真实 session 数据下连续追问是否带上下文。
 - HashRouter 后各页路由 / 刷新是否正常。
 
+## 2026-06-02（晚）— 自动批次跑完 P2 + P3
+全部 tsc+build 通过，**未浏览器验证**。审阅清单：[REVIEW-2026-06-02.md](./REVIEW-2026-06-02.md)（7 项 + ⚠️ 关键点）。
+- P2：转录卡顿、KTV 真实化、字幕融合 B、C 高光、D 猫猫去框、AI 多层 fallback。
+- P3：Takeaway 拆 4 块+按指标/高级建议、保存到 Library（localStorage + MyPage）。
+- 每项都有 `Design/specs/2026-06-02-*.md`，TODO Specs 索引已全部挂上。
+- 明天用户审阅；重点看 ⚠️ 项（KTV 启发式阈值、停顿毛玻璃遮历史、Takeaway 重新出现分数、多层 fallback 会换一次词、Library 仅本地）。
+
 ## 2026-06-02 — 全面反馈，TODO 已重排
 - 用户给了大量练习页/Takeaway 抱怨，并要求"结合 PDF 重排 TODO、对准抱怨方向"。
 - [TODO.md](./TODO.md) 已重写为：北极星（转录稳/KTV真/AI实时懂）→ 按页主计划（P2/P3/P4/P1/跨页/后台）→ 建议执行顺序 → 已完成 → 原话归档。
