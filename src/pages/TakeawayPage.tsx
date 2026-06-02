@@ -278,6 +278,9 @@ Rules:
 - Use ONLY ideas supported by the transcript, highlights, and score events.
 - Do NOT repeat the full transcript, and do NOT write a full speech or a complete answer for them. Coach process only.
 - The "encouragement" should be warm and a little playful, not a score.
+- "say_this" must be a STRONGER model upgrade — a higher-level sentence/frame than what they actually said (use a real connector or structure like "X is significant because…", "One striking example is…"). Do NOT just echo their words.
+- "reuse_words" must be UPGRADE vocabulary — 2-4 words/phrases more advanced than the ones they used, fitting their topic.
+- Look at "ktv_score" in the session: target "make_stronger" at their LOWEST metric (flow=keep talking, words=stronger phrases, sentences=fuller forms, story=claim+example+why). Name the metric.
 - For every "what_worked" and "make_stronger" item, include a SHORT exact quote (3-8 words) copied verbatim from the transcript as "quote". If no fitting quote exists, use "".
 
 Return ONLY valid JSON:
@@ -285,13 +288,13 @@ Return ONLY valid JSON:
   "encouragement": "one warm, playful sentence",
   "summary": ["2-3 short bullets describing what the student talked about"],
   "next_run_plan": {
-    "focus": "one specific focus",
-    "say_this": "one short sentence or frame the student can say next time",
-    "reuse_words": ["2-4 words or phrases"],
+    "focus": "one specific focus, aimed at the lowest KTV metric",
+    "say_this": "a stronger model sentence/frame to aim for next time (not a repeat)",
+    "reuse_words": ["2-4 upgrade words/phrases, more advanced than they used"],
     "one_move": "one tiny action for the next run"
   },
   "what_worked": [{ "point": "what worked", "quote": "exact short phrase they said, or empty" }],
-  "make_stronger": [{ "point": "one improvement", "quote": "the phrase this refers to, or empty" }]
+  "make_stronger": [{ "point": "one improvement tied to the lowest metric", "quote": "the phrase this refers to, or empty" }]
 }
 
 Session:
@@ -502,6 +505,48 @@ export default function TakeawayPage() {
           </section>
         )}
 
+        {/* ② Your progress this run — scores + what moved */}
+        {takeaway && (
+          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-widest text-gray-400">② Your progress this run</p>
+              <TrendingUp size={15} className="text-green-500" />
+            </div>
+            <div className="space-y-2.5">
+              {(["flow", "words", "sentences", "story"] as KTVMetric[]).map((metric) => {
+                const level = trendLevel(ktvScore[metric]);
+                const tag = level === "strong" ? "Strong" : level === "growing" ? "Growing" : "Just starting";
+                const tagStyle = level === "strong" ? "bg-green-50 text-green-600" : level === "growing" ? "bg-blue-50 text-blue-600" : "bg-gray-50 text-gray-400";
+                return (
+                  <div key={metric} className="flex items-center gap-2">
+                    <span className="w-5 shrink-0 text-center text-sm">{KTV_META[metric].icon}</span>
+                    <span className="w-16 shrink-0 text-xs font-bold text-gray-500">{KTV_META[metric].label}</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-full rounded-full bg-green-400" style={{ width: `${ktvScore[metric]}%` }} />
+                    </div>
+                    <span className="w-7 text-right font-mono text-xs font-black text-gray-500">{Math.round(ktvScore[metric])}</span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${tagStyle}`}>{tag}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {ktvEvents.length > 0 && (
+              <div className="mt-3 border-t border-gray-100 pt-2">
+                <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-gray-300">What moved</p>
+                <div className="space-y-1">
+                  {ktvEvents.slice(0, 4).map((e) => (
+                    <p key={e.id} className="text-xs font-semibold text-gray-500">
+                      <span className="font-black text-green-600">+{e.delta} {KTV_META[e.metric].label}</span> · {e.reason}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        <p className="px-1 pt-1 text-xs font-black uppercase tracking-widest text-gray-300">③ Coach · what to try next</p>
+
         <section className="rounded-[1.25rem] border border-green-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-black uppercase tracking-widest text-green-500">Next Run Plan</p>
@@ -652,30 +697,7 @@ export default function TakeawayPage() {
           </form>
         </section>
 
-        <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">What's growing</p>
-            <TrendingUp size={15} className="text-green-500" />
-          </div>
-          <div className="space-y-2.5">
-            {(["flow", "words", "sentences", "story"] as KTVMetric[]).map((metric) => {
-              const level = trendLevel(ktvScore[metric]);
-              const tag = level === "strong" ? "Strong" : level === "growing" ? "Growing" : "Just starting";
-              const tagStyle = level === "strong"
-                ? "bg-green-50 text-green-600"
-                : level === "growing"
-                ? "bg-blue-50 text-blue-600"
-                : "bg-gray-50 text-gray-400";
-              return (
-                <div key={metric} className="flex items-center gap-2">
-                  <span className="w-5 shrink-0 text-center text-sm">{KTV_META[metric].icon}</span>
-                  <span className="flex-1 text-sm font-bold text-gray-700">{GROWTH_TREND[metric][level]}</span>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${tagStyle}`}>{tag}</span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        <p className="px-1 pt-1 text-xs font-black uppercase tracking-widest text-gray-300">④ Go again</p>
 
         <div className="flex gap-3 pt-1">
           <button onClick={() => navigate("/practice")} className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 text-base font-black text-white shadow-md active:scale-95" style={{ background: "linear-gradient(135deg, #58A9FF, #7ED957)" }}>
