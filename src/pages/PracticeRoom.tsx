@@ -504,6 +504,9 @@ export default function PracticeRoom() {
   const lastPassiveHighlightAtRef = useRef(0);
   const lastSentencePatternAtRef = useRef(0);
   const lastCaptionAnalysisAtRef = useRef(0);
+  const lastFlowBumpAtRef = useRef(0);
+  const lastStoryBumpAtRef = useRef(0);
+  const prevAnalysisLenRef = useRef(0);
   const durationMilestoneRef = useRef(0);
   const pauseHandledRef = useRef(false);
   const pendingFollowUpRef = useRef("");
@@ -755,12 +758,26 @@ export default function PracticeRoom() {
       if (!(finalParts.length > 0) && now - lastCaptionAnalysisAtRef.current < 700) return;
       lastCaptionAnalysisAtRef.current = now;
 
-      const tail = [finalCaptionRef.current, interimText].filter(Boolean).join(" ").slice(-200);
+      const fullCaption = [finalCaptionRef.current, interimText].filter(Boolean).join(" ");
+      const tail = fullCaption.slice(-200);
       if (tail.length > 18) promotePassiveHighlights(tail);
       const sentencePattern = detectSentencePattern(tail);
       if (sentencePattern && now - lastSentencePatternAtRef.current > 4500) {
         lastSentencePatternAtRef.current = now;
         bumpKtvScore("sentences", sentencePattern.delta, `Used a ${sentencePattern.label}`);
+      }
+
+      // Flow: reward sustained talking (transcript kept growing).
+      if (fullCaption.length > prevAnalysisLenRef.current + 12 && now - lastFlowBumpAtRef.current > 3000) {
+        lastFlowBumpAtRef.current = now;
+        bumpKtvScore("flow", 2, "Kept your idea going");
+      }
+      prevAnalysisLenRef.current = fullCaption.length;
+
+      // Story: reward connecting ideas (cause / example / consequence).
+      if (now - lastStoryBumpAtRef.current > 5000 && /\b(because|so that|for example|for instance|this shows|this means|as a result|therefore|which means)\b/i.test(tail)) {
+        lastStoryBumpAtRef.current = now;
+        bumpKtvScore("story", 3, "Connected an idea");
       }
     };
 
@@ -1147,6 +1164,10 @@ export default function PracticeRoom() {
     lastFollowUpAtRef.current = 0;
     lastPassiveHighlightAtRef.current = 0;
     lastSentencePatternAtRef.current = 0;
+    lastCaptionAnalysisAtRef.current = 0;
+    lastFlowBumpAtRef.current = 0;
+    lastStoryBumpAtRef.current = 0;
+    prevAnalysisLenRef.current = 0;
     durationMilestoneRef.current = 0;
     pauseHandledRef.current = false;
     pendingFollowUpRef.current = "";
