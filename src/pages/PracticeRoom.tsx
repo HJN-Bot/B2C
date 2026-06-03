@@ -379,14 +379,16 @@ function topicKeywords(topic: string): string[] {
   )).slice(0, 5);
 }
 
-// Karaoke: show the recent tail of the transcript so it fills the caption
-// box (bottom-aligned, top fades out via .karaoke-mask). The full
-// single-line + scrollable history treatment is a later sub-project (B).
-function recentTail(transcript: string, maxWords = 45): string {
+// Karaoke: current line = the last sentence (capped). History above it is
+// dimmed; this current line is highlighted in the caption panel (B).
+function lastLine(transcript: string): string {
   const t = transcript.replace(/\s+/g, " ").trim();
   if (!t) return "";
-  const words = t.split(" ");
-  return words.length > maxWords ? words.slice(-maxWords).join(" ") : t;
+  const sentences = t.match(/[^.!?]+[.!?]*/g) || [t];
+  let line = (sentences[sentences.length - 1] || t).trim();
+  const words = line.split(" ");
+  if (words.length > 16) line = words.slice(-16).join(" ");
+  return line;
 }
 
 // ─── AI Character ─────────────────────────────────────────────────────────────
