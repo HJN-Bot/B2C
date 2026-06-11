@@ -136,14 +136,14 @@
      middle. The top/bottom padding centers the latest line when auto-scrolled
      to the bottom; the mask fades older text out at the top. */
   .practice-transcript-reel {
-    height: 7rem;
+    height: 7.5rem;
     overflow-y: auto;
-    padding: 2.75rem 0;
+    padding: 3rem 0.75rem;
     text-align: center;
     line-height: 1.5;
     scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 34%, #000 66%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, #000 34%, #000 66%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%);
   }
   .practice-transcript-reel::-webkit-scrollbar { display: none; }
 

@@ -89,14 +89,14 @@ interface KTVEvent { id: number; metric: KTVMetric; delta: number; reason: strin
 interface HighlightFlash { id: number; points: number; label?: string; tone?: "highlight" | "milestone" }
 interface PhraseSpark { id: number; text: string; source: "caption" | "ai" }
 
-const KTV_META: Record<KTVMetric, { label: string; short: string; Icon: LucideIcon; purpose: string }> = {
-  flow: { label: "Flow", short: "Flow", Icon: Waves, purpose: "keep talking" },
-  words: { label: "Words", short: "Words", Icon: BookOpen, purpose: "strong phrases" },
-  sentences: { label: "Sentences", short: "Syntax", Icon: Blocks, purpose: "better forms" },
-  story: { label: "Story", short: "Story", Icon: Brain, purpose: "complete point" },
+const KTV_META: Record<KTVMetric, { label: string; short: string; Icon: LucideIcon; color: string; purpose: string }> = {
+  flow: { label: "Flow", short: "Flow", Icon: Waves, color: "#58A9FF", purpose: "Keep talking" },
+  words: { label: "Words", short: "Words", Icon: BookOpen, color: "#16A34A", purpose: "Strong phrases" },
+  sentences: { label: "Sentences", short: "Syntax", Icon: Blocks, color: "#D97706", purpose: "Fuller sentences" },
+  story: { label: "Story", short: "Story", Icon: Brain, color: "#7C3AED", purpose: "Complete the point" },
 };
 
-const KTV_ITEMS: Array<{ key: KTVMetric; label: string; short: string; Icon: LucideIcon; purpose: string }> = [
+const KTV_ITEMS: Array<{ key: KTVMetric; label: string; short: string; Icon: LucideIcon; color: string; purpose: string }> = [
   { key: "flow", ...KTV_META.flow },
   { key: "words", ...KTV_META.words },
   { key: "sentences", ...KTV_META.sentences },
@@ -1359,16 +1359,14 @@ export default function PracticeRoom() {
 
       {/* ── Top bar ── */}
       <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <Star size={14} className="text-amber-400" />
-            <span className="text-sm font-bold text-gray-800">{highlightCount}</span>
-            <span className="text-xs text-gray-400">AI moments</span>
-            {apiStatus === "loading" && <span className="text-xs text-blue-400 ml-2">· AI loading…</span>}
-            {apiStatus === "error"   && <span className="text-xs text-red-400 ml-2">· AI offline</span>}
-            {micDenied              && <span className="text-xs text-gray-400 ml-2">· demo</span>}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-xs font-bold text-gray-600">🎯 {topic || practiceMode.label}</span>
+            {apiStatus === "loading" && <span className="shrink-0 text-xs text-blue-400">· loading…</span>}
+            {apiStatus === "error"   && <span className="shrink-0 text-xs text-red-400">· offline</span>}
+            {micDenied              && <span className="shrink-0 text-xs text-gray-400">· demo</span>}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             <Clock size={13} className="text-gray-400" />
             <span className="font-mono text-sm font-bold text-gray-700">{fmt(timer)}</span>
           </div>
@@ -1383,7 +1381,7 @@ export default function PracticeRoom() {
         {/* KTV bars — purposeful event score */}
         <div ref={ktvBarRef} className="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 space-y-2">
           <div className="grid grid-cols-2 gap-x-2 gap-y-2">
-            {KTV_ITEMS.map(({ label, key, Icon, purpose }) => (
+            {KTV_ITEMS.map(({ label, key, Icon, color, purpose }) => (
               <div
                 key={key}
                 className="flex items-center gap-1.5 min-w-0 rounded-lg px-1.5 py-1 transition-all duration-300"
@@ -1392,32 +1390,30 @@ export default function PracticeRoom() {
                   boxShadow: activeKtvMetric === key ? "0 0 0 1px rgba(255,201,71,0.28)" : "none",
                 }}
               >
-                <Icon size={14} className="shrink-0 text-gray-400" />
-                <div className="w-[56px] min-w-0 leading-none">
-                  <div className="truncate text-[11px] font-black text-gray-600">{label}</div>
-                  <div className="truncate text-[9px] font-semibold text-gray-300 mt-0.5">{purpose}</div>
+                <Icon size={15} className="shrink-0" style={{ color }} />
+                <div className="w-[68px] shrink-0 leading-tight">
+                  <div className="text-[11px] font-black text-gray-700">{label}</div>
+                  <div className="text-[9px] font-semibold text-gray-400">{purpose}</div>
                 </div>
                 <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${ktvScore[key]}%`, background: scoreColor(ktvScore[key]) }} />
+                    style={{ width: `${ktvScore[key]}%`, background: color }} />
                 </div>
-                <span className="text-xs font-mono text-gray-400 w-6 text-right">{Math.round(ktvScore[key])}</span>
+                <span className="text-xs font-mono w-6 text-right" style={{ color }}>{Math.round(ktvScore[key])}</span>
               </div>
             ))}
           </div>
-          <div className="min-h-[18px]">
-            {latestKtvEvent && (() => {
-              const EvIcon = KTV_META[latestKtvEvent.metric].Icon;
-              return (
-                <div className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
-                  style={{ background: "rgba(88,169,255,0.08)", color: "#2563EB", animation: "score-jump 0.45s ease-out" }}>
-                  <EvIcon size={12} className="shrink-0" />
-                  <span>+{latestKtvEvent.delta} {KTV_META[latestKtvEvent.metric].short}</span>
-                  <span className="truncate text-gray-500 font-semibold">· {latestKtvEvent.reason}</span>
-                </div>
-              );
-            })()}
-          </div>
+          {latestKtvEvent && (() => {
+            const EvIcon = KTV_META[latestKtvEvent.metric].Icon;
+            return (
+              <div className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
+                style={{ background: "rgba(88,169,255,0.08)", color: "#2563EB", animation: "score-jump 0.45s ease-out" }}>
+                <EvIcon size={12} className="shrink-0" />
+                <span>+{latestKtvEvent.delta} {KTV_META[latestKtvEvent.metric].short}</span>
+                <span className="truncate text-gray-500 font-semibold">· {latestKtvEvent.reason}</span>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -1446,10 +1442,6 @@ export default function PracticeRoom() {
 
           <div className="relative z-[1] mb-3 flex items-center justify-between">
             <div>
-              <p className="mb-0.5 text-[11px] font-semibold text-gray-500">{practiceMode.emoji} {practiceMode.label}</p>
-              {topic ? (
-                <p className="mb-0.5 text-[11px] font-semibold text-gray-400">Topic · {topic}</p>
-              ) : null}
               <p className="text-[11px] font-black uppercase tracking-widest text-blue-500">Coach is following your story</p>
               <p className="text-xs font-semibold text-gray-400">
                 {started ? (micDenied ? "Demo mode" : "I'm with your idea — keep going") : "Ready when you are"}
@@ -1549,9 +1541,9 @@ export default function PracticeRoom() {
                 )}
               </div>
 
-              <div className="practice-transcript-shell relative z-[1] mx-auto mt-3 w-full max-w-[318px]">
+              <div className="practice-transcript-shell relative z-[1] mx-auto mt-3 flex w-full max-w-[330px] min-h-0 flex-1 flex-col justify-center">
                 <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  <MessageCircle size={11} />Transcript reel
+                  <MessageCircle size={11} />Transcript
                   <span className="ml-auto h-1.5 w-1.5 rounded-full"
                     style={{ background: speakingActive ? "#7ED957" : captionStatus === "listening" ? "#58A9FF" : "#D1D5DB" }} />
                 </div>
