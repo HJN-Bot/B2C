@@ -2,6 +2,34 @@
 
 > 这次 session "做到哪了"。每次开工先看这里。稳定事实放 [PROJECT-MEMORY.md](./PROJECT-MEMORY.md)，完整待办放 [TODO.md](./TODO.md)。
 
+---
+
+## 📌 版本总结 · 2026-06-11（推远端前）
+
+### 这一版改了什么
+**练习页（Practice）**
+- 猫猫动画：去圆框裁切（clip 88→112，不再被遮）+ 动画放慢、状态自动切；最终 AICharacter 只画猫。
+- 字幕（Transcript / 你说的"Chatbot"）：连续记录、当前行锁中间、固定提词器窗口（不再越说越长 / 不再按句跳行）。
+- 提示小卡：预生成缓冲（每段 Gemini 顺带备好 follow-up）→ 停顿**立刻弹**；与猫下状态**合并到一个固定槽位**，尺寸固定不跳。
+- 暂停可靠性：阈值 4.8s→2.5s；`ENERGY_THRESHOLD` 0.003→0.006（环境噪音不再误判成说话）。
+- KTV：flow/story 本地实时涨分（带原因）；emoji→lucide **彩色**图标；含义(purpose)显示完整；删"AI moments"；顶部加 🎯topic/mode；删常驻提示句、空事件框。
+- 首次 **Navigator 引导**（锚定高亮 KTV/猫/Start，localStorage 只对新用户出一次）。
+- 高光加强、音浪弱化、"Coach is following your story" 文案、白屏修复 + App 级 ErrorBoundary。
+
+**结束页（Takeaway）**
+- 早前：4 块结构、进步分值、按最弱指标建议、保存到 Library、原文引用。
+- 本次：加了 `amplify`（放大）字段到 AI 结构 —— **3 大块渲染重排尚未完成**（见下）。
+
+### 将来接着改（下次）
+- 🔴 **Takeaway 3 大块渲染重排**：① 总结与鼓励（含做得好+分值）② 核心增强（放大 Amplify + 改掉 Change + 下一次怎么说）③ Coach（Chatbox+Try Again）；长页可下滑。schema 已就绪，只差渲染。Spec：`Design/specs/2026-06-11-takeaway-3blocks.md`。
+- 🟡 Practice Navigator 覆盖 **Script + 反馈小卡**（它们开练后才出现，需"开始后再补一个高亮气泡"）。
+- 🟡 Home 首页 Navigator 引导。
+- 🟡 暂停阈值/ENERGY_THRESHOLD 按真机手感微调。
+- 🟢 TakeawayPage 的 KTV 图标统一成 lucide（目前仍 emoji）；清理无用 CSS/函数（recentLines、practice-coach-strip 等）。
+- 🟢 后台 Supabase 落库（替 localStorage）、PracticeRoom 拆组件。
+
+---
+
 ## 本 session 日期
 2026-05-29
 

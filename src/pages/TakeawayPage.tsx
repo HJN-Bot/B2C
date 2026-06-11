@@ -38,8 +38,9 @@ interface AiTakeaway {
   encouragement: string;
   summary: string[];           // top-down: what the student actually talked about
   next_run_plan: NextRunPlan;
-  what_worked: Evidence[];
-  make_stronger: Evidence[];
+  what_worked: Evidence[];     // block 1: done well (credit)
+  amplify: Evidence[];         // block 2: a strength worth doing MORE of
+  make_stronger: Evidence[];   // block 2: one thing to change/fix
 }
 
 interface CoachMessage {
@@ -159,6 +160,7 @@ function normalizeTakeaway(value: Partial<AiTakeaway> | null): AiTakeaway | null
       one_move: String(plan.one_move).trim(),
     },
     what_worked: normalizeEvidence(value?.what_worked, [{ point: "You gave the coach real content to build from." }]),
+    amplify: normalizeEvidence(value?.amplify, [{ point: "Keep developing your strongest idea further." }]),
     make_stronger: normalizeEvidence(value?.make_stronger, [{ point: String(plan.one_move) }]),
   };
 }
@@ -227,6 +229,11 @@ function createLocalTakeaway(session: {
         ? { point: "You saved useful moments that can be reused next time.", quote: session.highlightWords[0] }
         : { point: "You gave the coach a starting point for your next run." },
     ],
+    amplify: [
+      mainWord
+        ? { point: `You reached for "${mainWord}" — lean into more words like it.`, quote: mainWord }
+        : { point: "You kept your idea going — do even more of that next time." },
+    ],
     make_stronger: [
       { point: "Add one concrete example after your main point.", quote: mainWord },
       { point: "Use because, for example, and this matters to connect the idea." },
@@ -294,8 +301,9 @@ Return ONLY valid JSON:
     "reuse_words": ["2-4 upgrade words/phrases, more advanced than they used"],
     "one_move": "one tiny action for the next run"
   },
-  "what_worked": [{ "point": "what worked", "quote": "exact short phrase they said, or empty" }],
-  "make_stronger": [{ "point": "one improvement tied to the lowest metric", "quote": "the phrase this refers to, or empty" }]
+  "what_worked": [{ "point": "what they did well", "quote": "exact short phrase they said, or empty" }],
+  "amplify": [{ "point": "one strength worth doing MORE of next time, and how", "quote": "the phrase it builds on, or empty" }],
+  "make_stronger": [{ "point": "one thing to change/fix, tied to the lowest metric", "quote": "the phrase this refers to, or empty" }]
 }
 
 Session:
