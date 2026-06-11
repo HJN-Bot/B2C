@@ -87,6 +87,63 @@
     mask-image: linear-gradient(to bottom, transparent 0%, #000 45%);
   }
 
+  /* ── Practice room speaking panel (2026-06-11 redesign) ── */
+  .practice-room-panel { flex: 1 1 auto; }
+
+  /* Coach: cat centered, a small status under it (not a wide side strip). */
+  .practice-coach-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+  .practice-cat-stage { display: flex; justify-content: center; align-items: center; }
+  .practice-bubble-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    max-width: 300px;
+    text-align: center;
+  }
+  .practice-listening-bubble { line-height: 1.35; }
+  .practice-listening-bubble-main { font-size: 14px; font-weight: 800; color: #374151; }
+  /* Keep the coach area light — hide the secondary status lines (the live dot
+     + the one main bubble already convey state; the prompt card carries the
+     actual coaching). Cuts the "too much dialog content" noise. */
+  .practice-listening-bubble-soft,
+  .practice-listening-bubble-tiny { display: none; }
+  .practice-listening-bubble:empty { display: none; }
+
+  /* One compact feedback card (merges old bubble / pause card / mini tip). */
+  .practice-prompt-card {
+    width: 100%;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 1rem;
+    border: 1px solid #dbeafe;
+    background: #ffffff;
+    padding: 12px 14px;
+    box-shadow: 0 4px 14px rgba(31, 41, 55, 0.06);
+  }
+
+  /* Fixed-height teleprompter: current line locked in the middle, older lines
+     scroll up and fade; height never grows with how much you say. */
+  .practice-transcript-shell { width: 100%; }
+  .practice-transcript-reel {
+    height: 8.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    overflow: hidden;
+    text-align: center;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%);
+  }
+
   .cat-sprite-coach {
     --buddy-accent: #58A9FF;
     position: relative;

@@ -14,7 +14,7 @@ const TARGET_SAMPLE_RATE     = 16000;
 const BUFFER_SIZE            = 1024;
 const MIN_PHRASE_SECONDS     = 0.9;
 const MAX_PHRASE_SECONDS     = 3.0;
-const BOTTLENECK_SILENCE_MS  = 4800;
+const BOTTLENECK_SILENCE_MS  = 3000;
 const PASSIVE_HIGHLIGHT_COOLDOWN_MS = 2600;
 const MAX_SESSION_HIGHLIGHT_WORDS = 8;
 
@@ -29,7 +29,8 @@ Respond ONLY with valid JSON (no markdown, no extra text):
   "transcript": "exact transcription of what was said",
   "feedback": "1 specific, natural reaction under 10 words. Do not ask a question here.",
   "highlight_words": ["advanced", "less common", "academic", "scientific", "or vivid words the student actually used"],
-  "follow_up": "if the student pauses, trails off, repeats fillers, or seems stuck: ask 1 helpful question. Otherwise empty string.",
+  "follow_up": "ALWAYS prepare the single best thing to say IF the student paused right now — one short question OR one improvement nudge, <=16 words, referencing what they just said",
+  "kind": "question",
   "mood": "excited",
   "highlight_moment": false,
   "score_delta": { "flow": 0, "words": 0, "sentences": 0, "story": 0 }
@@ -39,7 +40,8 @@ Rules:
 - transcript: accurate transcription only, no extra commentary
 - feedback must mention a real word, idea, evidence, transition, or behavior from the audio. Avoid generic phrases like "good point" or "nice job". Keep it warm and human, not robotic.
 - highlight_words: include only words or short phrases present in transcript. Prefer words the student may not commonly use.
-- follow_up: return a question only if the student clearly trails off, repeats fillers, or gets stuck. If they are still developing a thought, return an empty string.
+- follow_up: ALWAYS fill it (it is pre-buffered, not shown unless they pause). Base it on what they just said: a real next question, or a direction to improve. Never generic praise.
+- kind: "question" if follow_up is a question, "nudge" if it's an improvement direction.
 - mood: "excited" if strong phrases used | "thinking" if short/stuck | "listening" otherwise
 - highlight_moment: true only when the student says a strong claim, vivid explanation, evidence, or unusually good vocabulary.
 - score_delta: small integers 0-8 based on the real chunk. words should rise only for real highlighted words. sentences should rise for modal clauses, causal structures, comparisons, passive voice, or complex grammar. story should rise when the student develops claim/example/evidence/impact.
@@ -379,21 +381,33 @@ function topicKeywords(topic: string): string[] {
   )).slice(0, 5);
 }
 
-// Karaoke: current line = the last sentence (capped). History above it is
-// dimmed; this current line is highlighted in the caption panel (B).
-function lastLine(transcript: string): string {
+// Teleprompter: the last n sentence-ish lines for a fixed-height window.
+// The last item is the "current" line (locked in the middle); earlier ones
+// sit above it, dimmed, and scroll off the top.
+function recentLines(transcript: string, n = 3): string[] {
   const t = transcript.replace(/\s+/g, " ").trim();
-  if (!t) return "";
-  const sentences = t.match(/[^.!?]+[.!?]*/g) || [t];
-  let line = (sentences[sentences.length - 1] || t).trim();
-  const words = line.split(" ");
-  if (words.length > 16) line = words.slice(-16).join(" ");
-  return line;
+  if (!t) return [];
+  const sentences = (t.match(/[^.!?]+[.!?]*/g) || [t]).map((s) => s.trim()).filter(Boolean);
+  const capped = sentences.map((s) => {
+    const w = s.split(" ");
+    return w.length > 14 ? "…" + w.slice(-14).join(" ") : s;
+  });
+  return capped.slice(-n);
 }
 
 // ─── AI Character ─────────────────────────────────────────────────────────────
 
-function AICharacter({ mood, bubble }: { mood: CharacterMood; bubble: string | null }) {
+function AICharacter({
+  mood,
+  bubble,
+  statusLine,
+  secondaryLine,
+}: {
+  mood: CharacterMood;
+  bubble: string | null;
+  statusLine: string;
+  secondaryLine: string;
+}) {
   const moodLabel: Record<CharacterMood, string> = {
     idle: "Ready",
     listening: "Listening",
@@ -424,37 +438,45 @@ function AICharacter({ mood, bubble }: { mood: CharacterMood; bubble: string | n
   const currentSpriteMood = spriteMood[mood];
 
   return (
-    <div className="mx-auto flex w-full max-w-[360px] items-center justify-center gap-3">
-      <div
-        className={`cat-motion-coach cat-motion-coach-${currentSpriteMood}`}
-        aria-label={`Cat coach is ${moodLabel[mood].toLowerCase()}`}
-        style={{
-          ["--buddy-accent" as string]: accent[mood],
-          ["--cat-motion-sheet" as string]: motionSheet[currentSpriteMood],
-        }}
-      >
-        <span className="cat-motion-glow" />
-        <span className="cat-motion-spark cat-motion-spark-one" />
-        <span className="cat-motion-spark cat-motion-spark-two" />
-        <span className="cat-motion-clip">
-          <span className="cat-motion-frame" />
-        </span>
+    <div className="practice-coach-strip">
+      <div className="practice-cat-stage">
+        <div
+          className={`cat-motion-coach cat-motion-coach-${currentSpriteMood}`}
+          aria-label={`Cat coach is ${moodLabel[mood].toLowerCase()}`}
+          style={{
+            ["--buddy-accent" as string]: accent[mood],
+            ["--cat-motion-sheet" as string]: motionSheet[currentSpriteMood],
+          }}
+        >
+          <span className="cat-motion-glow" />
+          <span className="cat-motion-spark cat-motion-spark-one" />
+          <span className="cat-motion-spark cat-motion-spark-two" />
+          <span className="cat-motion-clip">
+            <span className="cat-motion-frame" />
+          </span>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex items-center gap-1.5">
+      <div className="practice-bubble-stack">
+        <div className="flex items-center gap-1.5">
           <span
             className="h-2 w-2 rounded-full"
             style={{ background: accent[mood], boxShadow: `0 0 0 5px ${accent[mood]}22` }}
           />
-          <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
-            AI {moodLabel[mood]}
+          <span className="text-[10px] font-black uppercase tracking-widest text-blue-500">
+            AI Coaching is listening
           </span>
         </div>
         <div
-          className="rounded-2xl border border-gray-100 bg-white/85 px-3 py-2.5 text-sm font-bold leading-snug text-gray-800 shadow-sm"
+          className="practice-listening-bubble practice-listening-bubble-main"
           style={{ opacity: bubble ? 1 : 0.65 }}
         >
           {bubble || "I am here with you."}
+        </div>
+        <div className="practice-listening-bubble practice-listening-bubble-soft">
+          {statusLine}
+        </div>
+        <div className="practice-listening-bubble practice-listening-bubble-tiny">
+          {secondaryLine}
         </div>
       </div>
     </div>
@@ -491,7 +513,8 @@ export default function PracticeRoom() {
   const rafRef    = useRef<number>(0);
 
   // Transcript scroll
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const transcriptScrollRef = useRef<HTMLDivElement>(null);
+  const transcriptEndRef = useRef<HTMLSpanElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const shouldRestartRecognitionRef = useRef(false);
   const finalCaptionRef = useRef("");
@@ -514,6 +537,9 @@ export default function PracticeRoom() {
   const durationMilestoneRef = useRef(0);
   const pauseHandledRef = useRef(false);
   const pendingFollowUpRef = useRef("");
+  // Pre-generated follow-up from the last processed phrase, ready to pop the
+  // instant the user pauses (0 latency). Refilled every chunk by Gemini.
+  const bufferedReplyRef = useRef<{ follow_up: string; feedback: string; kind: "question" | "nudge" } | null>(null);
 
   // State
   const [started, setStarted]               = useState(false);
@@ -681,9 +707,11 @@ export default function PracticeRoom() {
     }
   }, [bumpKtvScore, started, timer, triggerRewardFlash]);
 
-  // Auto-scroll transcript
+  // Auto-scroll only the transcript reel, so live captions never move the page.
   useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const reel = transcriptScrollRef.current;
+    if (!reel) return;
+    reel.scrollTo({ top: reel.scrollHeight, behavior: "smooth" });
   }, [transcript, interimTranscript]);
 
   const stopLiveCaptions = useCallback((clearText = false) => {
@@ -899,27 +927,23 @@ export default function PracticeRoom() {
     else showLocal();
   }, [enterReply, fetchFollowUpReply]);
 
-  // Phase 1: the instant the student pauses, show the "thinking" beat, then
-  // fetch the real reply.
+  // On a >=3s pause, INSTANTLY pop the pre-buffered Gemini follow-up (prepared
+  // while the student was speaking) — no thinking wait. If the buffer is empty
+  // (e.g. very first pause), use a content-aware local reply.
   const beginPauseCoaching = useCallback(() => {
     if (showBottleneckRef.current) return;
     const silenceMs = Date.now() - lastVoiceAtRef.current;
     if (speakingRef.current || silenceMs < BOTTLENECK_SILENCE_MS) return;
     lastFollowUpAtRef.current = Date.now();
     pauseHandledRef.current = true;
-    pendingFollowUpRef.current = "";
     if (miniCoachTipTimerRef.current) clearTimeout(miniCoachTipTimerRef.current);
     setMiniCoachTip("");
-    setFollowUpQ("");
-    setFollowUpFeedback("");
-    setThinkingAck(THINKING_ACKS[Math.floor(Math.random() * THINKING_ACKS.length)]);
-    setBottleneckPhase("thinking");
+    const ready = bufferedReplyRef.current ?? localPauseReply(transcriptRef.current, highlightWordsRef.current);
+    bufferedReplyRef.current = null; // consumed; next pause waits for a fresh one
     showBottleneckRef.current = true;
     setShowBottleneck(true);
-    setMood("thinking");
-    setAiState("Coach is thinking about your pause");
-    void resolvePauseReply();
-  }, [resolvePauseReply]);
+    enterReply(ready.follow_up, ready.feedback, ready.kind);
+  }, [enterReply]);
 
   useEffect(() => {
     if (!started) return;
@@ -1022,8 +1046,16 @@ export default function PracticeRoom() {
         triggerRewardFlash("strong moment", pts);
       }
 
-      // Store follow-up ideas, but only show them after a real 4.8s pause.
+      // Pre-buffer the next follow-up from this chunk's Gemini reply, ready to
+      // pop instantly on a pause. Keep the last good one if this chunk had none.
       pendingFollowUpRef.current = result.follow_up?.trim() || "";
+      if (result.follow_up?.trim()) {
+        bufferedReplyRef.current = {
+          follow_up: result.follow_up.trim(),
+          feedback: result.feedback?.trim() || "",
+          kind: result.kind === "nudge" ? "nudge" : "question",
+        };
+      }
 
       // Reset to listening after 3s
       setTimeout(() => {
@@ -1268,6 +1300,20 @@ export default function PracticeRoom() {
     v < 40 ? "#FF7A5C" : v < 70 ? "#FFC947" : v < 90 ? "#7ED957" : "#58A9FF";
 
   const latestKtvEvent = ktvEvents[0];
+  const coachStatusLine = started
+    ? speakingActive
+      ? "Is listening to your story..."
+      : showBottleneck
+      ? "Holding this pause with you"
+      : "Waiting for the next sentence"
+    : "Ready to follow your idea";
+  const coachSecondaryLine = started
+    ? showBottleneck
+      ? "I will ask only when the pause becomes useful."
+      : miniCoachTip
+      ? "One small prompt is parked below."
+      : "Keep going. I will not interrupt the flow."
+    : "Tap start and speak naturally.";
 
   // ─────────────────────────────────────────────────────────────────────────────
   return (
@@ -1369,8 +1415,8 @@ export default function PracticeRoom() {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pb-28 sm:px-4">
-        {/* ── AI listening panel: caption + coach in one place ── */}
-        <section className="relative flex min-h-[330px] flex-1 flex-col overflow-hidden rounded-[1.5rem] border border-blue-100 bg-white/82 p-4 shadow-sm">
+        {/* ── AI listening panel: coach, prompt, and transcript stay in stable layers ── */}
+        <section className="practice-room-panel relative flex min-h-[520px] flex-col overflow-hidden rounded-[1.5rem] border border-blue-100 bg-white/78 p-4 shadow-sm">
           <div className="pointer-events-none absolute inset-0 opacity-70"
             style={{ background: "linear-gradient(180deg,rgba(88,169,255,0.08),transparent 38%,rgba(126,217,87,0.08))" }} />
 
@@ -1436,115 +1482,115 @@ export default function PracticeRoom() {
             <AICharacter
               mood={started ? mood : "idle"}
               bubble={started ? bubble : apiStatus === "loading" ? "Warming up AI..." : "Tap start and I will follow your idea."}
+              statusLine={coachStatusLine}
+              secondaryLine={coachSecondaryLine}
             />
           </div>
 
-          {started && showBottleneck && (
-            <div
-              className="relative z-[1] mt-3 rounded-2xl border border-blue-100 bg-white p-3.5 shadow-md"
-              style={{ animation: "slide-up 0.35s cubic-bezier(0.16,1,0.3,1) forwards" }}
-            >
-              {bottleneckPhase === "thinking" ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-600">{thinkingAck || "let me think…"}</span>
-                  <span className="flex gap-0.5">
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "0ms" }} />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "150ms" }} />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "300ms" }} />
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <p className="mb-1 text-xs font-black uppercase tracking-widest text-blue-500">
-                    {followUpKind === "nudge" ? "Try this next" : "Coach asks"}
-                  </p>
-                  {followUpFeedback && (
-                    <p className="mb-1.5 text-xs font-semibold italic text-gray-400">{followUpFeedback}</p>
-                  )}
-                  <p className="text-[15px] font-black leading-snug text-gray-900">{followUpQ}</p>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => { collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); setBubble("That's it. Keep building it."); }}
-                      className="flex-1 rounded-xl py-2 text-sm font-black text-white active:scale-95"
-                      style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)" }}
-                    >
-                      Use it
-                    </button>
-                    <button
-                      onClick={() => { setMiniCoachTip(""); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); setBubble("No worries. I am still listening."); }}
-                      className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-gray-500 active:scale-95"
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {started && !showBottleneck && miniCoachTip && (
-            <div className="relative z-[1] mt-3 flex items-start gap-2 rounded-2xl border border-blue-100 bg-blue-50/80 px-3 py-2.5"
-              style={{ animation: "float-in 0.25s ease-out forwards" }}>
-              <MessageCircle size={14} className="mt-0.5 shrink-0 text-blue-500" />
-              <p className="line-clamp-2 text-xs font-bold leading-snug text-blue-700">{miniCoachTip}</p>
-            </div>
-          )}
-
           {started ? (
-            // B: one merged caption panel that fills the central area — full
-            // history scrolls, the current line stays highlighted at the
-            // bottom, and a frosted glass covers it while you're not speaking.
-            <div className="relative z-[1] mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white/90 px-3.5 py-3 shadow-sm">
-              <div className="mb-1.5 flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-gray-400">
-                <MessageCircle size={12} />Now saying
-                <span className="ml-auto h-1.5 w-1.5 rounded-full"
-                  style={{ background: speakingActive ? "#7ED957" : captionStatus === "listening" ? "#58A9FF" : "#D1D5DB" }} />
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-y-auto pr-1 text-[17px] leading-relaxed" style={{ scrollbarWidth: "thin" }}>
-                {(() => {
-                  const current = lastLine(transcript);
-                  const history = current && transcript.length > current.length
-                    ? transcript.slice(0, transcript.length - current.length).trim()
-                    : "";
-                  return (
-                    <p className="w-full">
-                      {history && <span className="font-medium text-gray-400">{history} </span>}
-                      {applyHighlights(current, highlightWords).map((p, i) =>
-                        p.hl ? (
-                          <mark key={i} className="phrase-highlight rounded px-0.5 font-bold"
-                            style={{ background: "rgba(88,169,255,0.18)", color: "#2563EB" }}>{p.str}</mark>
-                        ) : <span key={i} className="font-semibold text-gray-900">{p.str}</span>
-                      )}
-                      {interimTranscript && (
-                        <span className="font-semibold text-blue-500">{transcript ? " " : ""}{interimTranscript}</span>
-                      )}
-                      {!transcript && !interimTranscript && (
-                        <span className="italic text-gray-300">
-                          {captionStatus === "unsupported"
-                            ? "Live captions need Chrome or Edge…"
-                            : captionStatus === "error"
-                            ? "Live captions paused…"
-                            : "Your words will appear here…"}
-                        </span>
-                      )}
-                      <span ref={transcriptEndRef} />
+            <>
+              <div
+                className="practice-prompt-card relative z-[1] mt-3"
+                style={{ animation: showBottleneck ? "slide-up 0.35s cubic-bezier(0.16,1,0.3,1) forwards" : "float-in 0.25s ease-out forwards" }}
+              >
+                {showBottleneck && bottleneckPhase === "thinking" ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-gray-700">{thinkingAck || "let me think..."}</span>
+                    <span className="flex gap-0.5">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "0ms" }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "150ms" }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "300ms" }} />
+                    </span>
+                  </div>
+                ) : showBottleneck ? (
+                  <>
+                    <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-blue-500">
+                      {followUpKind === "nudge" ? "Try this next" : "Coach asks"}
                     </p>
-                  );
-                })()}
+                    {followUpFeedback && (
+                      <p className="mb-1.5 text-xs font-semibold italic text-gray-400">{followUpFeedback}</p>
+                    )}
+                    <p className="text-[15px] font-black leading-snug text-gray-900">{followUpQ}</p>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => { collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); setBubble("That's it. Keep building it."); }}
+                        className="flex-1 rounded-xl py-2 text-sm font-black text-white active:scale-95"
+                        style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)" }}
+                      >
+                        Use it
+                      </button>
+                      <button
+                        onClick={() => { setMiniCoachTip(""); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); setBubble("No worries. I am still listening."); }}
+                        className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-gray-500 active:scale-95"
+                      >
+                        Skip
+                      </button>
+                    </div>
+                  </>
+                ) : miniCoachTip ? (
+                  <div className="flex items-start gap-2">
+                    <MessageCircle size={14} className="mt-0.5 shrink-0 text-blue-500" />
+                    <p className="line-clamp-2 text-xs font-bold leading-snug text-blue-700">{miniCoachTip}</p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <MessageCircle size={14} className="shrink-0 text-blue-500" />
+                    <p className="text-xs font-bold leading-snug text-gray-500">
+                      Keep speaking. I will wait for a real pause before asking.
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Frosted glass while not actively speaking — keeps the panel calm
-                  and only "reveals" the captions when you're talking. */}
-              {!speakingActive && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-2xl"
-                  style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", background: "rgba(255,255,255,0.72)" }}>
-                  <p className="px-6 text-center text-sm font-bold text-gray-400">
-                    {transcript ? "Keep going — I'm following your story" : "Speak when you're ready"}
-                  </p>
+              <div className="practice-transcript-shell relative z-[1] mx-auto mt-3 w-full max-w-[318px]">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  <MessageCircle size={11} />Transcript reel
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full"
+                    style={{ background: speakingActive ? "#7ED957" : captionStatus === "listening" ? "#58A9FF" : "#D1D5DB" }} />
                 </div>
-              )}
-            </div>
+                <div ref={transcriptScrollRef} className="practice-transcript-reel">
+                  {(() => {
+                    if (!transcript && !interimTranscript) {
+                      return (
+                        <p className="text-[15px] italic text-gray-300">
+                          {captionStatus === "unsupported"
+                            ? "Live captions need Chrome or Edge..."
+                            : captionStatus === "error"
+                            ? "Live captions paused..."
+                            : "Your words will appear here..."}
+                        </p>
+                      );
+                    }
+                    // Teleprompter: previous lines above (dimmed), current line
+                    // locked in the middle (bold/highlighted), interim below.
+                    const lines = recentLines(transcript, 3);
+                    const current = lines[lines.length - 1] || "";
+                    const prev = lines.slice(0, -1);
+                    return (
+                      <>
+                        {prev.map((ln, i) => (
+                          <p key={`prev-${i}`} className="truncate text-[14px] font-semibold leading-relaxed text-gray-300">{ln}</p>
+                        ))}
+                        {current && (
+                          <p className="text-[18px] font-black leading-relaxed text-gray-900">
+                            {applyHighlights(current, highlightWords).map((p, i) =>
+                              p.hl ? (
+                                <mark key={i} className="phrase-highlight rounded px-0.5"
+                                  style={{ background: "rgba(88,169,255,0.2)", color: "#2563EB" }}>{p.str}</mark>
+                              ) : <span key={i}>{p.str}</span>
+                            )}
+                          </p>
+                        )}
+                        {interimTranscript && (
+                          <p className="truncate text-[14px] font-bold leading-relaxed text-blue-500">{interimTranscript}</p>
+                        )}
+                        <span ref={transcriptEndRef} />
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </>
           ) : (
             <div className="relative z-[1] mt-auto flex flex-col items-center gap-3 pt-8">
               <button onClick={startSession}
