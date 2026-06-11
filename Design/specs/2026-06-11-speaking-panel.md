@@ -24,3 +24,9 @@
 
 ## 验证测试
 tsc + build；手动 `#/practice`（Chrome/Edge+麦克风）：连续说→字幕固定 5 行、当前句锁中间、旧句上滚不撑高；停 3s→**立刻**弹出基于刚说内容的问题（不再等 1-3s）；版面只剩 猫(居中)+字幕+一张反馈卡，不杂。
+
+## v2 微调（2026-06-11 体验反馈）
+- 字幕**改回连续记录**（之前按句断行不连贯）：渲染全量 transcript（已说=灰、正在说=黑），`.practice-transcript-reel` 改 `overflow-y:auto` + 上下 padding 2.75rem 使**最新一行自动居中**，旧文上滚、上下渐隐；高度 8.5→7rem 略缩。
+- 猫旁**两层状态合并为一层**（dot + 一行 coach 文案；删冗余 label/soft/tiny）。
+- 停顿阈值 3000 → **2500ms**（再快一点）。
+- 新增**首次使用 Navigator**：`PracticeOnboarding`（4 步解释 KTV/猫/字幕/开始，Skip/Next，`localStorage speakspark.practiceOnboarded` 只出一次）。

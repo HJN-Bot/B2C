@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Clock, MessageCircle, Sparkles, Star, StopCircle, Zap } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
+import PracticeOnboarding, { hasOnboardedPractice } from "@/components/PracticeOnboarding";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { getPracticeMode } from "@/lib/practice-mode";
 
@@ -14,7 +15,7 @@ const TARGET_SAMPLE_RATE     = 16000;
 const BUFFER_SIZE            = 1024;
 const MIN_PHRASE_SECONDS     = 0.9;
 const MAX_PHRASE_SECONDS     = 3.0;
-const BOTTLENECK_SILENCE_MS  = 3000;
+const BOTTLENECK_SILENCE_MS  = 2500;
 const PASSIVE_HIGHLIGHT_COOLDOWN_MS = 2600;
 const MAX_SESSION_HIGHLIGHT_WORDS = 8;
 
@@ -457,26 +458,15 @@ function AICharacter({
         </div>
       </div>
       <div className="practice-bubble-stack">
-        <div className="flex items-center gap-1.5">
+        {/* One status line only: a live dot + the coach's current line. */}
+        <div className="flex items-center justify-center gap-1.5">
           <span
-            className="h-2 w-2 rounded-full"
+            className="h-2 w-2 shrink-0 rounded-full"
             style={{ background: accent[mood], boxShadow: `0 0 0 5px ${accent[mood]}22` }}
           />
-          <span className="text-[10px] font-black uppercase tracking-widest text-blue-500">
-            AI Coaching is listening
+          <span className="practice-listening-bubble-main" style={{ opacity: bubble ? 1 : 0.7 }}>
+            {bubble || statusLine}
           </span>
-        </div>
-        <div
-          className="practice-listening-bubble practice-listening-bubble-main"
-          style={{ opacity: bubble ? 1 : 0.65 }}
-        >
-          {bubble || "I am here with you."}
-        </div>
-        <div className="practice-listening-bubble practice-listening-bubble-soft">
-          {statusLine}
-        </div>
-        <div className="practice-listening-bubble practice-listening-bubble-tiny">
-          {secondaryLine}
         </div>
       </div>
     </div>
@@ -554,6 +544,7 @@ export default function PracticeRoom() {
   const [transcript, setTranscript]         = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [speakingActive, setSpeakingActive] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasOnboardedPractice());
   const speakingActiveRef = useRef(false);
   const [highlightWords, setHighlightWords] = useState<string[]>([]);
   const [phraseSparks, setPhraseSparks]     = useState<PhraseSpark[]>([]);
@@ -1319,6 +1310,8 @@ export default function PracticeRoom() {
   return (
     <div className="min-h-dvh flex flex-col bg-gray-50 select-none relative overflow-hidden">
 
+      {showOnboarding && <PracticeOnboarding onDone={() => setShowOnboarding(false)} />}
+
       {/* Highlight flash */}
       {flashes.map((f) => (
         <div key={f.id} className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
@@ -1549,45 +1542,31 @@ export default function PracticeRoom() {
                     style={{ background: speakingActive ? "#7ED957" : captionStatus === "listening" ? "#58A9FF" : "#D1D5DB" }} />
                 </div>
                 <div ref={transcriptScrollRef} className="practice-transcript-reel">
-                  {(() => {
-                    if (!transcript && !interimTranscript) {
-                      return (
-                        <p className="text-[15px] italic text-gray-300">
-                          {captionStatus === "unsupported"
-                            ? "Live captions need Chrome or Edge..."
-                            : captionStatus === "error"
-                            ? "Live captions paused..."
-                            : "Your words will appear here..."}
-                        </p>
-                      );
-                    }
-                    // Teleprompter: previous lines above (dimmed), current line
-                    // locked in the middle (bold/highlighted), interim below.
-                    const lines = recentLines(transcript, 3);
-                    const current = lines[lines.length - 1] || "";
-                    const prev = lines.slice(0, -1);
-                    return (
-                      <>
-                        {prev.map((ln, i) => (
-                          <p key={`prev-${i}`} className="truncate text-[14px] font-semibold leading-relaxed text-gray-300">{ln}</p>
-                        ))}
-                        {current && (
-                          <p className="text-[18px] font-black leading-relaxed text-gray-900">
-                            {applyHighlights(current, highlightWords).map((p, i) =>
-                              p.hl ? (
-                                <mark key={i} className="phrase-highlight rounded px-0.5"
-                                  style={{ background: "rgba(88,169,255,0.2)", color: "#2563EB" }}>{p.str}</mark>
-                              ) : <span key={i}>{p.str}</span>
-                            )}
-                          </p>
-                        )}
-                        {interimTranscript && (
-                          <p className="truncate text-[14px] font-bold leading-relaxed text-blue-500">{interimTranscript}</p>
-                        )}
-                        <span ref={transcriptEndRef} />
-                      </>
-                    );
-                  })()}
+                  {transcript || interimTranscript ? (
+                    // Continuous record: committed words dimmed, the words you're
+                    // saying right now bold/dark. CSS centering + auto-scroll keep
+                    // the current line locked in the middle; older text scrolls up.
+                    <p className="text-[16px] leading-relaxed">
+                      {applyHighlights(transcript, highlightWords).map((p, i) =>
+                        p.hl ? (
+                          <mark key={i} className="phrase-highlight rounded px-0.5 font-bold"
+                            style={{ background: "rgba(88,169,255,0.2)", color: "#2563EB" }}>{p.str}</mark>
+                        ) : <span key={i} className="font-semibold text-gray-400">{p.str}</span>
+                      )}
+                      {interimTranscript && (
+                        <span className="font-black text-gray-900">{transcript ? " " : ""}{interimTranscript}</span>
+                      )}
+                      <span ref={transcriptEndRef} />
+                    </p>
+                  ) : (
+                    <p className="text-[15px] italic text-gray-300">
+                      {captionStatus === "unsupported"
+                        ? "Live captions need Chrome or Edge..."
+                        : captionStatus === "error"
+                        ? "Live captions paused..."
+                        : "Your words will appear here..."}
+                    </p>
+                  )}
                 </div>
               </div>
             </>
