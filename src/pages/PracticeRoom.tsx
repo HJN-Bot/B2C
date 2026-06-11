@@ -9,7 +9,7 @@ import { getPracticeMode } from "@/lib/practice-mode";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MODEL_NAME             = "gemini-2.5-flash";
-const ENERGY_THRESHOLD       = 0.003;
+const ENERGY_THRESHOLD       = 0.006;
 const SILENCE_DURATION_MSEC  = 650;
 const TARGET_SAMPLE_RATE     = 16000;
 const BUFFER_SIZE            = 1024;
@@ -398,24 +398,8 @@ function recentLines(transcript: string, n = 3): string[] {
 
 // ─── AI Character ─────────────────────────────────────────────────────────────
 
-function AICharacter({
-  mood,
-  bubble,
-  statusLine,
-  secondaryLine,
-}: {
-  mood: CharacterMood;
-  bubble: string | null;
-  statusLine: string;
-  secondaryLine: string;
-}) {
-  const moodLabel: Record<CharacterMood, string> = {
-    idle: "Ready",
-    listening: "Listening",
-    excited: "Great line",
-    thinking: "Thinking",
-    coaching: "Hint ready",
-  };
+// Just the cat. Its status / coach message lives in the fixed slot below it.
+function AICharacter({ mood }: { mood: CharacterMood }) {
   const accent: Record<CharacterMood, string> = {
     idle: "#58A9FF",
     listening: "#7ED957",
@@ -439,35 +423,21 @@ function AICharacter({
   const currentSpriteMood = spriteMood[mood];
 
   return (
-    <div className="practice-coach-strip">
-      <div className="practice-cat-stage">
-        <div
-          className={`cat-motion-coach cat-motion-coach-${currentSpriteMood}`}
-          aria-label={`Cat coach is ${moodLabel[mood].toLowerCase()}`}
-          style={{
-            ["--buddy-accent" as string]: accent[mood],
-            ["--cat-motion-sheet" as string]: motionSheet[currentSpriteMood],
-          }}
-        >
-          <span className="cat-motion-glow" />
-          <span className="cat-motion-spark cat-motion-spark-one" />
-          <span className="cat-motion-spark cat-motion-spark-two" />
-          <span className="cat-motion-clip">
-            <span className="cat-motion-frame" />
-          </span>
-        </div>
-      </div>
-      <div className="practice-bubble-stack">
-        {/* One status line only: a live dot + the coach's current line. */}
-        <div className="flex items-center justify-center gap-1.5">
-          <span
-            className="h-2 w-2 shrink-0 rounded-full"
-            style={{ background: accent[mood], boxShadow: `0 0 0 5px ${accent[mood]}22` }}
-          />
-          <span className="practice-listening-bubble-main" style={{ opacity: bubble ? 1 : 0.7 }}>
-            {bubble || statusLine}
-          </span>
-        </div>
+    <div className="practice-cat-stage">
+      <div
+        className={`cat-motion-coach cat-motion-coach-${currentSpriteMood}`}
+        aria-label={`Cat coach: ${mood}`}
+        style={{
+          ["--buddy-accent" as string]: accent[mood],
+          ["--cat-motion-sheet" as string]: motionSheet[currentSpriteMood],
+        }}
+      >
+        <span className="cat-motion-glow" />
+        <span className="cat-motion-spark cat-motion-spark-one" />
+        <span className="cat-motion-spark cat-motion-spark-two" />
+        <span className="cat-motion-clip">
+          <span className="cat-motion-frame" />
+        </span>
       </div>
     </div>
   );
@@ -1417,7 +1387,7 @@ export default function PracticeRoom() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pb-28 sm:px-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-24 sm:px-4">
         {/* ── AI listening panel: coach, prompt, and transcript stay in stable layers ── */}
         <section className="practice-room-panel relative flex min-h-[520px] flex-col overflow-hidden rounded-[1.5rem] border border-blue-100 bg-white/78 p-4 shadow-sm">
           <div className="pointer-events-none absolute inset-0 opacity-70"
@@ -1440,13 +1410,8 @@ export default function PracticeRoom() {
             </div>
           ))}
 
-          <div className="relative z-[1] mb-3 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-widest text-blue-500">Coach is following your story</p>
-              <p className="text-xs font-semibold text-gray-400">
-                {started ? (micDenied ? "Demo mode" : "I'm with your idea — keep going") : "Ready when you are"}
-              </p>
-            </div>
+          {/* Just a slim state chip — the coach status text lives in the slot below the cat. */}
+          <div className="relative z-[1] mb-2 flex justify-end">
             <span
               className="rounded-full px-2.5 py-1 text-[11px] font-black"
               style={{
@@ -1478,22 +1443,16 @@ export default function PracticeRoom() {
           )}
 
           <div ref={coachRef} className="relative z-[1] flex justify-center py-1">
-            <AICharacter
-              mood={started ? mood : "idle"}
-              bubble={started ? bubble : apiStatus === "loading" ? "Warming up AI..." : "Tap start and I will follow your idea."}
-              statusLine={coachStatusLine}
-              secondaryLine={coachSecondaryLine}
-            />
+            <AICharacter mood={started ? mood : "idle"} />
           </div>
 
           {started ? (
             <>
-              <div
-                className="practice-prompt-card relative z-[1] mt-3"
-                style={{ animation: showBottleneck ? "slide-up 0.35s cubic-bezier(0.16,1,0.3,1) forwards" : "float-in 0.25s ease-out forwards" }}
-              >
+              {/* Fixed-size coach slot: shows the status line normally; the same
+                  slot fills with the question card on a pause — no layout shift. */}
+              <div className="practice-coach-slot relative z-[1] mt-1">
                 {showBottleneck && bottleneckPhase === "thinking" ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     <span className="text-sm font-black text-gray-700">{thinkingAck || "let me think..."}</span>
                     <span className="flex gap-0.5">
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400" style={{ animationDelay: "0ms" }} />
@@ -1502,7 +1461,7 @@ export default function PracticeRoom() {
                     </span>
                   </div>
                 ) : showBottleneck ? (
-                  <>
+                  <div className="practice-prompt-card" style={{ animation: "slide-up 0.3s cubic-bezier(0.16,1,0.3,1) forwards" }}>
                     <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-blue-500">
                       {followUpKind === "nudge" ? "Try this next" : "Coach asks"}
                     </p>
@@ -1512,36 +1471,30 @@ export default function PracticeRoom() {
                     <p className="text-[15px] font-black leading-snug text-gray-900">{followUpQ}</p>
                     <div className="mt-3 flex gap-2">
                       <button
-                        onClick={() => { collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); setBubble("That's it. Keep building it."); }}
+                        onClick={() => { collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); pauseHandledRef.current = false; setMood("listening"); }}
                         className="flex-1 rounded-xl py-2 text-sm font-black text-white active:scale-95"
                         style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)" }}
                       >
                         Use it
                       </button>
                       <button
-                        onClick={() => { setMiniCoachTip(""); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); setBubble("No worries. I am still listening."); }}
+                        onClick={() => { showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); pauseHandledRef.current = false; setMood("listening"); }}
                         className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-gray-500 active:scale-95"
                       >
                         Skip
                       </button>
                     </div>
-                  </>
-                ) : miniCoachTip ? (
-                  <div className="flex items-start gap-2">
-                    <MessageCircle size={14} className="mt-0.5 shrink-0 text-blue-500" />
-                    <p className="line-clamp-2 text-xs font-bold leading-snug text-blue-700">{miniCoachTip}</p>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <MessageCircle size={14} className="shrink-0 text-blue-500" />
-                    <p className="text-xs font-bold leading-snug text-gray-500">
-                      Keep speaking. I will wait for a real pause before asking.
-                    </p>
+                  // Idle: the single coach status line (replaces the old cat bubble).
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full" style={{ background: speakingActive ? "#7ED957" : "#94A3B8" }} />
+                    <span className="text-sm font-semibold text-gray-500">{coachStatusLine}</span>
                   </div>
                 )}
               </div>
 
-              <div className="practice-transcript-shell relative z-[1] mx-auto mt-3 flex w-full max-w-[330px] min-h-0 flex-1 flex-col justify-center">
+              <div className="practice-transcript-shell relative z-[1] mx-auto mt-2 flex w-full max-w-[330px] min-h-0 flex-1 flex-col justify-center">
                 <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400">
                   <MessageCircle size={11} />Transcript
                   <span className="ml-auto h-1.5 w-1.5 rounded-full"
@@ -1611,9 +1564,9 @@ export default function PracticeRoom() {
 
         {started && (
           <button onClick={triggerHighlight}
-            className="w-full rounded-2xl border py-3.5 text-sm font-bold transition-transform active:scale-95"
+            className="w-full rounded-2xl border py-2.5 text-sm font-bold transition-transform active:scale-95"
             style={{ background: "rgba(255,201,71,0.1)", borderColor: "rgba(255,201,71,0.5)", color: "#D97706" }}>
-            <Zap size={16} className="mr-2 inline" />Save this moment
+            <Zap size={15} className="mr-2 inline" />Save this moment
           </button>
         )}
       </div>

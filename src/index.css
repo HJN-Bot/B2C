@@ -116,6 +116,15 @@
   .practice-listening-bubble-tiny { display: none; }
   .practice-listening-bubble:empty { display: none; }
 
+  /* Fixed slot under the cat: status line and the pause card share this space,
+     so swapping between them never shifts the transcript below. */
+  .practice-coach-slot {
+    min-height: 118px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
   /* One compact feedback card (merges old bubble / pause card / mini tip). */
   .practice-prompt-card {
     width: 100%;
