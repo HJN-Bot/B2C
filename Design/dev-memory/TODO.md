@@ -63,6 +63,7 @@
 - [x] 🔴 **G 拆 4 块**（R7）：① 鼓励 → ② 进步(分数+什么涨了) → ③ Coach → ④ 再试。`✅🧪`
 - [x] 🔴 **按指标建议 + 高级句式/词汇**：prompt 升级——make_stronger 对准最低指标，say_this 给高级模型句、reuse_words 给升级词。`✅🧪`
 - [x] 🔴 **引用原对话**：#4 的 summary + "You said: …" 引用保留。`✅🧪`
+- [x] 🔴 **Takeaway 重构为 3 大块（长页）**：① Your run（鼓励+讲了什么+做得好+分值）② Level up（**Amplify**+Change+Next Run Plan）③ Coach（Chatbox+Go again）；KTV 图标 emoji→lucide 上色。`✅🧪` [spec](../specs/2026-06-11-takeaway-3blocks.md) · [审阅](./REVIEW-2026-06-14.md)
 - [ ] ⏸ P4-3 Next Run Plan 置顶 hero（仍暂缓）。
 - [ ] 🟡 更"懂我过去说了什么"——可在 prompt 里带入历史 sessions，下一轮做。
 

@@ -20,13 +20,16 @@
 - 早前：4 块结构、进步分值、按最弱指标建议、保存到 Library、原文引用。
 - 本次：加了 `amplify`（放大）字段到 AI 结构 —— **3 大块渲染重排尚未完成**（见下）。
 
+## 📌 2026-06-14 — Takeaway 3 大块渲染落地
+- ✅🧪 **Takeaway 3 大块渲染重排完成**（`src/pages/TakeawayPage.tsx`，tsc+build 通过，未浏览器验证）：① Your run（Hero+鼓励+talked-about+What you did well+进步分值）② Level up（**Amplify 新上墙**+Change+Next Run Plan）③ Coach（Chatbox+Go again）。带数字徽标的大分区标题、长页下滑。审阅清单：[REVIEW-2026-06-14.md](./REVIEW-2026-06-14.md)。
+- ✅🧪 顺手 🟢：TakeawayPage KTV 图标 emoji→lucide 并上色，与练习页统一。
+
 ### 将来接着改（下次）
-- 🔴 **Takeaway 3 大块渲染重排**：① 总结与鼓励（含做得好+分值）② 核心增强（放大 Amplify + 改掉 Change + 下一次怎么说）③ Coach（Chatbox+Try Again）；长页可下滑。schema 已就绪，只差渲染。Spec：`Design/specs/2026-06-11-takeaway-3blocks.md`。
 - 🟡 Practice Navigator 覆盖 **Script + 反馈小卡**（它们开练后才出现，需"开始后再补一个高亮气泡"）。
 - 🟡 Home 首页 Navigator 引导。
-- 🟡 暂停阈值/ENERGY_THRESHOLD 按真机手感微调。
-- 🟢 TakeawayPage 的 KTV 图标统一成 lucide（目前仍 emoji）；清理无用 CSS/函数（recentLines、practice-coach-strip 等）。
-- 🟢 后台 Supabase 落库（替 localStorage）、PracticeRoom 拆组件。
+- 🟡 暂停阈值/ENERGY_THRESHOLD 按真机手感微调（需真机，本机无法实测麦克风）。
+- 🟢 清理无用 CSS/函数（PracticeRoom 的 recentLines/resolvePauseReply/fetchFollowUpReply、index.css 的 practice-coach-strip/bubble-stack/listening-bubble*）。
+- 🟢 后台 Supabase 落库（替 localStorage，需用户侧部署）、PracticeRoom 拆组件。
 
 ---
 

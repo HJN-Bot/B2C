@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Blocks, BookOpen, Brain, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, TrendingUp, Waves, Wrench, type LucideIcon } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { getPracticeMode } from "@/lib/practice-mode";
@@ -49,11 +49,11 @@ interface CoachMessage {
   text: string;
 }
 
-const KTV_META: Record<KTVMetric, { label: string; icon: string }> = {
-  flow: { label: "Flow", icon: "🌊" },
-  words: { label: "Words", icon: "📚" },
-  sentences: { label: "Sentences", icon: "🧩" },
-  story: { label: "Story", icon: "🧠" },
+const KTV_META: Record<KTVMetric, { label: string; Icon: LucideIcon; color: string }> = {
+  flow: { label: "Flow", Icon: Waves, color: "#58A9FF" },
+  words: { label: "Words", Icon: BookOpen, color: "#16A34A" },
+  sentences: { label: "Sentences", Icon: Blocks, color: "#D97706" },
+  story: { label: "Story", Icon: Brain, color: "#7C3AED" },
 };
 
 
@@ -493,6 +493,12 @@ export default function TakeawayPage() {
   return (
     <div className="min-h-dvh bg-gray-50">
       <div className="flex min-h-dvh flex-col gap-4 overflow-y-auto px-4 pb-28 pt-6">
+        {/* ═══════════ BLOCK ① Summary & encouragement ═══════════ */}
+        <div className="flex items-center gap-2 px-1">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-xs font-black text-white">1</span>
+          <h2 className="text-lg font-black text-gray-900">Your run</h2>
+        </div>
+
         <section className="rounded-[1.5rem] border border-amber-100 bg-white p-5 shadow-sm">
           <p className="text-xs font-black uppercase tracking-widest text-amber-500">Practice complete</p>
           <div className="mt-2 flex items-end justify-between gap-3">
@@ -506,6 +512,11 @@ export default function TakeawayPage() {
             </div>
             <div className="text-5xl">🎉</div>
           </div>
+          {takeaway?.encouragement && (
+            <p className="mt-3 rounded-2xl bg-amber-50/70 px-3 py-2.5 text-sm font-bold leading-relaxed text-amber-700">
+              {takeaway.encouragement}
+            </p>
+          )}
         </section>
 
         {/* P5-4: coach-mode boundary shown as a persistent trust label */}
@@ -529,11 +540,30 @@ export default function TakeawayPage() {
           </section>
         )}
 
-        {/* ② Your progress this run — scores + what moved */}
+        {/* What you did well — credit first, with the words they actually said */}
+        {takeaway && takeaway.what_worked.length > 0 && (
+          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-widest text-blue-500">What you did well</p>
+            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+              {takeaway.what_worked.map((item) => (
+                <div key={item.point}>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
+                  {item.quote && (
+                    <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                      You said: “{item.quote}”
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Your progress this run — scores + what moved */}
         {takeaway && (
           <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-widest text-gray-400">② Your progress this run</p>
+              <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your progress this run</p>
               <TrendingUp size={15} className="text-green-500" />
             </div>
             <div className="space-y-2.5">
@@ -541,14 +571,15 @@ export default function TakeawayPage() {
                 const level = trendLevel(ktvScore[metric]);
                 const tag = level === "strong" ? "Strong" : level === "growing" ? "Growing" : "Just starting";
                 const tagStyle = level === "strong" ? "bg-green-50 text-green-600" : level === "growing" ? "bg-blue-50 text-blue-600" : "bg-gray-50 text-gray-400";
+                const { Icon, color } = KTV_META[metric];
                 return (
                   <div key={metric} className="flex items-center gap-2">
-                    <span className="w-5 shrink-0 text-center text-sm">{KTV_META[metric].icon}</span>
+                    <Icon size={15} className="w-5 shrink-0" style={{ color }} />
                     <span className="w-16 shrink-0 text-xs font-bold text-gray-500">{KTV_META[metric].label}</span>
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-                      <div className="h-full rounded-full bg-green-400" style={{ width: `${ktvScore[metric]}%` }} />
+                      <div className="h-full rounded-full" style={{ width: `${ktvScore[metric]}%`, backgroundColor: color }} />
                     </div>
-                    <span className="w-7 text-right font-mono text-xs font-black text-gray-500">{Math.round(ktvScore[metric])}</span>
+                    <span className="w-7 text-right font-mono text-xs font-black" style={{ color }}>{Math.round(ktvScore[metric])}</span>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${tagStyle}`}>{tag}</span>
                   </div>
                 );
@@ -569,11 +600,60 @@ export default function TakeawayPage() {
           </section>
         )}
 
-        <p className="px-1 pt-1 text-xs font-black uppercase tracking-widest text-gray-300">③ Coach · what to try next</p>
+        {/* ═══════════ BLOCK ② Level up — amplify + change + plan ═══════════ */}
+        <div className="flex items-center gap-2 px-1 pt-3">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-xs font-black text-white">2</span>
+          <h2 className="text-lg font-black text-gray-900">Level up</h2>
+        </div>
 
+        {/* Amplify — a strength worth doing MORE of */}
+        {takeaway && takeaway.amplify.length > 0 && (
+          <section className="rounded-[1.25rem] border border-green-100 bg-green-50/40 p-4 shadow-sm">
+            <div className="flex items-center gap-2">
+              <ArrowUpRight size={16} className="text-green-600" />
+              <p className="text-xs font-black uppercase tracking-widest text-green-600">Amplify · do more of this</p>
+            </div>
+            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+              {takeaway.amplify.map((item) => (
+                <div key={item.point}>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
+                  {item.quote && (
+                    <p className="mt-1 rounded-lg border-l-2 border-green-200 bg-green-50/70 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                      You said: “{item.quote}”
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Change — one thing to fix */}
+        {takeaway && takeaway.make_stronger.length > 0 && (
+          <section className="rounded-[1.25rem] border border-orange-100 bg-orange-50/40 p-4 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Wrench size={16} className="text-orange-500" />
+              <p className="text-xs font-black uppercase tracking-widest text-orange-500">Change · one thing to fix</p>
+            </div>
+            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+              {takeaway.make_stronger.map((item) => (
+                <div key={item.point}>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
+                  {item.quote && (
+                    <p className="mt-1 rounded-lg border-l-2 border-orange-200 bg-orange-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                      You said: “{item.quote}”
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* How to say it next time */}
         <section className="rounded-[1.25rem] border border-green-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-green-500">Next Run Plan</p>
+            <p className="text-xs font-black uppercase tracking-widest text-green-500">Next time, say it like this</p>
             <span className="rounded-full bg-green-50 px-2 py-1 text-[10px] font-black text-green-600">
               {takeawayStatus === "thinking" ? "Thinking…" : takeawayStatus === "idle" ? "Practice first" : "From this run"}
             </span>
@@ -634,30 +714,11 @@ export default function TakeawayPage() {
           )}
         </section>
 
-        {takeaway && (
-          <section className="grid grid-cols-1 gap-3">
-            {([
-              ["What worked", takeaway.what_worked, "text-blue-500", "border-blue-200 bg-blue-50/60"],
-              ["Make stronger", takeaway.make_stronger, "text-orange-500", "border-orange-200 bg-orange-50/60"],
-            ] as const).map(([title, items, color, quoteStyle]) => (
-              <div key={title} className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-                <p className={`text-xs font-black uppercase tracking-widest ${color}`}>{title}</p>
-                <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  {items.map((item) => (
-                    <div key={item.point}>
-                      <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
-                      {item.quote && (
-                        <p className={`mt-1 rounded-lg border-l-2 ${quoteStyle} px-2 py-1 text-xs font-semibold italic text-gray-500`}>
-                          You said: “{item.quote}”
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
+        {/* ═══════════ BLOCK ③ Coach — chatbox + go again ═══════════ */}
+        <div className="flex items-center gap-2 px-1 pt-3">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs font-black text-white">3</span>
+          <h2 className="text-lg font-black text-gray-900">Coach</h2>
+        </div>
 
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
@@ -720,8 +781,6 @@ export default function TakeawayPage() {
             </button>
           </form>
         </section>
-
-        <p className="px-1 pt-1 text-xs font-black uppercase tracking-widest text-gray-300">④ Go again</p>
 
         <div className="flex gap-3 pt-1">
           <button onClick={() => navigate("/practice")} className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 text-base font-black text-white shadow-md active:scale-95" style={{ background: "linear-gradient(135deg, #58A9FF, #7ED957)" }}>

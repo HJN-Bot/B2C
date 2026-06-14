@@ -1,6 +1,6 @@
 # Spec — Takeaway 重构为 3 大块（长页）
 
-> 2026-06-11 · 对应 TODO：P3·Takeaway 重构 · 文件：`src/pages/TakeawayPage.tsx` · 状态：实现中
+> 2026-06-11 · 对应 TODO：P3·Takeaway 重构 · 文件：`src/pages/TakeawayPage.tsx` · 状态：✅ 已实现 🧪 待浏览器验证（2026-06-14）
 > 经确认：长页可下滑；核心增强分「放大 / 改掉」两桶。
 
 ## 修改建议
