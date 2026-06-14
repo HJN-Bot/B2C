@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SpeakSpark 迭代报告 · 对照设计走查逐条解答 · 2026-06-14</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f7fb;
+    --paper:#ffffff;
+    --ink:#16202f;
+    --muted:#56657f;
+    --faint:#8493ac;
+    --line:#e3e9f2;
+    --brand:#2f86e6;
+    --brand-soft:#58a9ff;
+    --green:#159a4e;
+    --green-bg:#e8f7ee;
+    --amber:#c9750a;
+    --amber-bg:#fdf2e2;
+    --orange:#d9622f;
+    --blocked:#8a5cf0;
+    --blocked-bg:#efe9fd;
+    --rule:#eef2f8;
+    --shadow:0 1px 2px rgba(20,40,80,.05), 0 12px 32px -18px rgba(20,40,80,.22);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Public Sans",system-ui,sans-serif;
+    font-size:15.5px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px 96px}
+  h1,h2,h3{font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-weight:800;letter-spacing:-.01em;line-height:1.1;margin:0}
+
+  /* ── Masthead ── */
+  .mast{
+    margin:0 -22px 40px;padding:54px 22px 40px;
+    background:
+      radial-gradient(120% 140% at 88% -10%, rgba(126,217,87,.20), transparent 60%),
+      linear-gradient(135deg,#2f86e6,#58a9ff 52%,#7ed957);
+    color:#fff;
+  }
+  .mast .inner{max-width:940px;margin:0 auto}
+  .kicker{font-size:12.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;opacity:.9}
+  .mast h1{font-size:clamp(30px,5vw,46px);margin:.3em 0 .25em;max-width:18ch}
+  .mast p{margin:0;max-width:60ch;font-size:16px;color:rgba(255,255,255,.92)}
+  .mast .meta{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;font-weight:600;color:rgba(255,255,255,.9)}
+  .mast .meta b{color:#fff}
+
+  /* ── Legend ── */
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;
+    padding:5px 11px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .chip .dot{width:8px;height:8px;border-radius:50%}
+  .chip.s-ship{background:var(--green-bg);color:var(--green);border-color:#bfe7cf}
+  .chip.s-ship .dot{background:var(--green)}
+  .chip.s-part{background:var(--amber-bg);color:var(--amber);border-color:#f3d9ac}
+  .chip.s-part .dot{background:var(--amber)}
+  .chip.s-block{background:var(--blocked-bg);color:var(--blocked);border-color:#d8caf8}
+  .chip.s-block .dot{background:var(--blocked)}
+
+  /* ── Backend notice ── */
+  .notice{
+    border:1px solid #d8caf8;background:linear-gradient(180deg,#f6f1fe,#efe9fd);
+    border-radius:16px;padding:18px 20px;margin:0 0 40px;box-shadow:var(--shadow)}
+  .notice h3{font-size:16px;color:#5a37c0;display:flex;align-items:center;gap:9px}
+  .notice p{margin:.55em 0 0;font-size:14px;color:#4a3a73}
+  .notice code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:#fff;border:1px solid #e0d6f7;border-radius:6px;padding:1px 6px;color:#5a37c0}
+
+  /* ── Section ── */
+  section{margin:0 0 18px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin:48px 0 6px;padding-bottom:14px;border-bottom:2px solid var(--ink)}
+  .sec-head .n{font-family:"Bricolage Grotesque";font-weight:800;font-size:15px;color:var(--brand)}
+  .sec-head h2{font-size:clamp(22px,3.4vw,30px)}
+  .sec-sub{color:var(--muted);font-size:14px;margin:0 0 26px}
+
+  /* ── Item ── */
+  .item{background:var(--paper);border:1px solid var(--line);border-radius:16px;
+    padding:20px 22px;margin:0 0 16px;box-shadow:var(--shadow)}
+  .item-top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .tag{flex:0 0 auto;font-family:"Bricolage Grotesque";font-weight:800;font-size:12px;
+    color:var(--brand);background:#eaf3fe;border:1px solid #cfe4fc;border-radius:8px;padding:3px 9px;margin-top:2px}
+  .item-top h3{font-size:17px;flex:1 1 240px;min-width:0}
+  .item-top .chip{margin-top:1px}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:16px;border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+  .ba > div{padding:13px 15px}
+  .ba .was{background:#fbfcfe;border-right:1px solid var(--rule)}
+  .ba .now{background:#f3faf5}
+  .ba .lbl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin:0 0 6px}
+  .ba .was .lbl{color:var(--faint)}
+  .ba .now .lbl{color:var(--green)}
+  .ba p{margin:0;font-size:14px;color:var(--ink)}
+  .ba .was p{color:var(--muted)}
+  .quote{margin:8px 0 0;padding:7px 11px;border-left:3px solid var(--brand-soft);background:#eef5ff;border-radius:0 8px 8px 0;font-size:12.5px;color:#3f5878;font-style:italic}
+
+  .refs{margin:12px 0 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .refs .rl{font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.08em;text-transform:uppercase;margin-right:2px}
+  .commit{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:#f1f4f9;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--muted)}
+
+  /* ── Screenshot slot ── */
+  .shot{margin:14px 0 0;border:2px dashed #c5d3e6;border-radius:12px;background:
+    repeating-linear-gradient(135deg,#fafcff,#fafcff 14px,#f3f7fc 14px,#f3f7fc 28px);
+    padding:18px;text-align:center}
+  .shot .s-id{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;
+    color:#fff;background:var(--brand);border-radius:6px;padding:2px 8px;letter-spacing:.04em}
+  .shot .s-what{margin:9px 0 2px;font-size:13.5px;font-weight:700;color:var(--ink)}
+  .shot .s-where{margin:0;font-size:12.5px;color:var(--muted)}
+  .shot .s-where code{font-family:ui-monospace,Menlo,monospace;background:#fff;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:11.5px}
+
+  /* ── Shot list table ── */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{background:#f1f5fb;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  tr:last-child td{border-bottom:0}
+  td code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--brand)}
+
+  .foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint)}
+
+  @media (max-width:680px){
+    .ba{grid-template-columns:1fr}
+    .ba .was{border-right:0;border-bottom:1px solid var(--rule)}
+  }
+  @media print{
+    body{background:#fff;font-size:11pt}
+    .wrap{max-width:none;padding:0}
+    .mast{margin:0 0 24pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .item,.notice,.shot,.ba .now,.ba .was,.chip{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .item{break-inside:avoid;box-shadow:none}
+    .sec-head{break-after:avoid}
+    .shot{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+  <header class="mast">
+    <div class="inner">
+      <div class="kicker">SpeakSpark · Iteration Report</div>
+      <h1>对照设计走查，逐条解答我们改了什么</h1>
+      <p>把 2026-05-06 外部 reviewer 的 7 页标注走查 PDF + 5 条文字反馈，一条一条对应到这一阶段的重设计与改动。每条都标了状态、对应代码提交，并留出截图位。</p>
+      <div class="meta">
+        <span>报告日期 <b>2026-06-14</b></span>
+        <span>核心立场 <b>私人练习教练，不是评分/比赛工具</b></span>
+        <span>对应原件 <b>speakspark-labelled-design-walkthrough.pdf</b></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <div class="legend">
+      <span class="chip s-ship"><span class="dot"></span>已上线（本阶段已实现，待你浏览器验证）</span>
+      <span class="chip s-part"><span class="dot"></span>部分 / 待做</span>
+      <span class="chip s-block"><span class="dot"></span>代码已就绪，受后台失效暂不可见</span>
+    </div>
+
+    <div class="notice">
+      <h3>⚠️ 一个前提：AI 后台当前失效，AI 相关效果暂时看不到真实输出</h3>
+      <p>2026-06-14 实测：Supabase 后台项目 <code>jyofoabobuwfowpctbfd</code> 已失效（<code>nslookup</code> 返回 NXDOMAIN，域名不解析），免费版长期不活动被回收。后果：前端所有 Gemini 调用在网络层失败，AI 总结 / 实时追问全程走本地兜底模板。<b>前端与函数源码均无问题</b>，凡标 <span style="color:#5a37c0;font-weight:700">紫色（受后台影响）</span> 的项都是"已写好代码、待后台恢复即生效"。恢复后这些截图位才会显示真实 AI 内容。</p>
+    </div>
+
+    <!-- ════════════ SECTION A ════════════ -->
+    <div class="sec-head"><span class="n">A</span><h2>外部 reviewer 文字反馈 #1–#5</h2></div>
+    <p class="sec-sub">来源：试用反馈原话。这五条共同指向一个原则——「说话中的界面，只放帮用户继续说下去的东西」。</p>
+
+    <div class="item">
+      <div class="item-top">
+        <span class="tag">#1</span>
+        <h3>字幕改为单行 Karaoke，End 按钮固定</h3>
+        <span class="chip s-ship"><span class="dot"></span>已上线</span>
+      </div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原问题</p><p>多行字幕信息过载、用户分心；多人噪音环境下实时转录抖动，右上角 End 按钮被挤开点不到。</p>
+          <p class="quote">"keep the transcript to one line… the 'end' button keeps getting bumped and cannot be clicked"</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>字幕改成<b>提词器式</b>：连续记录、当前句锁在中间一行、旧句上滚淡出、固定高度不再越说越长。End 按钮固定在顶栏，<b>不随字幕内容移动</b>，始终可点。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">59156f9</span><span class="commit">9995d42</span><span class="commit">9e8cb75</span></div>
+      <div class="shot"><span class="s-id">SHOT P-CAPTION</span><p class="s-what">练习页·说话中字幕区（当前句居中、旧句淡出）</p><p class="s-where">路由 <code>#/practice</code> → Start → 说几句</p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top">
+        <span class="tag">#2</span>
+        <h3>去掉音浪等冗余动效</h3>
+        <span class="chip s-ship"><span class="dot"></span>已上线</span>
+      </div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原问题</p><p>音浪（40 柱 Canvas）+ 字幕 + AI 气泡 + KTV 四指标 + 暂停卡，动态元素太多，喧宾夺主。</p>
+          <p class="quote">"consider not showing the 'voice wave'… a lot of moving elements… a bit distracting"</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>砍掉大音浪动效；猫只画猫、并排气泡删除；多处重复的 listening 文案合并，状态只在猫下方<b>一个固定槽位</b>显示，切换不跳动。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">9e8cb75</span><span class="commit">f6392c9</span><span class="commit">fc53fd2</span></div>
+      <div class="shot"><span class="s-id">SHOT P-FULL</span><p class="s-what">练习页全景（猫居中 + 字幕 + 单张状态/反馈卡，干净）</p><p class="s-where">路由 <code>#/practice</code> → Start</p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top">
+        <span class="tag">#3</span>
+        <h3>说话中显示话题提示 + 冷启动关键词</h3>
+        <span class="chip s-ship"><span class="dot"></span>已上线</span>
+      </div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原问题</p><p>开口时冷启动忘话题细节、说着说着断线，尤其科技/科学类话题对中学生本就不熟。</p>
+          <p class="quote">"showing the topic at the top… they could run into a cold start and not remembering all the details"</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>顶部常驻 <b>🎯 当前话题 / 模式</b>；冷启动给关键词小标签，<b>讲到哪个就自动变绿</b>，形成"我讲到了"的成就感。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">dee6b0f</span><span class="commit">f6392c9</span></div>
+      <div class="shot"><span class="s-id">SHOT P-TOPIC</span><p class="s-what">练习页顶部 topic 条 + 冷启动关键词（部分变绿）</p><p class="s-where">路由 <code>#/practice</code></p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top">
+        <span class="tag">#4</span>
+        <h3>结束页自上而下 + 原文引用证据</h3>
+        <span class="chip s-block"><span class="dot"></span>结构已上线 · AI 内容受后台影响</span>
+      </div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原问题</p><p>建议和用户实际说的内容脱节，看不到"因为我说了这句、所以建议那样"的因果链。</p>
+          <p class="quote">"build the report more top-down & showing some visual evidence… summarizing what the users talked about, then pull evidence from there"</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>先 <b>What you talked about</b>（讲了什么）→ 再给建议；每条 What you did well / Change 都带 <b>"You said: …"</b> 原文引用。并进一步重构为 <b>3 大块长页</b>：① 总结鼓励 ② Level up（放大/改掉/下次怎么说）③ Coach。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">fa5b2c2</span><span class="commit">838a68b</span><span class="commit">4bdaf81</span></div>
+      <div class="shot"><span class="s-id">SHOT T-BLOCK1</span><p class="s-what">Takeaway 块①（讲了什么 + 做得好带引用 + 进步分值）</p><p class="s-where">路由 <code>#/session-end</code>（先练一次）· ⚠️ 后台恢复后才是真 AI 总结</p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top">
+        <span class="tag">#5</span>
+        <h3>首页主题化口语活动</h3>
+        <span class="chip s-part"><span class="dot"></span>部分</span>
+      </div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原问题</p><p>首页是个人仪表盘，缺"我接下来该练什么"的引导。</p>
+          <p class="quote">"Themed speaking events on front page… '科普英语 practice'… '/TOEFL topics'/'Travel'/etc."</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>已加 <b>练习模式选择</b>（Free Talk / Exam Prep / Story）+ <b>今日话题 Starter</b>（Use this topic / My own）。完整的"主题活动卡片区（科普/TOEFL/旅游/日常 + 限时）"<b>仍待做</b>。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">9410ca1</span><span class="rl" style="margin-left:8px">待做</span><span class="commit" style="color:var(--amber);border-color:#f3d9ac;background:var(--amber-bg)">themed-events</span></div>
+      <div class="shot"><span class="s-id">SHOT H-HOME</span><p class="s-what">首页（模式选择 + 今日话题 Starter）</p><p class="s-where">路由 <code>#/</code></p></div>
+    </div>
+
+    <!-- ════════════ SECTION B ════════════ -->
+    <div class="sec-head"><span class="n">B</span><h2>7 页标注走查 · Page 1–7</h2></div>
+    <p class="sec-sub">来源：SpeakSpark Labelled Design Walkthrough（7 页 PDF）。逐页对应其每条标注。</p>
+
+    <div class="item">
+      <div class="item-top"><span class="tag">P1</span><h3>Cover · 核心原则与红线</h3><span class="chip s-part"><span class="dot"></span>部分</span></div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原则 / 红线</p><p>UI 不能读成评分/评判/比赛；只做 coach process（prompts / frames / vocabulary / 一个 next-run plan）；避免完整演讲、比分、排名、实时纠错、暴露 AI provider 报错。</p></div>
+        <div class="now"><p class="lbl">我们怎么落</p><p>Takeaway 常驻 <b>"practice feedback only"</b> 信任标签；说话中不弹比分式评价；AI 报错改为<b>中性诚实提示</b>（不再红色"失败"、不暴露 provider）。🟡 把该标签推广到全 app 仍待办。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">fa5b2c2</span><span class="commit">1936038</span></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top"><span class="tag">P2</span><h3>Start Screen</h3><span class="chip s-part"><span class="dot"></span>多数待做 + Navigator 已上线</span></div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原标注</p><p>① streak 制造压力 · ② "92 pts" 像分数 · ③ CTA "Start Speaking" 偏比赛。方向：首屏应是选话题 + 复用已存短语，不是挣分。</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>🟡 ①②③ <b>暂未改</b>：首页仍是 streak、仍显示 pts、CTA 仍 "Start Speaking"（建议下一步改成学习证据 + "Start Practice"）。<b>本次新增</b>：首页 Navigator 首用引导（模式 / 话题 / Start，三步，只出一次）✅。</p></div>
+      </div>
+      <div class="refs"><span class="rl">已上线</span><span class="commit">63b78d4</span><span class="rl" style="margin-left:8px">待做</span><span class="commit" style="color:var(--amber);border-color:#f3d9ac;background:var(--amber-bg)">evidence-hook / Start Practice</span></div>
+      <div class="shot"><span class="s-id">SHOT H-TOUR</span><p class="s-what">首页 Navigator 引导（高亮模式/话题/Start 之一 + 气泡）</p><p class="s-where">清 localStorage <code>speakspark.homeOnboarded</code> 后进 <code>#/</code></p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top"><span class="tag">P3</span><h3>Practice Screen</h3><span class="chip s-block"><span class="dot"></span>多数已上线 · 指标露出待定 · 实时 AI 受后台影响</span></div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原标注</p><p>① "Antonens" 模糊像分数 · ② 指标面板像实时评判（建议说话中隐藏、结束后作 private evidence）· ③ "AI is listening" 监控感 · ④ loading 阻塞练习承诺。</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>① ✅ 删掉左上模糊计数，换成 🎯 topic/mode；③ ✅ 改 <b>"Coach is following your story"</b> + 猫状态（后去重，只在猫下一处）；④ ✅ 预生成缓冲 + 多层 fallback，不被 AI 就绪阻塞；<b>停顿卡优先真 AI</b>（有缓冲秒弹，无则猫 thinking 再问，断网才本地）。② 🟡 我们目前<b>保留 KTV 露出</b>并用 Navigator 解释"它是私人信号、不是评分"——与 PDF "说话中隐藏"是个取舍，待你定。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">f6392c9</span><span class="commit">35472de</span><span class="commit">1936038</span></div>
+      <div class="shot"><span class="s-id">SHOT P-PAUSE</span><p class="s-what">练习页停顿反馈卡（Coach asks / Use it · Skip）</p><p class="s-where"><code>#/practice</code> → 说一段 → 停 ~2.5s · ⚠️ 真问题需后台恢复</p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top"><span class="tag">P4</span><h3>Takeaway Top</h3><span class="chip s-ship"><span class="dot"></span>多数已上线 · hero 置顶待定</span></div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原标注</p><p>① 奖杯像夺冠/排名 · ② stats 像成绩单 · ③ Next Run Plan 应是每次练习的 hero card · ④ 红色 AI fallback 像失败。</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>① ✅ 换成 <b>"Practice complete" + 🎉</b>，无奖杯无排名；② ✅ 先一句<b>人话 headline</b>（"You kept your idea going…"）再谈数据；④ ✅ 红色失败改为<b>中性诚实琥珀提示</b>（这次正是靠它定位到后台失效）；③ 🟡 Next Run Plan 现放在块② "Level up" 内，"置顶成 hero" 这条你之前说先放着。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">838a68b</span><span class="commit">4bdaf81</span><span class="commit">ca2982f</span></div>
+      <div class="shot"><span class="s-id">SHOT T-TOP</span><p class="s-what">Takeaway 顶部（Practice complete + headline）+ 琥珀诚实提示条</p><p class="s-where"><code>#/session-end</code></p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top"><span class="tag">P5</span><h3>Takeaway Lower</h3><span class="chip s-ship"><span class="dot"></span>已上线</span></div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原标注</p><p>① "Go deeper" 易诱导生成完整答案 · ② progress map 回到分数框架 · ③ Practice again CTA 很好（保留）· 方向：加持久 "Coach mode: practice feedback only"。</p></div>
+        <div class="now"><p class="lbl">我们怎么改</p><p>① ✅ presets 改 <b>"Ask me one question"</b> 等，明确不替你作答；② ✅ 进步改<b>文字趋势</b>（Strong / Growing / Just starting + 成长描述）而非裸分；③ ✅ Practice Again 保留；✅ coach-mode 持久标签已加。</p></div>
+      </div>
+      <div class="refs"><span class="rl">commits</span><span class="commit">fa5b2c2</span><span class="commit">9410ca1</span><span class="commit">4bdaf81</span></div>
+      <div class="shot"><span class="s-id">SHOT T-COACH</span><p class="s-what">Takeaway 块③ Coach（chatbox + presets "Ask me one question"）</p><p class="s-where"><code>#/session-end</code> 下滑到底</p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top"><span class="tag">P6</span><h3>Growth Page Top（My 页）</h3><span class="chip s-part"><span class="dot"></span>改名待做</span></div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原标注</p><p>① growth map 框架对（保留）· ② Trying Point 概念很好（推广全 app）· ③ "Ability Portrait" 像计分卡 → 改 "Practice growth"。</p></div>
+        <div class="now"><p class="lbl">现状</p><p>① ✅ 保留个人成长语言；② ✅ Trying Point 仍在；③ 🟡 <b>未改</b>：My 页仍是 "Ability portrait"，下一步改名为 "Practice growth"。</p></div>
+      </div>
+      <div class="refs"><span class="rl">待做</span><span class="commit" style="color:var(--amber);border-color:#f3d9ac;background:var(--amber-bg)">rename: Ability portrait → Practice growth</span></div>
+      <div class="shot"><span class="s-id">SHOT M-TOP</span><p class="s-what">My 页上半（Trying Point + Ability portrait 现状）</p><p class="s-where">路由 <code>#/my</code></p></div>
+    </div>
+
+    <div class="item">
+      <div class="item-top"><span class="tag">P7</span><h3>Growth Page Lower（My 页）</h3><span class="chip s-part"><span class="dot"></span>改名/文案待做</span></div>
+      <div class="ba">
+        <div class="was"><p class="lbl">原标注</p><p>① practice history 有用（保留）· ② "User management" 太内部 → 改 "Settings" · ③ coach mode 应更明确 → "Practice feedback only" / "Contest-safe coaching on"。</p></div>
+        <div class="now"><p class="lbl">现状</p><p>① ✅ history 保留；② 🟡 <b>未改</b>：仍是 "User management"（待改 "Settings"）；③ 🟡 <b>未改</b>：coach mode 值仍是 "Gentle prompts"（待改 "Practice feedback only"）。</p></div>
+      </div>
+      <div class="refs"><span class="rl">待做</span><span class="commit" style="color:var(--amber);border-color:#f3d9ac;background:var(--amber-bg)">rename: User management → Settings</span><span class="commit" style="color:var(--amber);border-color:#f3d9ac;background:var(--amber-bg)">Gentle prompts → Practice feedback only</span></div>
+      <div class="shot"><span class="s-id">SHOT M-LOW</span><p class="s-what">My 页下半（User management / Coach mode 现状）</p><p class="s-where">路由 <code>#/my</code> 下滑</p></div>
+    </div>
+
+    <!-- ════════════ SHOT LIST ════════════ -->
+    <div class="sec-head"><span class="n">C</span><h2>截图清单（你来截，我留好位）</h2></div>
+    <p class="sec-sub">下面每个编号对应上面一个截图位。按路由截好后把图替换进对应虚线框即可。标 ⚠️ 的需后台恢复后才有真实 AI 内容。</p>
+    <table>
+      <thead><tr><th>编号</th><th>截什么</th><th>怎么到</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr><td><code>SHOT H-HOME</code></td><td>首页（模式 + 今日话题）</td><td><code>#/</code></td><td>—</td></tr>
+        <tr><td><code>SHOT H-TOUR</code></td><td>首页 Navigator 引导气泡</td><td>清 <code>speakspark.homeOnboarded</code> → <code>#/</code></td><td>—</td></tr>
+        <tr><td><code>SHOT P-FULL</code></td><td>练习页全景</td><td><code>#/practice</code> → Start</td><td>—</td></tr>
+        <tr><td><code>SHOT P-CAPTION</code></td><td>说话中字幕（当前句居中）</td><td><code>#/practice</code> → 说几句</td><td>—</td></tr>
+        <tr><td><code>SHOT P-TOPIC</code></td><td>顶部 topic + 冷启动关键词</td><td><code>#/practice</code></td><td>—</td></tr>
+        <tr><td><code>SHOT P-PAUSE</code></td><td>停顿反馈卡</td><td><code>#/practice</code> → 停 ~2.5s</td><td>⚠️ 真问题需后台</td></tr>
+        <tr><td><code>SHOT T-TOP</code></td><td>Takeaway 顶部 + 琥珀提示条</td><td><code>#/session-end</code></td><td>⚠️ 真 AI 需后台</td></tr>
+        <tr><td><code>SHOT T-BLOCK1</code></td><td>Takeaway 块①</td><td><code>#/session-end</code></td><td>⚠️ 真 AI 需后台</td></tr>
+        <tr><td><code>SHOT T-COACH</code></td><td>Takeaway 块③ Coach chatbox</td><td><code>#/session-end</code> 到底</td><td>⚠️ 真 AI 需后台</td></tr>
+        <tr><td><code>SHOT M-TOP</code></td><td>My 页上半</td><td><code>#/my</code></td><td>—</td></tr>
+        <tr><td><code>SHOT M-LOW</code></td><td>My 页下半</td><td><code>#/my</code> 下滑</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <div class="foot">
+      SpeakSpark · 面向 6–9 年级中学生的英文科普演讲实时陪练 · 私人练习教练，不是评分工具。<br>
+      导出 PDF：浏览器打开本文件 → 打印（Cmd/Ctrl+P）→ 目标选「另存为 PDF」，背景图形开启。截图清单标 ⚠️ 的项需 Supabase 后台恢复后重截。
+    </div>
+
+  </div>
+</body>
+</html>
