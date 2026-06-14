@@ -9,17 +9,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy:#0f1b2e; --navy-panel:#172a44; --navy-line:#26405f;
-    --ink:#15223a; --sub:#66758d; --faint:#94a2b8;
-    --blue:#3b6cf5; --blue-soft:#eef3ff; --blue-line:#d4e0fb;
+    --navy:#0e1b2e; --navy-panel:#16273f; --navy-line:#27405e;
+    --ink:#16243c; --sub:#647389; --faint:#9aa7bb;
+    --blue:#3b6cf5; --blue-soft:#f2f5fd; --blue-line:#dde6fa;
     --orange:#ef8f1c;
-    --green:#1f9d57; --green-bg:#eaf7f0; --green-line:#c5e8d4;
-    --red:#ef4444;
-    --amber:#c9750a; --amber-bg:#fdf3e3; --amber-line:#f1d6a8;
-    --purple:#6d44d8; --purple-bg:#f1ecfd; --purple-line:#dccdf8;
-    --line:#e7ecf4; --rule:#eef2f8;
-    --bg:#eaeff5; --paper:#ffffff;
-    --shadow:0 1px 2px rgba(15,30,60,.04), 0 18px 40px -24px rgba(15,30,60,.28);
+    --green:#1f9d57; --green-bg:#eef8f2; --green-line:#cfe9da;
+    --red:#ef4d4d;
+    --amber:#c1780f; --amber-bg:#fbf4e6; --amber-line:#ecdcbb;
+    /* backend-blocked: calm slate, no purple */
+    --slate:#5a6b86; --slate-bg:#eef2f8; --slate-line:#dbe2ee;
+    --line:#e6ebf3; --rule:#f0f3f8;
+    --bg:#f6f8fb; --paper:#ffffff;
+    --shadow:0 1px 2px rgba(15,30,60,.03), 0 14px 34px -26px rgba(15,30,60,.22);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
@@ -48,11 +49,11 @@
   .cover .meta b{color:#fff;font-weight:700}
 
   /* ───────── Backend notice ───────── */
-  .notice{border:1px solid var(--purple-line);background:var(--purple-bg);border-radius:16px;
-    padding:18px 22px;margin:34px 0 8px;box-shadow:var(--shadow)}
-  .notice h3{font-size:16px;color:#4a2cab;display:flex;gap:9px;align-items:center}
-  .notice p{margin:.5em 0 0;font-size:13.5px;color:#4b3a7a;line-height:1.6}
-  .notice code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#fff;border:1px solid var(--purple-line);border-radius:6px;padding:0 6px;color:#4a2cab}
+  .notice{border:1px solid var(--slate-line);background:var(--slate-bg);border-radius:14px;
+    padding:17px 20px;margin:34px 0 8px}
+  .notice h3{font-size:15.5px;color:#3a4a64;display:flex;gap:9px;align-items:center}
+  .notice p{margin:.5em 0 0;font-size:13.5px;color:#4f5e76;line-height:1.6}
+  .notice code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#fff;border:1px solid var(--slate-line);border-radius:6px;padding:0 6px;color:#3a4a64}
 
   /* ───────── Legend ───────── */
   .legend{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 4px}
@@ -63,8 +64,8 @@
   .s-ship .dot{background:var(--green)}
   .s-part{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line)}
   .s-part .dot{background:var(--amber)}
-  .s-block{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-line)}
-  .s-block .dot{background:var(--purple)}
+  .s-block{background:var(--slate-bg);color:var(--slate);border-color:var(--slate-line)}
+  .s-block .dot{background:var(--slate)}
 
   /* ───────── Page section ───────── */
   .page{margin:46px 0 0}
@@ -74,7 +75,7 @@
   .page-head h2{font-size:clamp(20px,2.8vw,26px)}
   .page-sub{color:var(--sub);font-size:14px;margin:6px 0 18px}
 
-  .split{display:grid;grid-template-columns:minmax(0,46%) minmax(0,54%);gap:24px;align-items:start}
+  .split{display:grid;grid-template-columns:minmax(0,56%) minmax(0,44%);gap:30px;align-items:start}
   .orig{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:var(--shadow);position:sticky;top:18px}
   .orig .cap{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:4px 4px 10px;display:flex;align-items:center;gap:7px}
   .orig img{width:100%;display:block;border-radius:9px;border:1px solid var(--rule)}
@@ -99,8 +100,8 @@
   .todo{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:6px;padding:1px 6px;color:var(--amber)}
   .refs{margin:8px 0 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 
-  .shot{margin:16px 0 0;border:1px solid var(--blue-line);background:var(--blue-soft);border-radius:12px;padding:13px 15px;display:flex;gap:11px;align-items:flex-start}
-  .shot .ic{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .shot{margin:16px 0 0;border:1px dashed var(--blue-line);background:var(--blue-soft);border-radius:12px;padding:13px 15px;display:flex;gap:11px;align-items:flex-start}
+  .shot .ic{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:#fff;border:1px solid var(--blue-line);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px}
   .shot .sid{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;color:var(--blue)}
   .shot .sw{font-size:13px;font-weight:700;color:var(--ink);margin:2px 0 1px}
   .shot .se{font-size:12px;color:var(--sub);margin:0}
@@ -167,7 +168,7 @@
 
     <div class="notice">
       <h3>⚠️ 一个前提：AI 后台当前失效，AI 相关效果暂看不到真实输出</h3>
-      <p>2026-06-14 实测 Supabase 后台 <code>jyofoabobuwfowpctbfd</code> 已失效（<code>nslookup</code> 返回 NXDOMAIN，免费版长期不活动被回收）。前端所有 Gemini 调用在网络层失败，AI 总结 / 实时追问全程走本地兜底。<b>前端与函数源码均无问题</b>——凡标<b style="color:var(--purple)">紫色</b>的项都是"代码已就绪、待后台恢复即生效"。</p>
+      <p>2026-06-14 实测 Supabase 后台 <code>jyofoabobuwfowpctbfd</code> 已失效（<code>nslookup</code> 返回 NXDOMAIN，免费版长期不活动被回收）。前端所有 Gemini 调用在网络层失败，AI 总结 / 实时追问全程走本地兜底。<b>前端与函数源码均无问题</b>——凡标<b style="color:var(--slate)">灰蓝色</b>的项都是"代码已就绪、待后台恢复即生效"。</p>
     </div>
 
     <div class="legend">
