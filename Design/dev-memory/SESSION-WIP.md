@@ -24,6 +24,12 @@
 - ✅🧪 **Takeaway 3 大块渲染重排完成**（`src/pages/TakeawayPage.tsx`，tsc+build 通过，未浏览器验证）：① Your run（Hero+鼓励+talked-about+What you did well+进步分值）② Level up（**Amplify 新上墙**+Change+Next Run Plan）③ Coach（Chatbox+Go again）。带数字徽标的大分区标题、长页下滑。审阅清单：[REVIEW-2026-06-14.md](./REVIEW-2026-06-14.md)。
 - ✅🧪 顺手 🟢：TakeawayPage KTV 图标 emoji→lucide 并上色，与练习页统一。
 
+## 🚨 2026-06-14 — 根因确诊：Supabase 后台没了
+- 用户反馈"AI 不智能"。诊断琥珀条 reason = `Failed to send a request to the Edge Function`。
+- 实测 `nslookup jyofoabobuwfowpctbfd.supabase.co` → **NXDOMAIN**（域名不解析），`supabase.com` 正常 → **后台项目已失效**（暂停/回收）。
+- 结论：前端所有 Gemini 调用网络层失败 → 全程本地兜底。**代码无问题，需用户恢复/重建 Supabase**（步骤见 PROJECT-MEMORY 后台节）。本次前端改动（防截断/诚实兜底/prompt 升级/停顿优先 AI）在后台恢复后才会体现真效果。
+- ⏸ 等用户：控制台看项目能否 Restore，或重建后给我新 URL+key（我来改 client.ts/config.toml + 写部署步骤）。
+
 ## 📌 2026-06-14 — AI 真听懂 + Navigator 空槽 + 停顿卡优先真 AI
 - 🔍 **根因定位**：用户看到的 Takeaway "不智能"其实是 **AI 静默失败 → 本地关键词模板**（`createLocalTakeaway`）。Coach 问答同理。两者都走 `callGeminiProxy`。
 - ✅🧪 **修**（全前端，无需部署）：①token 调大防截断（takeaway 1600/chat 900）②`takeawayError` 渲染成琥珀提示条 + reason（失败可见、可诊断）③prompt 升级（真实主题句/同义词升级/KTV 维度定制/连贯 say_this）④本地兜底去套路化。

@@ -20,7 +20,9 @@ SpeakSpark = 面向 6–9 年级（11–15 岁）中学生的**英文科普演�
 - 部署：Vercel，`vercel.json`（build=vite, output=dist, SPA rewrites）。
 
 ## 后台（Supabase）
-- project_id：`jyofoabobuwfowpctbfd`
+- ⛔ **2026-06-14 实测：项目 `jyofoabobuwfowpctbfd` 已失效——`nslookup` 返回 NXDOMAIN，域名根本不解析**（免费版长期不活动被暂停/回收）。后果：前端**所有** Gemini 调用在网络层失败 → 全程走本地兜底模板，Takeaway/KTV/停顿追问全都"假装智能"。前端代码与函数源码均无问题，纯后台没了。
+- **恢复路径**：① Supabase 控制台看该项目能否 Restore（仅暂停）；②若已回收 → 新建项目，改 `src/integrations/supabase/client.ts`(URL+anon key) 与 `supabase/config.toml`(project_id)，部署 3 个函数(gemini-proxy/analyze-voice/get-gemini-api-key)，`supabase secrets set GEMINI_API_KEY=…`。本机无 supabase CLI，部署需用户侧。
+- project_id：`jyofoabobuwfowpctbfd`（已失效，见上）
 - Gemini API key 存在 Supabase，**不暴露到前端 / 日志 / 提交**。
 - 前端所有 Gemini 调用走 Edge Function 代理 `gemini-proxy`（不再前端直连）。
   - 封装：`src/lib/gemini-proxy.ts`（支持 `systemInstruction` / `responseMimeType` / `temperature` / `maxOutputTokens`）。
