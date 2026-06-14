@@ -1,23 +1,24 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 
-const KEY = "speakspark.practiceOnboarded";
-
 export interface CoachStep {
   ref: RefObject<HTMLElement>;
   title: string;
   body: string;
 }
 
-export function hasOnboardedPractice(): boolean {
+// Has the user already finished the tour stored under this key?
+export function hasSeenTour(key: string): boolean {
   try {
-    return window.localStorage.getItem(KEY) === "1";
+    return window.localStorage.getItem(key) === "1";
   } catch {
     return true; // storage blocked → don't nag
   }
 }
 
-// Anchored coachmarks: dim everything, spotlight the real panel, explain it.
-export default function PracticeOnboarding({ steps, onDone }: { steps: CoachStep[]; onDone: () => void }) {
+// Anchored coachmarks: dim everything, spotlight a real panel, explain it.
+// Reused across pages (Home, Practice pre-start, Practice after start) — each
+// pass passes its own storageKey so it only shows once per pass.
+export default function CoachmarkTour({ steps, storageKey, onDone }: { steps: CoachStep[]; storageKey: string; onDone: () => void }) {
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const last = i === steps.length - 1;
@@ -32,7 +33,7 @@ export default function PracticeOnboarding({ steps, onDone }: { steps: CoachStep
 
   const finish = () => {
     try {
-      window.localStorage.setItem(KEY, "1");
+      window.localStorage.setItem(storageKey, "1");
     } catch {
       /* ignore */
     }

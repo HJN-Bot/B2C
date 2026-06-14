@@ -47,7 +47,8 @@
 **KTV（🔴 核心"眼前一亮"）**
 - [x] 🔴 **指标定义不明**：Flow（持续说）/Story（连接词）现在本地实时涨且带原因；四指标都动。`✅🧪`
 - [x] 🟡 **卡拉OK 分值冲击**：沿用 bar transition + activeKtvMetric 高亮 + score-jump；C 高光也加强了。`✅🧪`
-- [ ] 🟡 KTV 在**首页也要露出**；练习时要有**导航**知道身处哪页（F/R6）。
+- [x] 🟡 练习**导航**：开练后第二段引导补上字幕+反馈卡（Start 后 0.6s 弹）。`✅🧪` [spec](../specs/2026-06-14-navigator-expand.md)
+- [ ] 🟡 KTV 在**首页也要露出**（导航已做，KTV 露出仍待）。
 - [ ] 🟡 说话中隐藏细节指标、结束后作为 private evidence（PDF P3）——与"露出"权衡，待定。
 
 **布局 / 注意力（🔴 不知道看哪）**
@@ -75,6 +76,7 @@
 ### P1 · 首页
 
 - [ ] 🟡 **#5/P2 主题活动卡**：科普英语 / TOEFL / 旅游 / 日常对话。
+- [x] 🟡 **首页 Navigator 引导**：进首页弹 3 步（mode / 今日话题 / Start），只出一次。`✅🧪` [spec](../specs/2026-06-14-navigator-expand.md)
 - [ ] 🔴 **P2 情感钩子**：streak/分数 → 学习证据 / 历史 / 一条 Coach Note，与 Takeaway **闭环**。
 - [ ] 🟡 CTA "Start Speaking" → 测 "Start Practice"。
 - [ ] 🟡 首页露出 KTV（见 P2·KTV）。

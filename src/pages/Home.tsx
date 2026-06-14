@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Flame, Star, Volume2, ChevronRight, Lightbulb } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
+import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 
 const MOCK_USER = { name: "Alex", streak: 5 };
+const HOME_TOUR = "speakspark.homeOnboarded";
 
 const TOPIC_STARTERS = [
   "How is AI changing the way doctors diagnose diseases?",
@@ -23,6 +25,10 @@ export default function Home() {
   const navigate = useNavigate();
   const topic = TOPIC_STARTERS[Math.floor(Math.random() * TOPIC_STARTERS.length)];
   const [modeId, setModeId] = useState<PracticeModeId>(() => getPracticeMode().id);
+  const [showTour, setShowTour] = useState(() => !hasSeenTour(HOME_TOUR));
+  const modeRef = useRef<HTMLDivElement>(null);
+  const topicRef = useRef<HTMLDivElement>(null);
+  const startRef = useRef<HTMLButtonElement>(null);
 
   const chooseMode = (id: PracticeModeId) => {
     setModeId(id);
@@ -31,6 +37,17 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh flex flex-col bg-gray-50">
+      {showTour && (
+        <CoachmarkTour
+          storageKey={HOME_TOUR}
+          onDone={() => setShowTour(false)}
+          steps={[
+            { ref: modeRef, title: "Pick how you practice", body: "Free Talk, Exam Prep, or Story — this sets the coach's style for your whole run. You can switch anytime." },
+            { ref: topicRef, title: "Need an idea?", body: "Stuck on what to say? Tap Use this topic to start with a science prompt, or My own to bring your own." },
+            { ref: startRef, title: "Start speaking", body: "Tap here when you're ready. You'll get live captions, a cat coach, and a takeaway when you finish." },
+          ]}
+        />
+      )}
       <div className="flex-1 flex flex-col px-5 pt-8 pb-10 gap-6">
 
         {/* Greeting */}
@@ -43,7 +60,7 @@ export default function Home() {
         </div>
 
         {/* Practice mode — carried into PracticeRoom + Takeaway */}
-        <div>
+        <div ref={modeRef}>
           <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Practice mode</span>
           <div className="mt-2 grid grid-cols-3 gap-2">
             {PRACTICE_MODES.map((mode) => {
@@ -66,7 +83,7 @@ export default function Home() {
         </div>
 
         {/* Topic starter card — solves "no inspiration" pain point */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-blue-100">
+        <div ref={topicRef} className="bg-white rounded-2xl p-5 shadow-sm border border-blue-100">
           <div className="flex items-center gap-2 mb-3">
             <Lightbulb size={15} className="text-blue-500" />
             <span className="text-xs font-bold uppercase tracking-widest text-blue-500">Today's Starter</span>
@@ -127,6 +144,7 @@ export default function Home() {
 
         {/* Single CTA */}
         <button
+          ref={startRef}
           onClick={() => navigate("/practice")}
           className="w-full py-5 rounded-2xl text-lg font-black text-white flex items-center justify-center gap-3 active:scale-95 transition-transform"
           style={{

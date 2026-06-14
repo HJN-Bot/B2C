@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Blocks, BookOpen, Brain, Clock, MessageCircle, Sparkles, Star, StopCircle, Waves, Zap, type LucideIcon } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
-import PracticeOnboarding, { hasOnboardedPractice } from "@/components/PracticeOnboarding";
+import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
+
+const PRESTART_TOUR = "speakspark.practiceOnboarded";
+const STARTED_TOUR = "speakspark.practiceStartedTour";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { getPracticeMode } from "@/lib/practice-mode";
 
@@ -477,6 +480,7 @@ export default function PracticeRoom() {
   // Coachmark targets for the first-run tour.
   const ktvBarRef = useRef<HTMLDivElement>(null);
   const coachRef = useRef<HTMLDivElement>(null);
+  const coachSlotRef = useRef<HTMLDivElement>(null);
   const startBtnRef = useRef<HTMLButtonElement>(null);
   const transcriptEndRef = useRef<HTMLSpanElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -518,7 +522,8 @@ export default function PracticeRoom() {
   const [transcript, setTranscript]         = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [speakingActive, setSpeakingActive] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(() => !hasOnboardedPractice());
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenTour(PRESTART_TOUR));
+  const [showStartedTour, setShowStartedTour] = useState(false);
   const speakingActiveRef = useRef(false);
   const [highlightWords, setHighlightWords] = useState<string[]>([]);
   const [phraseSparks, setPhraseSparks]     = useState<PhraseSpark[]>([]);
@@ -536,6 +541,14 @@ export default function PracticeRoom() {
 
   const isStartedRef = useRef(started);
   useEffect(() => { isStartedRef.current = started; }, [started]);
+
+  // Second-pass tour: transcript + feedback card only exist after Start, so
+  // explain them once the run begins (let layout + first words settle first).
+  useEffect(() => {
+    if (!started || hasSeenTour(STARTED_TOUR)) return;
+    const t = setTimeout(() => setShowStartedTour(true), 600);
+    return () => clearTimeout(t);
+  }, [started]);
 
   const transcriptRef = useRef(transcript);
   useEffect(() => { transcriptRef.current = transcript; }, [transcript]);
@@ -1285,12 +1298,24 @@ export default function PracticeRoom() {
     <div className="min-h-dvh flex flex-col bg-gray-50 select-none relative overflow-hidden">
 
       {showOnboarding && (
-        <PracticeOnboarding
+        <CoachmarkTour
+          storageKey={PRESTART_TOUR}
           onDone={() => setShowOnboarding(false)}
           steps={[
             { ref: ktvBarRef, title: "Your scores", body: "These four move as you keep speaking, use strong phrases, and complete ideas — private signals, not a grade." },
             { ref: coachRef, title: "Your cat coach", body: "It follows your idea while you talk. Pause a couple of seconds and it pops one short question or tip about what you just said." },
             { ref: startBtnRef, title: "Just talk", body: "Tap Start and speak. Your words appear below with the line you're saying kept in the middle. End anytime." },
+          ]}
+        />
+      )}
+
+      {showStartedTour && (
+        <CoachmarkTour
+          storageKey={STARTED_TOUR}
+          onDone={() => setShowStartedTour(false)}
+          steps={[
+            { ref: transcriptScrollRef, title: "Your words, live", body: "Everything you say shows up here. The line you're saying stays in the middle; older words scroll up — no need to keep up." },
+            { ref: coachSlotRef, title: "Pause for a hint", body: "Stop for a couple of seconds and a short question or tip about what you just said appears right here. Tap Use it to keep going, or Skip." },
           ]}
         />
       )}
@@ -1450,7 +1475,7 @@ export default function PracticeRoom() {
             <>
               {/* Fixed-size coach slot: shows the status line normally; the same
                   slot fills with the question card on a pause — no layout shift. */}
-              <div className="practice-coach-slot relative z-[1] mt-1">
+              <div ref={coachSlotRef} className="practice-coach-slot relative z-[1] mt-1">
                 {showBottleneck && bottleneckPhase === "thinking" ? (
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-sm font-black text-gray-700">{thinkingAck || "let me think..."}</span>

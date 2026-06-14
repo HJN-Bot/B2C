@@ -24,9 +24,12 @@
 - ✅🧪 **Takeaway 3 大块渲染重排完成**（`src/pages/TakeawayPage.tsx`，tsc+build 通过，未浏览器验证）：① Your run（Hero+鼓励+talked-about+What you did well+进步分值）② Level up（**Amplify 新上墙**+Change+Next Run Plan）③ Coach（Chatbox+Go again）。带数字徽标的大分区标题、长页下滑。审阅清单：[REVIEW-2026-06-14.md](./REVIEW-2026-06-14.md)。
 - ✅🧪 顺手 🟢：TakeawayPage KTV 图标 emoji→lucide 并上色，与练习页统一。
 
+## 📌 2026-06-14 — Navigator 扩展
+- ✅🧪 **Practice 开练后第二段引导**（字幕 + 反馈卡槽位，Start 后 0.6s 弹，2 步）。
+- ✅🧪 **Home 首页引导**（mode / 今日话题 / Start，3 步）。
+- 🔧 组件 `PracticeOnboarding` → 泛化为 **`CoachmarkTour`**（`storageKey` prop + `hasSeenTour(key)`），三处引导各用独立 key。审阅：[REVIEW-2026-06-14-navigator.md](./REVIEW-2026-06-14-navigator.md)。
+
 ### 将来接着改（下次）
-- 🟡 Practice Navigator 覆盖 **Script + 反馈小卡**（它们开练后才出现，需"开始后再补一个高亮气泡"）。
-- 🟡 Home 首页 Navigator 引导。
 - 🟡 暂停阈值/ENERGY_THRESHOLD 按真机手感微调（需真机，本机无法实测麦克风）。
 - 🟢 清理无用 CSS/函数（PracticeRoom 的 recentLines/resolvePauseReply/fetchFollowUpReply、index.css 的 practice-coach-strip/bubble-stack/listening-bubble*）。
 - 🟢 后台 Supabase 落库（替 localStorage，需用户侧部署）、PracticeRoom 拆组件。
