@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowUpRight, Blocks, BookOpen, Brain, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, TrendingUp, Waves, Wrench, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Blocks, BookOpen, Brain, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, TrendingUp, Waves, Wrench, type LucideIcon } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { getPracticeMode } from "@/lib/practice-mode";
@@ -205,10 +205,13 @@ function createLocalTakeaway(session: {
 
   const mainWord = reuseWords[0];
 
-  const summary: string[] = [];
-  if (session.timer) summary.push(`You kept your idea going for ${formatTime(session.timer)}.`);
-  if (mainWord) summary.push(`You talked about ideas like ${reuseWords.slice(0, 3).join(", ")}.`);
-  if (!summary.length) summary.push("You completed a short practice run.");
+  // Honest placeholder summary — the real, topic-aware summary comes from the AI;
+  // this only shows when the AI call fails, so don't fake specificity here.
+  const summary: string[] = [
+    session.timer
+      ? `You spoke for ${formatTime(session.timer)}. (Basic recap — the AI summary couldn't load this time.)`
+      : "You reached the takeaway page. (Basic recap — the AI summary couldn't load this time.)",
+  ];
 
   return {
     encouragement: session.wordCount > 0
@@ -217,9 +220,7 @@ function createLocalTakeaway(session: {
     summary,
     next_run_plan: {
       focus: focusByMetric[weakest],
-      say_this: mainWord
-        ? `My main point is about ${mainWord}, and one example is that it changes what we can see or do.`
-        : "My main point is clear, and one example can show why it matters.",
+      say_this: "My point is ___, because ___, and one example is ___. (Fill this frame with your real topic next run.)",
       reuse_words: reuseWords,
       one_move: moveByMetric[weakest],
     },
@@ -281,29 +282,30 @@ function buildTakeawayPrompt(context: string, coachStyle: string) {
   return `You are SpeakSpark, an AI speaking coach for Chinese middle-school students practicing English science presentations.
 ${coachStyle}
 
-Write a SHORT, top-down post-practice takeaway. First capture what the student actually talked about, then give advice tied to their OWN words.
+First UNDERSTAND what the student was actually arguing — read the whole transcript as a real talk on a real topic, not a bag of words. Then coach with advice tied to THAT topic and to their KTV scores.
 Rules:
-- Use ONLY ideas supported by the transcript, highlights, and score events.
-- Do NOT repeat the full transcript, and do NOT write a full speech or a complete answer for them. Coach process only.
+- Use ONLY ideas supported by the transcript, highlights, and score events. Never invent a topic. If the transcript is too thin to tell the topic, say so plainly instead of guessing.
+- "summary": 1-2 COMPLETE SENTENCES naming the actual topic and the point they were making (e.g. "You explained how renewable energy could replace coal, and gave wind power as an example."). NEVER output a list of disconnected words.
 - The "encouragement" should be warm and a little playful, not a score.
-- "say_this" must be a STRONGER model upgrade — a higher-level sentence/frame than what they actually said (use a real connector or structure like "X is significant because…", "One striking example is…"). Do NOT just echo their words.
-- "reuse_words" must be UPGRADE vocabulary — 2-4 words/phrases more advanced than the ones they used, fitting their topic.
-- Look at "ktv_score" in the session: target "make_stronger" at their LOWEST metric (flow=keep talking, words=stronger phrases, sentences=fuller forms, story=claim+example+why). Name the metric.
-- For every "what_worked" and "make_stronger" item, include a SHORT exact quote (3-8 words) copied verbatim from the transcript as "quote". If no fitting quote exists, use "".
+- "reuse_words": 3-5 SYNONYM UPGRADES — for words the student actually used, give a stronger/more precise alternative fitting their topic. Format each as "their word → upgrade" (e.g. "good → remarkable", "a lot of → a vast amount of"). Pick words they really said.
+- "say_this": rewrite ONE real sentence the student said into a higher-level version of THE SAME point — keep their meaning, upgrade the structure/connectors (e.g. "X is significant because…", "One striking example is…"). It must read as a coherent sentence about their topic, never echo a single keyword.
+- Tie advice to "ktv_score": find the LOWEST metric and aim "focus", "one_move" and "make_stronger" at it — flow=keep one idea going, words=stronger/precise vocabulary, sentences=fuller complete sentences, story=claim+example+why it matters. NAME the metric in the advice so it feels custom (e.g. "Your Story score is lowest — add why it matters").
+- "amplify": the metric/skill they did BEST on, with how to do even more of it next time.
+- For every "what_worked", "amplify" and "make_stronger" item, include a SHORT exact quote (3-8 words) copied verbatim from the transcript as "quote". If no fitting quote exists, use "".
 
 Return ONLY valid JSON:
 {
   "encouragement": "one warm, playful sentence",
-  "summary": ["2-3 short bullets describing what the student talked about"],
+  "summary": ["1-2 full sentences naming the real topic and their point"],
   "next_run_plan": {
-    "focus": "one specific focus, aimed at the lowest KTV metric",
-    "say_this": "a stronger model sentence/frame to aim for next time (not a repeat)",
-    "reuse_words": ["2-4 upgrade words/phrases, more advanced than they used"],
-    "one_move": "one tiny action for the next run"
+    "focus": "one specific focus, naming the lowest KTV metric",
+    "say_this": "their own sentence upgraded — same point, stronger structure (not a repeat, not a keyword)",
+    "reuse_words": ["3-5 'their word → stronger synonym' upgrades, drawn from words they used"],
+    "one_move": "one tiny concrete action for the next run, aimed at the lowest metric"
   },
   "what_worked": [{ "point": "what they did well", "quote": "exact short phrase they said, or empty" }],
-  "amplify": [{ "point": "one strength worth doing MORE of next time, and how", "quote": "the phrase it builds on, or empty" }],
-  "make_stronger": [{ "point": "one thing to change/fix, tied to the lowest metric", "quote": "the phrase this refers to, or empty" }]
+  "amplify": [{ "point": "the skill/metric they did best on and how to do more of it", "quote": "the phrase it builds on, or empty" }],
+  "make_stronger": [{ "point": "one thing to change, tied to the lowest metric (name it)", "quote": "the phrase this refers to, or empty" }]
 }
 
 Session:
@@ -390,7 +392,7 @@ export default function TakeawayPage() {
         model: MODEL_NAME,
         responseMimeType: "application/json",
         temperature: 0.68,
-        maxOutputTokens: 900,
+        maxOutputTokens: 1600,
         contents: [{ role: "user", parts: [{ text: buildTakeawayPrompt(sessionContext, practiceMode.coachStyle) }] }],
       });
       const parsed = normalizeTakeaway(parseJson<Partial<AiTakeaway>>(text));
@@ -444,7 +446,7 @@ export default function TakeawayPage() {
         systemInstruction: buildChatSystemPrompt(sessionContext, takeaway, practiceMode.coachStyle),
         responseMimeType: "application/json",
         temperature: 0.68,
-        maxOutputTokens: 600,
+        maxOutputTokens: 900,
         contents: chatHistoryRef.current,
       });
       const parsed = parseJson<{ answer?: string }>(text);
@@ -524,6 +526,23 @@ export default function TakeawayPage() {
           <ShieldCheck size={12} className="text-green-500" />
           {practiceMode.emoji} {practiceMode.label} · practice feedback only
         </div>
+
+        {/* Honest fallback notice: if the AI takeaway failed, say so instead of
+            passing off the basic local template as a real, topic-aware result. */}
+        {takeawayError && takeawayStatus === "ready" && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-black text-amber-700">
+              <AlertTriangle size={13} />
+              Coach AI didn't respond — showing a basic version
+            </div>
+            <p className="mt-1 text-[11px] font-semibold leading-relaxed text-amber-600">
+              The summary and advice below are generic placeholders, not based on what you said. Reason: {takeawayError}
+            </p>
+            <button onClick={() => void generateTakeaway()} className="mt-2 rounded-lg bg-white px-3 py-1.5 text-[11px] font-black text-amber-700 shadow-sm active:scale-95">
+              Try again
+            </button>
+          </div>
+        )}
 
         {/* #4: top-down — what you talked about, before any advice */}
         {takeaway && takeaway.summary.length > 0 && (

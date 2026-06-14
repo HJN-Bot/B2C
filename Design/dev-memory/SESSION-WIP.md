@@ -24,6 +24,13 @@
 - ✅🧪 **Takeaway 3 大块渲染重排完成**（`src/pages/TakeawayPage.tsx`，tsc+build 通过，未浏览器验证）：① Your run（Hero+鼓励+talked-about+What you did well+进步分值）② Level up（**Amplify 新上墙**+Change+Next Run Plan）③ Coach（Chatbox+Go again）。带数字徽标的大分区标题、长页下滑。审阅清单：[REVIEW-2026-06-14.md](./REVIEW-2026-06-14.md)。
 - ✅🧪 顺手 🟢：TakeawayPage KTV 图标 emoji→lucide 并上色，与练习页统一。
 
+## 📌 2026-06-14 — AI 真听懂 + Navigator 空槽 + 停顿卡优先真 AI
+- 🔍 **根因定位**：用户看到的 Takeaway "不智能"其实是 **AI 静默失败 → 本地关键词模板**（`createLocalTakeaway`）。Coach 问答同理。两者都走 `callGeminiProxy`。
+- ✅🧪 **修**（全前端，无需部署）：①token 调大防截断（takeaway 1600/chat 900）②`takeawayError` 渲染成琥珀提示条 + reason（失败可见、可诊断）③prompt 升级（真实主题句/同义词升级/KTV 维度定制/连贯 say_this）④本地兜底去套路化。
+- ✅🧪 **Navigator 空槽**：开练后第二步从指空卡槽改指**猫**(coachRef)，删 coachSlotRef。
+- ✅🧪 **停顿卡优先真 AI**：有缓冲秒弹；无缓冲 thinking + 实时 AI(≤2.8s)→失败才本地（复活 resolvePauseReply/fetchFollowUpReply）。
+- 审阅：[REVIEW-2026-06-14-ai-semantic.md](./REVIEW-2026-06-14-ai-semantic.md)。⚠️ **真 AI 是否跑通需用户真机看琥珀条 reason 反馈**。
+
 ## 📌 2026-06-14 — Navigator 扩展
 - ✅🧪 **Practice 开练后第二段引导**（字幕 + 反馈卡槽位，Start 后 0.6s 弹，2 步）。
 - ✅🧪 **Home 首页引导**（mode / 今日话题 / Start，3 步）。

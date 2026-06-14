@@ -480,7 +480,6 @@ export default function PracticeRoom() {
   // Coachmark targets for the first-run tour.
   const ktvBarRef = useRef<HTMLDivElement>(null);
   const coachRef = useRef<HTMLDivElement>(null);
-  const coachSlotRef = useRef<HTMLDivElement>(null);
   const startBtnRef = useRef<HTMLButtonElement>(null);
   const transcriptEndRef = useRef<HTMLSpanElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -880,34 +879,31 @@ export default function PracticeRoom() {
     };
   }, []);
 
-  // Multi-layer reply: Layer 1 = fast content-aware LOCAL reply (~700ms) for
-  // a real-time feel; Layer 2 = Gemini upgrade within a short budget (2.5s).
-  // Deep coaching is deferred to the Takeaway page, not blocked on here.
+  // Prefer a real, content-aware AI reply: ask Gemini within a short budget
+  // (2.8s, the cat shows a thinking ack meanwhile) and only fall back to a
+  // local reply if that fails. Deep coaching is deferred to the Takeaway page.
   const resolvePauseReply = useCallback(async () => {
-    const showLocal = () => {
-      if (!showBottleneckRef.current || speakingRef.current) return;
-      const local = localPauseReply(transcriptRef.current, highlightWordsRef.current);
-      enterReply(local.follow_up, local.feedback, local.kind);
-    };
-    const fastTimer = window.setTimeout(showLocal, 700);
     let gemini: { follow_up: string; feedback: string; kind: "question" | "nudge" } | null = null;
     try {
       gemini = await Promise.race([
         fetchFollowUpReply(),
-        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
+        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2800)),
       ]);
     } catch (e) {
       console.error("Gemini follow-up error:", e);
     }
-    window.clearTimeout(fastTimer);
     if (!showBottleneckRef.current || speakingRef.current) return;
-    if (gemini) enterReply(gemini.follow_up, gemini.feedback, gemini.kind);
-    else showLocal();
+    if (gemini) {
+      enterReply(gemini.follow_up, gemini.feedback, gemini.kind);
+    } else {
+      const local = localPauseReply(transcriptRef.current, highlightWordsRef.current);
+      enterReply(local.follow_up, local.feedback, local.kind);
+    }
   }, [enterReply, fetchFollowUpReply]);
 
-  // On a >=3s pause, INSTANTLY pop the pre-buffered Gemini follow-up (prepared
-  // while the student was speaking) — no thinking wait. If the buffer is empty
-  // (e.g. very first pause), use a content-aware local reply.
+  // On a pause: if a real AI follow-up was pre-buffered while the student spoke,
+  // pop it instantly (0 wait). Otherwise show the cat thinking and ask Gemini
+  // live, falling back to a local reply only if the AI doesn't answer in time.
   const beginPauseCoaching = useCallback(() => {
     if (showBottleneckRef.current) return;
     const silenceMs = Date.now() - lastVoiceAtRef.current;
@@ -916,12 +912,20 @@ export default function PracticeRoom() {
     pauseHandledRef.current = true;
     if (miniCoachTipTimerRef.current) clearTimeout(miniCoachTipTimerRef.current);
     setMiniCoachTip("");
-    const ready = bufferedReplyRef.current ?? localPauseReply(transcriptRef.current, highlightWordsRef.current);
-    bufferedReplyRef.current = null; // consumed; next pause waits for a fresh one
     showBottleneckRef.current = true;
     setShowBottleneck(true);
-    enterReply(ready.follow_up, ready.feedback, ready.kind);
-  }, [enterReply]);
+
+    const buffered = bufferedReplyRef.current;
+    bufferedReplyRef.current = null; // consumed; next pause waits for a fresh one
+    if (buffered) {
+      enterReply(buffered.follow_up, buffered.feedback, buffered.kind);
+      return;
+    }
+    // No buffer yet (e.g. very first pause) → prefer a live AI reply.
+    setBottleneckPhase("thinking");
+    setThinkingAck(THINKING_ACKS[Math.floor(Math.random() * THINKING_ACKS.length)]);
+    void resolvePauseReply();
+  }, [enterReply, resolvePauseReply]);
 
   useEffect(() => {
     if (!started) return;
@@ -1315,7 +1319,7 @@ export default function PracticeRoom() {
           onDone={() => setShowStartedTour(false)}
           steps={[
             { ref: transcriptScrollRef, title: "Your words, live", body: "Everything you say shows up here. The line you're saying stays in the middle; older words scroll up — no need to keep up." },
-            { ref: coachSlotRef, title: "Pause for a hint", body: "Stop for a couple of seconds and a short question or tip about what you just said appears right here. Tap Use it to keep going, or Skip." },
+            { ref: coachRef, title: "Pause for a hint", body: "Stop for a couple of seconds and the cat pops one short question or tip about what you just said, right below it. Tap Use it to keep going, or Skip." },
           ]}
         />
       )}
@@ -1475,7 +1479,7 @@ export default function PracticeRoom() {
             <>
               {/* Fixed-size coach slot: shows the status line normally; the same
                   slot fills with the question card on a pause — no layout shift. */}
-              <div ref={coachSlotRef} className="practice-coach-slot relative z-[1] mt-1">
+              <div className="practice-coach-slot relative z-[1] mt-1">
                 {showBottleneck && bottleneckPhase === "thinking" ? (
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-sm font-black text-gray-700">{thinkingAck || "let me think..."}</span>
