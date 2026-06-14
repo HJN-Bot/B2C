@@ -16,7 +16,6 @@
     --green:#1f9d57; --green-bg:#eef8f2; --green-line:#cfe9da;
     --red:#ef4d4d;
     --amber:#c1780f; --amber-bg:#fbf4e6; --amber-line:#ecdcbb;
-    /* backend-blocked: calm slate, no purple */
     --slate:#5a6b86; --slate-bg:#eef2f8; --slate-line:#dbe2ee;
     --line:#e6ebf3; --rule:#f0f3f8;
     --bg:#f6f8fb; --paper:#ffffff;
@@ -27,88 +26,83 @@
     font-family:"Hanken Grotesk","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
     font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
   h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.012em;line-height:1.12}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 110px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px 110px}
 
-  /* ───────── Cover (mirrors PDF page 1) ───────── */
+  /* ── Cover (mirrors PDF page 1) ── */
   .cover{margin:0 -24px 4px;padding:0 24px;background:
-    radial-gradient(130% 120% at 92% -10%, rgba(126,217,87,.16), transparent 55%),
-    radial-gradient(120% 120% at 0% 0%, rgba(59,108,245,.20), transparent 50%),
-    var(--navy);
-    color:#fff}
-  .cover .in{max-width:1080px;margin:0 auto;padding:62px 0 56px}
+    radial-gradient(130% 120% at 92% -10%, rgba(126,217,87,.15), transparent 55%),
+    radial-gradient(120% 120% at 0% 0%, rgba(59,108,245,.18), transparent 50%),
+    var(--navy);color:#fff}
+  .cover .in{max-width:1040px;margin:0 auto;padding:60px 0 54px}
   .cover .eyebrow{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#9db4d8}
-  .cover h1{font-size:clamp(30px,4.6vw,50px);margin:14px 0 10px;max-width:20ch}
-  .cover .lede{font-size:17px;color:#c3d2e8;max-width:60ch;margin:0}
-  .cover .principles{margin:40px 0 8px;display:grid;grid-template-columns:repeat(2,1fr);gap:26px 56px;
+  .cover h1{font-size:clamp(29px,4.4vw,48px);margin:14px 0 10px;max-width:20ch}
+  .cover .lede{font-size:16.5px;color:#c3d2e8;max-width:62ch;margin:0}
+  .cover .principles{margin:38px 0 8px;display:grid;grid-template-columns:repeat(2,1fr);gap:24px 54px;
     background:var(--navy-panel);border:1px solid var(--navy-line);border-radius:20px;padding:30px 34px}
   .cover .principles .k{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin:0 0 5px}
   .cover .principles .k.risk{color:var(--orange)}
   .cover .principles .k.dir{color:#6f9bff}
-  .cover .principles p{margin:0;font-size:15.5px;color:#e6eefb;line-height:1.5}
-  .cover .meta{margin-top:30px;display:flex;flex-wrap:wrap;gap:9px 26px;font-size:13px;color:#9db4d8}
+  .cover .principles p{margin:0;font-size:15px;color:#e6eefb;line-height:1.5}
+  .cover .meta{margin-top:28px;display:flex;flex-wrap:wrap;gap:9px 26px;font-size:13px;color:#9db4d8}
   .cover .meta b{color:#fff;font-weight:700}
 
-  /* ───────── Backend notice ───────── */
-  .notice{border:1px solid var(--slate-line);background:var(--slate-bg);border-radius:14px;
-    padding:17px 20px;margin:34px 0 8px}
+  /* ── Backend notice ── */
+  .notice{border:1px solid var(--slate-line);background:var(--slate-bg);border-radius:14px;padding:17px 20px;margin:34px 0 8px}
   .notice h3{font-size:15.5px;color:#3a4a64;display:flex;gap:9px;align-items:center}
   .notice p{margin:.5em 0 0;font-size:13.5px;color:#4f5e76;line-height:1.6}
   .notice code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#fff;border:1px solid var(--slate-line);border-radius:6px;padding:0 6px;color:#3a4a64}
 
-  /* ───────── Legend ───────── */
+  /* ── Legend ── */
   .legend{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 4px}
-  .chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;
-    padding:5px 12px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
   .chip .dot{width:8px;height:8px;border-radius:50%}
-  .s-ship{background:var(--green-bg);color:var(--green);border-color:var(--green-line)}
-  .s-ship .dot{background:var(--green)}
-  .s-part{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line)}
-  .s-part .dot{background:var(--amber)}
-  .s-block{background:var(--slate-bg);color:var(--slate);border-color:var(--slate-line)}
-  .s-block .dot{background:var(--slate)}
+  .s-ship{background:var(--green-bg);color:var(--green);border-color:var(--green-line)} .s-ship .dot{background:var(--green)}
+  .s-part{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line)} .s-part .dot{background:var(--amber)}
+  .s-block{background:var(--slate-bg);color:var(--slate);border-color:var(--slate-line)} .s-block .dot{background:var(--slate)}
 
-  /* ───────── Page section ───────── */
-  .page{margin:46px 0 0}
+  /* ── Page section ── */
+  .page{margin:50px 0 0}
   .page-head{display:flex;align-items:baseline;gap:14px;margin:0 0 4px}
-  .page-no{flex:0 0 auto;font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--blue);
-    background:var(--blue-soft);border:1px solid var(--blue-line);border-radius:8px;padding:3px 9px}
+  .page-no{flex:0 0 auto;font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--blue);background:var(--blue-soft);border:1px solid var(--blue-line);border-radius:8px;padding:3px 9px}
   .page-head h2{font-size:clamp(20px,2.8vw,26px)}
   .page-sub{color:var(--sub);font-size:14px;margin:6px 0 18px}
 
-  .split{display:grid;grid-template-columns:minmax(0,56%) minmax(0,44%);gap:30px;align-items:start}
-  .orig{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:var(--shadow);position:sticky;top:18px}
-  .orig .cap{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:4px 4px 10px;display:flex;align-items:center;gap:7px}
-  .orig img{width:100%;display:block;border-radius:9px;border:1px solid var(--rule)}
+  /* before / after phones */
+  .phones{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:2px 0 24px}
+  .phone{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px 16px 18px;box-shadow:var(--shadow)}
+  .phlab{display:flex;align-items:center;gap:9px;margin:0 2px 13px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  .phlab .tg{font-size:10px;padding:2px 8px;border-radius:6px;letter-spacing:.08em}
+  .phone.before .phlab{color:var(--faint)} .phone.before .phlab .tg{background:#eef1f6;color:var(--sub);border:1px solid var(--line)}
+  .phone.after .phlab{color:var(--green)} .phone.after .phlab .tg{background:var(--green-bg);color:var(--green);border:1px solid var(--green-line)}
+  .phone img{width:100%;max-width:300px;display:block;margin:0 auto;border-radius:11px;border:1px solid var(--rule)}
+  .ph-slot{max-width:300px;margin:0 auto;aspect-ratio:828/1538;border:1.5px dashed var(--blue-line);border-radius:14px;background:var(--blue-soft);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;gap:8px}
+  .ph-slot .ic{width:36px;height:36px;border-radius:11px;background:#fff;border:1px solid var(--blue-line);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .ph-slot .sid{font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:var(--blue)}
+  .ph-slot .sw{font-size:13px;font-weight:700;color:var(--ink);max-width:24ch;line-height:1.4}
+  .ph-slot .se{font-size:11.5px;color:var(--sub);margin:0;max-width:26ch;line-height:1.5}
+  .ph-slot .se code{font-family:ui-monospace,Menlo,monospace;background:#fff;border:1px solid var(--blue-line);border-radius:5px;padding:0 5px;font-size:11px}
+  .ph-slot .warn{color:var(--slate);font-weight:700}
 
-  .resp{min-width:0}
-  .resp-cap{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin:2px 0 14px}
+  /* response rows (full width, 2-col) */
+  .resp-cap{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin:4px 0 8px}
   .resp-cap span{color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0;font-size:12px}
-
-  .row{display:flex;gap:13px;padding:15px 0;border-top:1px solid var(--rule)}
-  .row:first-of-type{border-top:0;padding-top:2px}
-  .pin{flex:0 0 auto;width:23px;height:23px;border-radius:50%;background:var(--red);color:#fff;
-    font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .response{display:grid;grid-template-columns:1fr 1fr;gap:0 36px}
+  .row{display:flex;gap:13px;padding:14px 0;border-top:1px solid var(--rule)}
+  .pin{flex:0 0 auto;width:23px;height:23px;border-radius:50%;background:var(--red);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
   .pin.dir{background:var(--green);font-size:11px}
   .row .body{min-width:0;flex:1}
   .row .t{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
   .row .t b{font-size:14.5px;font-weight:700;color:var(--ink)}
-  .row .was{margin:3px 0 0;font-size:13px;color:var(--sub)}
+  .row .was{margin:3px 0 0;font-size:12.5px;color:var(--sub);line-height:1.5}
   .row .now{margin:7px 0 0;font-size:13.5px;color:var(--ink);line-height:1.55}
   .row .now b{font-weight:700}
-  .commit{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#f2f5fa;border:1px solid var(--line);
-    border-radius:6px;padding:1px 6px;color:var(--sub)}
+  .commit{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#f2f5fa;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--sub)}
   .todo{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:6px;padding:1px 6px;color:var(--amber)}
   .refs{margin:8px 0 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 
-  .shot{margin:16px 0 0;border:1px dashed var(--blue-line);background:var(--blue-soft);border-radius:12px;padding:13px 15px;display:flex;gap:11px;align-items:flex-start}
-  .shot .ic{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:#fff;border:1px solid var(--blue-line);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px}
-  .shot .sid{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;color:var(--blue)}
-  .shot .sw{font-size:13px;font-weight:700;color:var(--ink);margin:2px 0 1px}
-  .shot .se{font-size:12px;color:var(--sub);margin:0}
-  .shot .se code{font-family:ui-monospace,Menlo,monospace;background:#fff;border:1px solid var(--blue-line);border-radius:5px;padding:0 5px;font-size:11px}
-
-  /* ───────── Text feedback appendix ───────── */
-  .sec-divider{margin:60px 0 6px;padding-bottom:12px;border-bottom:2px solid var(--ink);display:flex;align-items:baseline;gap:13px}
+  /* text feedback appendix */
+  .sec-divider{margin:62px 0 6px;padding-bottom:12px;border-bottom:2px solid var(--ink);display:flex;align-items:baseline;gap:13px}
   .sec-divider .n{font-size:13px;font-weight:800;letter-spacing:.1em;color:var(--blue)}
   .sec-divider h2{font-size:clamp(20px,3vw,27px)}
   .fb{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 19px;margin:14px 0 0;box-shadow:var(--shadow)}
@@ -118,25 +112,24 @@
   .fb .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
   .fb .two .lab{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px}
   .fb .was .lab{color:var(--faint)} .fb .now .lab{color:var(--green)}
-  .fb .two p{margin:0;font-size:13px}
-  .fb .was p{color:var(--sub)} .fb .now p{color:var(--ink)}
+  .fb .two p{margin:0;font-size:13px} .fb .was p{color:var(--sub)} .fb .now p{color:var(--ink)}
   .fb .refs{margin-top:11px}
 
   .foot{margin-top:54px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint);line-height:1.7}
+  .foot code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
 
-  @media (max-width:820px){
-    .split{grid-template-columns:1fr}
-    .orig{position:static}
+  @media (max-width:760px){
+    .response{grid-template-columns:1fr}
     .cover .principles{grid-template-columns:1fr;gap:20px}
     .fb .two{grid-template-columns:1fr}
   }
+  @media (max-width:440px){ .phones{grid-template-columns:1fr} }
   @media print{
     body{background:#fff;font-size:10.5pt}
     .wrap{max-width:none;padding:0}
-    .cover{margin:0 0 18pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cover{margin:0 0 18pt}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .orig{position:static}
-    .page,.fb,.notice,.shot,.row{break-inside:avoid}
+    .page,.fb,.notice,.phone,.row{break-inside:avoid}
     .page-head,.sec-divider{break-after:avoid}
   }
 </style>
@@ -147,15 +140,13 @@
     <div class="in">
       <div class="eyebrow">SpeakSpark · 设计走查回应与进展</div>
       <h1>对照那份 7 页走查，我们逐页改了什么</h1>
-      <p class="lede">把 2026-05-06 的标注走查 PDF 原样放在左边，右边是我们这一阶段对每个红色标注点（①②③④）的回应：怎么改的、状态、对应提交、以及新状态的截图位。</p>
-
+      <p class="lede">每页顶部并排：左 = 反馈方原稿手机（带红点 ①②③④），右 = 我们的新界面截图位；下方是对每个红点的逐条回应——怎么改的、状态、对应提交。</p>
       <div class="principles">
         <div><p class="k risk">PRIMARY RISK</p><p>UI 容易被读成评分、评判或比赛准备。</p></div>
         <div><p class="k dir">PRODUCT DIRECTION</p><p>把 SpeakSpark 定位成私人练习教练，不是评分者。</p></div>
         <div><p class="k dir">LAUNCH RULE</p><p>只做 coach process：prompts、frames、词汇选择、一个 next-run plan。</p></div>
         <div><p class="k dir">AVOID</p><p>完整演讲、比赛分数、排名语言、实时纠错、暴露 AI provider 报错。</p></div>
       </div>
-
       <div class="meta">
         <span>报告日期 <b>2026-06-14</b></span>
         <span>对应原件 <b>speakspark-labelled-design-walkthrough.pdf</b></span>
@@ -181,16 +172,18 @@
     <div class="page">
       <div class="page-head"><span class="page-no">PAGE 2</span><h2>Start Screen — Motivation Without Scoring</h2></div>
       <p class="page-sub">首屏友好，但分数/streak 会带来练习压力。</p>
-      <div class="split">
-        <div class="orig"><p class="cap">📄 原走查 · 反馈方</p><img src="assets/pdf/page-2.png" alt="原 PDF Page 2"></div>
-        <div class="resp">
-          <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应左图红点）</span></p>
-          <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>Streak 制造压力</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：用 "5 practices this week" 代替 streak 作情感钩子。</p><p class="now">🟡 首页目前仍是 "Day 5 streak"，下一步改成学习证据型钩子。</p></div></div>
-          <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"92 pts" 像分数</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：换成 "2 phrases saved / 1 coach note" 这类证据。</p><p class="now">🟡 仍显示 pts，待替换为练习证据。</p></div></div>
-          <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>CTA "Start Speaking" 偏比赛</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：测 "Start Practice" / "Practice this topic"。</p><p class="now">🟡 仍为 "Start Speaking"，待 A/B。</p></div></div>
-          <div class="row"><span class="pin dir">+</span><div class="body"><div class="t"><b>本次新增：首页 Navigator 引导</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="now">新用户进首页弹 3 步引导（模式 / 今日话题 / Start），只出一次。<span class="refs"><span class="commit">63b78d4</span></span></p></div></div>
-          <div class="shot"><span class="ic">📷</span><div><p class="sid">SHOT H-HOME · H-TOUR</p><p class="sw">首页（模式+今日话题）/ 首页引导气泡</p><p class="se">路由 <code>#/</code>；引导：清 <code>speakspark.homeOnboarded</code> 后进首页</p></div></div>
+      <div class="phones">
+        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-2.png" alt="原 Page 2 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
+          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT H-HOME · H-TOUR</div><div class="sw">首页（模式 + 今日话题）/ 首页引导气泡</div><p class="se">路由 <code>#/</code>；引导清 <code>speakspark.homeOnboarded</code></p></div>
         </div>
+      </div>
+      <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
+      <div class="response">
+        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>Streak 制造压力</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：用 "5 practices this week" 代替 streak。</p><p class="now">🟡 首页仍是 "Day 5 streak"，下一步改成学习证据型钩子。</p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"92 pts" 像分数</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：换 "2 phrases saved / 1 coach note"。</p><p class="now">🟡 仍显示 pts，待替换为练习证据。</p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>CTA 偏比赛</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：测 "Start Practice"。</p><p class="now">🟡 仍为 "Start Speaking"，待 A/B。</p></div></div>
+        <div class="row"><span class="pin dir">+</span><div class="body"><div class="t"><b>新增：首页 Navigator 引导</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="now">新用户弹 3 步引导（模式/话题/Start），只出一次。<span class="refs"><span class="commit">63b78d4</span></span></p></div></div>
       </div>
     </div>
 
@@ -198,16 +191,18 @@
     <div class="page">
       <div class="page-head"><span class="page-no">PAGE 3</span><h2>Practice Screen — Reduce Judging Signals</h2></div>
       <p class="page-sub">说话当下，界面应像冷静的教练，不是实时评分表。</p>
-      <div class="split">
-        <div class="orig"><p class="cap">📄 原走查 · 反馈方</p><img src="assets/pdf/page-3.png" alt="原 PDF Page 3"></div>
-        <div class="resp">
-          <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应左图红点）</span></p>
-          <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>"AI moments" 模糊像分数</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改 "coach notes" 或移除。</p><p class="now">✅ 直接删掉左上模糊计数，换成顶部 <b>🎯 当前话题 / 模式</b>。<span class="refs"><span class="commit">f6392c9</span></span></p></div></div>
-          <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>指标面板像实时评判</b><span class="chip s-part"><span class="dot"></span>取舍待定</span></div><p class="was">原建议：说话中隐藏详细指标，结束后作 private evidence。</p><p class="now">🟡 我们目前<b>保留 KTV 露出</b>并用 Navigator 解释"它是私人信号、不是评分"——和"说话中隐藏"是个取舍，待你拍板。</p></div></div>
-          <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>"AI is listening" 监控感</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改 "Coach is following your practice / your idea"。</p><p class="now">✅ 改为 <b>"Coach is following your story"</b> + 猫状态（后去重，状态只在猫下一处）。<span class="refs"><span class="commit">fa5b2c2</span><span class="commit">35472de</span></span></p></div></div>
-          <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>Loading 阻塞练习</b><span class="chip s-block"><span class="dot"></span>已就绪·受后台影响</span></div><p class="was">原建议：允许先录后生成 coaching，不让 AI 就绪成为阻塞。</p><p class="now">✅ 预生成缓冲 + 多层 fallback，不被 AI 就绪阻塞；<b>停顿卡优先真 AI</b>（有缓冲秒弹，无则猫 thinking 再问，断网才本地）。<span class="refs"><span class="commit">1936038</span></span></p></div></div>
-          <div class="shot"><span class="ic">📷</span><div><p class="sid">SHOT P-FULL · P-PAUSE</p><p class="sw">练习页全景 / 停顿反馈卡（Coach asks · Use it · Skip）</p><p class="se">路由 <code>#/practice</code> → Start →（停 ~2.5s）· ⚠️ 真问题需后台恢复</p></div></div>
+      <div class="phones">
+        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-3.png" alt="原 Page 3 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
+          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT P-FULL · P-PAUSE</div><div class="sw">练习页全景 / 停顿反馈卡</div><p class="se">路由 <code>#/practice</code> → Start。<span class="warn">⚠️ 真问题需后台恢复</span></p></div>
         </div>
+      </div>
+      <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
+      <div class="response">
+        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>"AI moments" 模糊像分数</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改 "coach notes" 或移除。</p><p class="now">✅ 删掉模糊计数，换成顶部 <b>🎯 话题/模式</b>。<span class="refs"><span class="commit">f6392c9</span></span></p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>指标像实时评判</b><span class="chip s-part"><span class="dot"></span>取舍待定</span></div><p class="was">原建议：说话中隐藏指标，结束后作 private evidence。</p><p class="now">🟡 我们<b>保留 KTV 露出</b>并用 Navigator 解释"是私人信号、不是评分"——与"隐藏"是取舍，待你定。</p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>"AI is listening" 监控感</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改 "Coach is following your idea"。</p><p class="now">✅ 改为 <b>"Coach is following your story"</b> + 猫状态。<span class="refs"><span class="commit">fa5b2c2</span><span class="commit">35472de</span></span></p></div></div>
+        <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>Loading 阻塞练习</b><span class="chip s-block"><span class="dot"></span>就绪·受后台影响</span></div><p class="was">原建议：允许先录后生成。</p><p class="now">✅ 预生成缓冲 + 多层 fallback；<b>停顿卡优先真 AI</b>（有缓冲秒弹，无则猫 thinking，断网才本地）。<span class="refs"><span class="commit">1936038</span></span></p></div></div>
       </div>
     </div>
 
@@ -215,16 +210,18 @@
     <div class="page">
       <div class="page-head"><span class="page-no">PAGE 4</span><h2>Takeaway Top — Put The Next Move Before The Trophy</h2></div>
       <p class="page-sub">结束页第一屏应该是教练计划，不是成绩单。</p>
-      <div class="split">
-        <div class="orig"><p class="cap">📄 原走查 · 反馈方</p><img src="assets/pdf/page-4.png" alt="原 PDF Page 4"></div>
-        <div class="resp">
-          <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应左图红点）</span></p>
-          <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>奖杯像夺冠/排名</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：换 notebook/check 图标 + "Practice complete"。</p><p class="now">✅ 改为 <b>"Practice complete" + 🎉</b>，无奖杯、无排名语言。<span class="refs"><span class="commit">838a68b</span></span></p></div></div>
-          <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>stats 像成绩单</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：先显示一句人话 "You kept your idea going for 41s"。</p><p class="now">✅ 先一句<b>人话 headline</b>，再谈数据。<span class="refs"><span class="commit">838a68b</span></span></p></div></div>
-          <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>Next Run Plan 应是 hero</b><span class="chip s-part"><span class="dot"></span>取舍待定</span></div><p class="was">原建议：把 Next Run Plan 提为每次练习后的置顶 hero。</p><p class="now">🟡 现放在块② "Level up" 内（"置顶 hero" 这条你之前说先放着）。</p></div></div>
-          <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>红色 AI 失败像出错</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：中性文案 "Coach plan is ready from this run"。</p><p class="now">✅ 改为<b>中性诚实琥珀提示</b>（这次正是靠它定位到后台失效）。<span class="refs"><span class="commit">1936038</span><span class="commit">ca2982f</span></span></p></div></div>
-          <div class="shot"><span class="ic">📷</span><div><p class="sid">SHOT T-TOP · T-BLOCK1</p><p class="sw">Takeaway 顶部（Practice complete + headline）+ 块①</p><p class="se">路由 <code>#/session-end</code> · ⚠️ 真 AI 总结需后台恢复</p></div></div>
+      <div class="phones">
+        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-4.png" alt="原 Page 4 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
+          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT T-TOP · T-BLOCK1</div><div class="sw">Takeaway 顶部（Practice complete + headline）+ 块①</div><p class="se">路由 <code>#/session-end</code>。<span class="warn">⚠️ 真 AI 总结需后台</span></p></div>
         </div>
+      </div>
+      <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
+      <div class="response">
+        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>奖杯像夺冠/排名</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：notebook/check + "Practice complete"。</p><p class="now">✅ 改为 <b>"Practice complete" + 🎉</b>，无奖杯无排名。<span class="refs"><span class="commit">838a68b</span></span></p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>stats 像成绩单</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：先一句人话再谈数据。</p><p class="now">✅ 先 <b>人话 headline</b>（"You kept your idea going…"）。<span class="refs"><span class="commit">838a68b</span></span></p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>Next Run Plan 应是 hero</b><span class="chip s-part"><span class="dot"></span>取舍待定</span></div><p class="was">原建议：提为置顶 hero card。</p><p class="now">🟡 现放在块② "Level up" 内（置顶 hero 你之前说先放着）。</p></div></div>
+        <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>红色 AI 失败像出错</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：中性文案。</p><p class="now">✅ 改为<b>中性诚实琥珀提示</b>（正是靠它定位到后台失效）。<span class="refs"><span class="commit">1936038</span><span class="commit">ca2982f</span></span></p></div></div>
       </div>
     </div>
 
@@ -232,15 +229,17 @@
     <div class="page">
       <div class="page-head"><span class="page-no">PAGE 5</span><h2>Takeaway Lower — Guard The Coach Chatbox</h2></div>
       <p class="page-sub">Chatbox 很强大，所以它的边界要在上线前明确可见。</p>
-      <div class="split">
-        <div class="orig"><p class="cap">📄 原走查 · 反馈方</p><img src="assets/pdf/page-5.png" alt="原 PDF Page 5"></div>
-        <div class="resp">
-          <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应左图红点）</span></p>
-          <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>Prompt 易诱导生成完整答案</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议："Go deeper" → "Ask me one question"，避免整段代答。</p><p class="now">✅ presets 改为 <b>"Ask me one question"</b> 等，明确不替你作答。<span class="refs"><span class="commit">fa5b2c2</span></span></p></div></div>
-          <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>progress map 回到分数框架</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：用文字趋势 "clearer claim / more examples / longer opening"，数字次要或隐藏。</p><p class="now">✅ 进步改<b>文字趋势</b>（Strong / Growing / Just starting + 成长描述）。<span class="refs"><span class="commit">4bdaf81</span></span></p></div></div>
-          <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>Practice again CTA 很好</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ 保留核心循环：练习 → 一个下一步 → 再练。✅ 另加 coach-mode 持久信任标签。</p></div></div>
-          <div class="shot"><span class="ic">📷</span><div><p class="sid">SHOT T-COACH</p><p class="sw">Takeaway 块③ Coach（chatbox + presets "Ask me one question"）</p><p class="se">路由 <code>#/session-end</code> 下滑到底 · ⚠️ 真 AI 回答需后台</p></div></div>
+      <div class="phones">
+        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-5.png" alt="原 Page 5 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
+          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT T-COACH</div><div class="sw">Takeaway 块③ Coach（chatbox + presets "Ask me one question"）</div><p class="se">路由 <code>#/session-end</code> 到底。<span class="warn">⚠️ 真 AI 回答需后台</span></p></div>
         </div>
+      </div>
+      <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
+      <div class="response">
+        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>Prompt 易生成完整答案</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议："Go deeper" → "Ask me one question"。</p><p class="now">✅ presets 改为 <b>"Ask me one question"</b> 等，不替你作答。<span class="refs"><span class="commit">fa5b2c2</span></span></p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>progress map 回到分数</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：用文字趋势，数字次要/隐藏。</p><p class="now">✅ 改<b>文字趋势</b>（Strong/Growing/Just starting + 成长描述）。<span class="refs"><span class="commit">4bdaf81</span></span></p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>Practice again CTA 很好</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ 保留核心循环；另加 coach-mode 持久信任标签。</p></div></div>
       </div>
     </div>
 
@@ -248,71 +247,71 @@
     <div class="page">
       <div class="page-head"><span class="page-no">PAGE 6</span><h2>Growth Page Top — Keep The Trying Point, Rename The Scores</h2></div>
       <p class="page-sub">成长页框架是对的，但 "Ability Portrait" 仍像评估。</p>
-      <div class="split">
-        <div class="orig"><p class="cap">📄 原走查 · 反馈方</p><img src="assets/pdf/page-6.png" alt="原 PDF Page 6"></div>
-        <div class="resp">
-          <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应左图红点）</span></p>
-          <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>growth map 框架正确</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ 保留个人成长语言，不做公开排名。</p></div></div>
-          <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"Trying Point" 很出色</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="was">原建议：推广这个概念到全 app。</p><p class="now">✅ Trying Point 保留在 My 页；🟡 推广到全 app 待办。</p></div></div>
-          <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>"Ability Portrait" 像计分卡</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：改名 "Practice growth"，偏好叙述证据。</p><p class="now">🟡 My 页仍是 "Ability portrait"，下一步改名。<span class="refs"><span class="todo">rename → Practice growth</span></span></p></div></div>
-          <div class="shot"><span class="ic">📷</span><div><p class="sid">SHOT M-TOP</p><p class="sw">My 页上半（Trying Point + Ability portrait 现状）</p><p class="se">路由 <code>#/my</code></p></div></div>
+      <div class="phones">
+        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-6.png" alt="原 Page 6 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
+          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT M-TOP</div><div class="sw">My 页上半（Trying Point + Ability portrait 现状）</div><p class="se">路由 <code>#/my</code></p></div>
         </div>
+      </div>
+      <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
+      <div class="response">
+        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>growth map 框架正确</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ 保留个人成长语言，不做公开排名。</p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"Trying Point" 很出色</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="was">原建议：推广到全 app。</p><p class="now">✅ Trying Point 保留；🟡 推广全 app 待办。</p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>"Ability Portrait" 像计分卡</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：改名 "Practice growth"。</p><p class="now">🟡 仍是 "Ability portrait"。<span class="refs"><span class="todo">→ Practice growth</span></span></p></div></div>
       </div>
     </div>
 
     <!-- ───── PAGE 7 ───── -->
     <div class="page">
       <div class="page-head"><span class="page-no">PAGE 7</span><h2>Growth Page Lower — Make Coach Mode A Trust Feature</h2></div>
-      <p class="page-sub">设置页应该让"内容安全边界"对家长/老师/学生都好理解。</p>
-      <div class="split">
-        <div class="orig"><p class="cap">📄 原走查 · 反馈方</p><img src="assets/pdf/page-7.png" alt="原 PDF Page 7"></div>
-        <div class="resp">
-          <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应左图红点）</span></p>
-          <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>practice history 是有用证据</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ history 聚焦练习动作（"Added one example / Used 3 stronger words"）。</p></div></div>
-          <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"User management" 太内部</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：改名 "Settings"（面向学生/家长）。</p><p class="now">🟡 仍是 "User management"。<span class="refs"><span class="todo">rename → Settings</span></span></p></div></div>
-          <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>coach mode 应更明确</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议："Gentle prompts" → "Practice feedback only" / "Contest-safe coaching on"。</p><p class="now">🟡 值仍是 "Gentle prompts"。<span class="refs"><span class="todo">→ Practice feedback only</span></span></p></div></div>
-          <div class="shot"><span class="ic">📷</span><div><p class="sid">SHOT M-LOW</p><p class="sw">My 页下半（User management / Coach mode 现状）</p><p class="se">路由 <code>#/my</code> 下滑</p></div></div>
+      <p class="page-sub">设置页应让"内容安全边界"对家长/老师/学生都好理解。</p>
+      <div class="phones">
+        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-7.png" alt="原 Page 7 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
+          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT M-LOW</div><div class="sw">My 页下半（User management / Coach mode 现状）</div><p class="se">路由 <code>#/my</code> 下滑</p></div>
         </div>
+      </div>
+      <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
+      <div class="response">
+        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>practice history 是有用证据</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ history 聚焦练习动作（"Added one example…"）。</p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"User management" 太内部</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：改名 "Settings"。</p><p class="now">🟡 仍是 "User management"。<span class="refs"><span class="todo">→ Settings</span></span></p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>coach mode 应更明确</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议："Gentle prompts" → "Practice feedback only"。</p><p class="now">🟡 值仍是 "Gentle prompts"。<span class="refs"><span class="todo">→ Practice feedback only</span></span></p></div></div>
       </div>
     </div>
 
     <!-- ───── Text feedback appendix ───── -->
     <div class="sec-divider"><span class="n">附录</span><h2>另外 5 条文字反馈（#1–#5）</h2></div>
-    <p class="page-sub">这些是走查 PDF 之外的试用文字反馈，多数落在练习页/首页，已与上面联动实现。</p>
+    <p class="page-sub">走查 PDF 之外的试用文字反馈，多数落在练习页/首页，已与上面联动实现。</p>
 
     <div class="fb">
       <div class="h"><span class="num">#1</span><b>字幕单行 Karaoke + End 固定</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div>
-      <div class="two"><div class="was"><p class="lab">原问题</p><p>多行字幕信息过载；噪音环境 End 按钮被挤无法点。</p></div><div class="now"><p class="lab">我们怎么改</p><p>提词器式字幕：当前句锁中间、旧句上滚淡出、固定高度；End 固定在顶栏不随字幕移动。</p></div></div>
+      <div class="two"><div class="was"><p class="lab">原问题</p><p>多行字幕信息过载；噪音环境 End 按钮被挤无法点。</p></div><div class="now"><p class="lab">我们怎么改</p><p>提词器式字幕：当前句锁中间、旧句上滚淡出、固定高度；End 固定顶栏不随字幕移动。</p></div></div>
       <div class="refs"><span class="commit">59156f9</span><span class="commit">9995d42</span><span class="commit">9e8cb75</span></div>
     </div>
-
     <div class="fb">
       <div class="h"><span class="num">#2</span><b>去掉音浪等冗余动效</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div>
       <div class="two"><div class="was"><p class="lab">原问题</p><p>音浪+字幕+气泡+KTV+卡片，动态元素太多分心。</p></div><div class="now"><p class="lab">我们怎么改</p><p>砍掉 40 柱音浪大动效；猫只画猫；重复 listening 文案合并到单一固定槽位。</p></div></div>
       <div class="refs"><span class="commit">9e8cb75</span><span class="commit">f6392c9</span><span class="commit">fc53fd2</span></div>
     </div>
-
     <div class="fb">
       <div class="h"><span class="num">#3</span><b>话题提示 + 冷启动关键词</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div>
       <div class="two"><div class="was"><p class="lab">原问题</p><p>冷启动忘话题、说着说着断线，科学话题本就不熟。</p></div><div class="now"><p class="lab">我们怎么改</p><p>顶部常驻 🎯 话题/模式；冷启动关键词标签，讲到哪个自动变绿。</p></div></div>
       <div class="refs"><span class="commit">dee6b0f</span><span class="commit">f6392c9</span></div>
     </div>
-
     <div class="fb">
       <div class="h"><span class="num">#4</span><b>Takeaway 自上而下 + 原文引用</b><span class="chip s-block"><span class="dot"></span>结构已上线·AI 内容受后台影响</span></div>
-      <div class="two"><div class="was"><p class="lab">原问题</p><p>建议和实际说的内容脱节，看不到"因为我说了 X 所以建议 Y"。</p></div><div class="now"><p class="lab">我们怎么改</p><p>先"讲了什么"→ 再建议；每条带 "You said: …" 引用。并重构为 3 大块长页（总结鼓励 / Level up / Coach）。</p></div></div>
+      <div class="two"><div class="was"><p class="lab">原问题</p><p>建议和实际说的内容脱节，看不到"因为我说了 X 所以建议 Y"。</p></div><div class="now"><p class="lab">我们怎么改</p><p>先"讲了什么"→ 再建议；每条带 "You said: …" 引用。重构为 3 大块长页（总结鼓励 / Level up / Coach）。</p></div></div>
       <div class="refs"><span class="commit">fa5b2c2</span><span class="commit">838a68b</span><span class="commit">4bdaf81</span></div>
     </div>
-
     <div class="fb">
       <div class="h"><span class="num">#5</span><b>首页主题化口语活动</b><span class="chip s-part"><span class="dot"></span>部分</span></div>
-      <div class="two"><div class="was"><p class="lab">原问题</p><p>首页是仪表盘，缺"接下来该练什么"的引导。</p></div><div class="now"><p class="lab">我们怎么改</p><p>已加练习模式选择 + 今日话题 Starter；完整的"主题活动卡片区（科普/TOEFL/旅游/日常）"仍待做。</p></div></div>
+      <div class="two"><div class="was"><p class="lab">原问题</p><p>首页是仪表盘，缺"接下来该练什么"的引导。</p></div><div class="now"><p class="lab">我们怎么改</p><p>已加练习模式选择 + 今日话题 Starter；完整"主题活动卡片区（科普/TOEFL/旅游/日常）"仍待做。</p></div></div>
       <div class="refs"><span class="commit">9410ca1</span><span class="todo">themed-events 待做</span></div>
     </div>
 
     <div class="foot">
       SpeakSpark · 面向 6–9 年级中学生的英文科普演讲实时陪练 · 私人练习教练，不是评分工具。<br>
-      导出 PDF：浏览器打开本文件 → 打印（Cmd/Ctrl+P）→ 另存为 PDF，开启「背景图形」。截图位标 ⚠️ 的项需 Supabase 后台恢复后再截。左侧原图来自 <code>Design/iterations/speakspark-labelled-design-walkthrough.pdf</code>。
+      导出 PDF：浏览器打开本文件 → 打印（Cmd/Ctrl+P）→ 另存为 PDF，开启「背景图形」。AFTER 截图位标 ⚠️ 的需 Supabase 后台恢复后再截。BEFORE 手机图裁自 <code>Design/iterations/speakspark-labelled-design-walkthrough.pdf</code>。
     </div>
 
   </div>
