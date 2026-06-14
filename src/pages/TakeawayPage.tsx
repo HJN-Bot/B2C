@@ -625,6 +625,23 @@ export default function TakeawayPage() {
           <h2 className="text-lg font-black text-gray-900">Level up</h2>
         </div>
 
+        {/* When the AI failed we fell back to generic templates — don't dress
+            those up as real, personalized advice; show one honest card instead. */}
+        {takeawayError && takeawayStatus === "ready" ? (
+          <section className="rounded-[1.25rem] border border-amber-200 bg-amber-50/70 p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-black text-amber-700">
+              <AlertTriangle size={15} />
+              Personalized advice needs the coach AI
+            </div>
+            <p className="mt-1.5 text-xs font-semibold leading-relaxed text-amber-600">
+              The AI didn't respond this run, so we're not inventing tips that don't match what you said. Your scores above are real — tap below to get the AI plan.
+            </p>
+            <button onClick={() => void generateTakeaway()} className="mt-3 rounded-xl bg-white px-4 py-2 text-xs font-black text-amber-700 shadow-sm active:scale-95">
+              Try again
+            </button>
+          </section>
+        ) : (
+        <>
         {/* Amplify — a strength worth doing MORE of */}
         {takeaway && takeaway.amplify.length > 0 && (
           <section className="rounded-[1.25rem] border border-green-100 bg-green-50/40 p-4 shadow-sm">
@@ -732,6 +749,8 @@ export default function TakeawayPage() {
             </div>
           )}
         </section>
+        </>
+        )}
 
         {/* ═══════════ BLOCK ③ Coach — chatbox + go again ═══════════ */}
         <div className="flex items-center gap-2 px-1 pt-3">
