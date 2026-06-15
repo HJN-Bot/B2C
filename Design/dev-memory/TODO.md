@@ -6,6 +6,33 @@
 
 ---
 
+## 🎯 Gap TODO（对照设计走查 · 2026-06-15）
+
+> 来源：[报告](../reports/iteration-report-2026-06-14.html) 里标 🟡/⛔ 的项 = 还没改的。按"能不能现在动手"分三档。
+
+### 🟢 现在就能改（纯前端，不依赖后台）
+- [ ] 🟡 **首页 streak 去压力**（PDF P2-1）：`Day 5 streak` → 学习证据钩子（如 "5 practices this week"）。文件 `src/pages/Home.tsx`。
+- [ ] 🟡 **首页 "92 pts" 去分数**（P2-2）：Last Highlight 的 `92 pts` → "2 phrases saved / 1 coach note" 类证据。`Home.tsx`。
+- [ ] 🟡 **首页 CTA 改词**（P2-3）：`Start Speaking` → 测 `Start Practice`。`Home.tsx`。
+- [ ] 🟡 **My 页改名**（P6-3）：`Ability portrait` → `Practice growth`。`src/pages/MyPage.tsx`。
+- [ ] 🟡 **My 页改名**（P7-2）：`User management` → `Settings`。`MyPage.tsx`。
+- [ ] 🟡 **My 页文案**（P7-3）：Coach mode 值 `Gentle prompts` → `Practice feedback only`（或 `Contest-safe coaching on`）。`MyPage.tsx`。
+- [ ] 🟡 **coach-mode 标签推广全 app**（P1/跨页）：现仅 Takeaway 有 "practice feedback only"，推广到练习页/My。
+- [ ] 🟡 **Trying Point 概念推广**（P6-2）：从 My 页扩散到全 app。
+- [ ] 🟡 **首页主题活动卡片区**（#5/P5）：科普英语 / TOEFL / 旅游 / 日常对话（+ 可选限时）。`Home.tsx`。
+- [ ] 🟢 清死代码：`recentLines`（PracticeRoom 无调用）、`index.css` 的 `practice-coach-strip / bubble-stack / listening-bubble*`。
+
+### 🟠 需要你先拍板（取舍/决定）
+- [ ] 🟡 **说话中 KTV 露出 vs 隐藏**（P3-2）：现在保留露出 + Navigator 解释；PDF 建议说话中隐藏、结束后作 private evidence。二选一待定。
+- [ ] ⏸ **Next Run Plan 置顶 hero**（P4-3）：你之前说先放着；要不要提为结束页 hero。
+
+### 🔵 受后台失效阻塞（需先恢复/重建 Supabase，本机无 CLI）
+- [ ] 🔴 **恢复/重建 Supabase 后台**（`jyofoabobuwfowpctbfd` 已 NXDOMAIN）——所有 AI 的总开关。步骤见 [PROJECT-MEMORY](./PROJECT-MEMORY.md) 后台节。
+- [ ] ⛔ 后台恢复后**验证真 AI**：Takeaway 真实主题总结 / 同义词升级 / 对准 KTV 维度的建议 / 连贯 say_this；停顿卡真 AI 追问。（代码已就绪，见 commit `1936038`/`ca2982f`）
+- [ ] 🔴 Supabase `sessions` + `highlights` 真·落库（替 localStorage）。
+
+---
+
 ## 🧭 北极星（核心痛点 · 2026-06-02）
 
 > 用户原话精炼：**"说和交互时重点会偏移，不知道该看哪里。真实的 KTV 指标、语音转录、AI 实时听懂——这些核心都没做好，没有眼前一亮的感觉。"**
