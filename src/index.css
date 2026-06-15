@@ -90,31 +90,8 @@
   /* ── Practice room speaking panel (2026-06-11 redesign) ── */
   .practice-room-panel { flex: 1 1 auto; }
 
-  /* Coach: cat centered, a small status under it (not a wide side strip). */
-  .practice-coach-strip {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-  }
+  /* Coach: cat centered in its stage. */
   .practice-cat-stage { display: flex; justify-content: center; align-items: center; }
-  .practice-bubble-stack {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    max-width: 300px;
-    text-align: center;
-  }
-  .practice-listening-bubble { line-height: 1.35; }
-  .practice-listening-bubble-main { font-size: 14px; font-weight: 800; color: #374151; }
-  /* Keep the coach area light — hide the secondary status lines (the live dot
-     + the one main bubble already convey state; the prompt card carries the
-     actual coaching). Cuts the "too much dialog content" noise. */
-  .practice-listening-bubble-soft,
-  .practice-listening-bubble-tiny { display: none; }
-  .practice-listening-bubble:empty { display: none; }
 
   /* Fixed slot under the cat: status line and the pause card share this space,
      so swapping between them never shifts the transcript below. */

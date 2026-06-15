@@ -47,7 +47,9 @@ export default function MyPage() {
             <div className="min-w-0 flex-1">
               <p className="text-xs font-black uppercase tracking-widest text-blue-500">My Page</p>
               <h1 className="text-2xl font-black text-gray-900">Alex's growth map</h1>
-              <p className="mt-0.5 text-sm font-semibold text-gray-400">Science speaking profile</p>
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-bold text-green-600">
+                <ShieldCheck size={11} /> Practice feedback only
+              </span>
             </div>
             <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-400">
               <Settings size={18} />
@@ -77,7 +79,7 @@ export default function MyPage() {
 
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Ability portrait</p>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Practice growth</p>
             <TrendingUp size={16} className="text-blue-500" />
           </div>
           <div className="space-y-3">
@@ -127,10 +129,10 @@ export default function MyPage() {
         </section>
 
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-xs font-black uppercase tracking-widest text-gray-400">User management</p>
+          <p className="mb-3 text-xs font-black uppercase tracking-widest text-gray-400">Settings</p>
           <div className="space-y-2">
             {[
-              { icon: ShieldCheck, label: "Coach mode", value: "Gentle prompts" },
+              { icon: ShieldCheck, label: "Coach mode", value: "Practice feedback only" },
               { icon: Sparkles, label: "Saved phrase bank", value: "12 phrases" },
               { icon: Settings, label: "Prompt settings", value: "Science presentation" },
             ].map(({ icon: Icon, label, value }) => (

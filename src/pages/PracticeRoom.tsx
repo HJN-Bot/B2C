@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Blocks, BookOpen, Brain, Clock, MessageCircle, Sparkles, Star, StopCircle, Waves, Zap, type LucideIcon } from "lucide-react";
+import { Blocks, BookOpen, Brain, Clock, MessageCircle, ShieldCheck, Sparkles, Star, StopCircle, Waves, Zap, type LucideIcon } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 
@@ -385,19 +385,6 @@ function topicKeywords(topic: string): string[] {
   )).slice(0, 5);
 }
 
-// Teleprompter: the last n sentence-ish lines for a fixed-height window.
-// The last item is the "current" line (locked in the middle); earlier ones
-// sit above it, dimmed, and scroll off the top.
-function recentLines(transcript: string, n = 3): string[] {
-  const t = transcript.replace(/\s+/g, " ").trim();
-  if (!t) return [];
-  const sentences = (t.match(/[^.!?]+[.!?]*/g) || [t]).map((s) => s.trim()).filter(Boolean);
-  const capped = sentences.map((s) => {
-    const w = s.split(" ");
-    return w.length > 14 ? "…" + w.slice(-14).join(" ") : s;
-  });
-  return capped.slice(-n);
-}
 
 // ─── AI Character ─────────────────────────────────────────────────────────────
 
@@ -1380,27 +1367,36 @@ export default function PracticeRoom() {
         {/* KTV bars — purposeful event score */}
         <div ref={ktvBarRef} className="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 space-y-2">
           <div className="grid grid-cols-2 gap-x-2 gap-y-2">
-            {KTV_ITEMS.map(({ label, key, Icon, color, purpose }) => (
-              <div
-                key={key}
-                className="flex items-center gap-1.5 min-w-0 rounded-lg px-1.5 py-1 transition-all duration-300"
-                style={{
-                  background: activeKtvMetric === key ? "rgba(255,201,71,0.16)" : "transparent",
-                  boxShadow: activeKtvMetric === key ? "0 0 0 1px rgba(255,201,71,0.28)" : "none",
-                }}
-              >
-                <Icon size={15} className="shrink-0" style={{ color }} />
-                <div className="w-[68px] shrink-0 leading-tight">
-                  <div className="text-[11px] font-black text-gray-700">{label}</div>
-                  <div className="text-[9px] font-semibold text-gray-400">{purpose}</div>
+            {KTV_ITEMS.map(({ label, key, Icon, color, purpose }) => {
+              // Keep all four visible as an encouragement frame, but let attention
+              // follow the points: metrics with no score yet are dimmed/greyed,
+              // scoring ones show their colour, and the one just gained pulses.
+              const scored = ktvScore[key] > 0;
+              const active = activeKtvMetric === key;
+              const tint = scored ? color : "#cbd5e1";
+              return (
+                <div
+                  key={key}
+                  className="flex items-center gap-1.5 min-w-0 rounded-lg px-1.5 py-1 transition-all duration-300"
+                  style={{
+                    opacity: scored || active ? 1 : 0.5,
+                    background: active ? "rgba(255,201,71,0.16)" : "transparent",
+                    boxShadow: active ? "0 0 0 1px rgba(255,201,71,0.28)" : "none",
+                  }}
+                >
+                  <Icon size={15} className="shrink-0" style={{ color: tint }} />
+                  <div className="w-[68px] shrink-0 leading-tight">
+                    <div className="text-[11px] font-black" style={{ color: scored ? "#374151" : "#9ca3af" }}>{label}</div>
+                    <div className="text-[9px] font-semibold text-gray-400">{purpose}</div>
+                  </div>
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${ktvScore[key]}%`, background: tint }} />
+                  </div>
+                  <span className="text-xs font-mono w-6 text-right" style={{ color: tint }}>{Math.round(ktvScore[key])}</span>
                 </div>
-                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${ktvScore[key]}%`, background: color }} />
-                </div>
-                <span className="text-xs font-mono w-6 text-right" style={{ color }}>{Math.round(ktvScore[key])}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {latestKtvEvent && (() => {
             const EvIcon = KTV_META[latestKtvEvent.metric].Icon;
@@ -1564,8 +1560,11 @@ export default function PracticeRoom() {
                 disabled={apiStatus === "loading"}
                 className="rounded-2xl px-8 py-4 text-base font-black text-white shadow-md transition-transform active:scale-95 disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)", boxShadow: "0 6px 20px rgba(88,169,255,0.3)" }}>
-                {apiStatus === "loading" ? "Loading AI..." : "🎙️ Start Speaking"}
+                {apiStatus === "loading" ? "Loading AI..." : "🎙️ Start Practice"}
               </button>
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-600">
+                <ShieldCheck size={11} /> Practice feedback only
+              </span>
             </div>
           )}
 

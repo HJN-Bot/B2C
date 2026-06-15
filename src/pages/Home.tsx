@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Flame, Star, Volume2, ChevronRight, Lightbulb } from "lucide-react";
+import { CalendarCheck, Star, Volume2, ChevronRight, Lightbulb } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
 import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 
@@ -12,6 +12,13 @@ const TOPIC_STARTERS = [
   "Why is renewable energy the key to our planet's future?",
   "How do self-driving cars make decisions in real time?",
   "What makes CRISPR a revolutionary tool in genetics?",
+];
+
+const THEMES = [
+  { emoji: "🔬", label: "Science English", blurb: "Explain how things work", topic: "How does AI change the way doctors diagnose diseases?" },
+  { emoji: "🎓", label: "Exam topics", blurb: "TOEFL / IELTS style", topic: "Describe a piece of technology you find useful and explain why." },
+  { emoji: "✈️", label: "Travel", blurb: "Trips & places", topic: "Talk about a place you'd love to visit and what you'd do there." },
+  { emoji: "💬", label: "Daily talk", blurb: "Everyday conversation", topic: "Tell me about your weekend plans and why you chose them." },
 ];
 
 const MOCK_LAST_HIGHLIGHT = {
@@ -44,7 +51,7 @@ export default function Home() {
           steps={[
             { ref: modeRef, title: "Pick how you practice", body: "Free Talk, Exam Prep, or Story — this sets the coach's style for your whole run. You can switch anytime." },
             { ref: topicRef, title: "Need an idea?", body: "Stuck on what to say? Tap Use this topic to start with a science prompt, or My own to bring your own." },
-            { ref: startRef, title: "Start speaking", body: "Tap here when you're ready. You'll get live captions, a cat coach, and a takeaway when you finish." },
+            { ref: startRef, title: "Start practice", body: "Tap here when you're ready. You'll get live captions, a cat coach, and a takeaway when you finish." },
           ]}
         />
       )}
@@ -54,8 +61,8 @@ export default function Home() {
         <div>
           <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name} 👋</h1>
           <div className="flex items-center gap-1.5 mt-1">
-            <Flame size={15} className="text-orange-400" />
-            <span className="text-sm text-gray-500">Day {MOCK_USER.streak} streak · keep going!</span>
+            <CalendarCheck size={15} className="text-green-500" />
+            <span className="text-sm text-gray-500">{MOCK_USER.streak} practices this week · nice work</span>
           </div>
         </div>
 
@@ -108,6 +115,26 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Themed practice events — pick a direction */}
+        <div>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Practice themes</span>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {THEMES.map((theme) => (
+              <button
+                key={theme.label}
+                onClick={() => navigate("/practice", { state: { topic: theme.topic } })}
+                className="flex items-start gap-2.5 rounded-2xl border border-gray-100 bg-white p-3 text-left shadow-sm transition active:scale-95"
+              >
+                <span className="text-xl leading-none">{theme.emoji}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-black leading-tight text-gray-800">{theme.label}</span>
+                  <span className="mt-0.5 block text-xs font-semibold text-gray-400">{theme.blurb}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Last highlight */}
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -130,8 +157,8 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Star size={13} className="text-amber-400" />
-                <span className="text-sm font-bold text-amber-500">{MOCK_LAST_HIGHLIGHT.score} pts</span>
-                <span className="text-xs text-gray-400">· {MOCK_LAST_HIGHLIGHT.dimension}</span>
+                <span className="text-sm font-bold text-amber-500">Phrase saved</span>
+                <span className="text-xs text-gray-400">· {MOCK_LAST_HIGHLIGHT.dimension} win</span>
               </div>
               <button className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-50">
                 <Volume2 size={14} className="text-blue-500" />
@@ -153,7 +180,7 @@ export default function Home() {
           }}
         >
           <span className="text-2xl">🎙️</span>
-          Start Speaking
+          Start Practice
         </button>
 
       </div>
