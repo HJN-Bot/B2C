@@ -544,77 +544,16 @@ export default function TakeawayPage() {
           </div>
         )}
 
-        {/* #4: top-down — what you talked about, before any advice */}
-        {takeaway && takeaway.summary.length > 0 && (
-          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">What you talked about</p>
-            <div className="mt-2 space-y-1.5">
-              {takeaway.summary.map((point) => (
-                <div key={point} className="flex gap-2">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{point}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* What you did well — credit first, with the words they actually said */}
+        {/* One quick win up top — the full detail lives in block ③ below, so we
+            lead with affirmation but don't bury the Level-up plan. */}
         {takeaway && takeaway.what_worked.length > 0 && (
-          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-widest text-blue-500">What you did well</p>
-            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-              {takeaway.what_worked.map((item) => (
-                <div key={item.point}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
-                  {item.quote && (
-                    <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
-                      You said: “{item.quote}”
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Your progress this run — scores + what moved */}
-        {takeaway && (
-          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your progress this run</p>
-              <TrendingUp size={15} className="text-green-500" />
-            </div>
-            <div className="space-y-2.5">
-              {(["flow", "words", "sentences", "story"] as KTVMetric[]).map((metric) => {
-                const level = trendLevel(ktvScore[metric]);
-                const tag = level === "strong" ? "Strong" : level === "growing" ? "Growing" : "Just starting";
-                const tagStyle = level === "strong" ? "bg-green-50 text-green-600" : level === "growing" ? "bg-blue-50 text-blue-600" : "bg-gray-50 text-gray-400";
-                const { Icon, color } = KTV_META[metric];
-                return (
-                  <div key={metric} className="flex items-center gap-2">
-                    <Icon size={15} className="w-5 shrink-0" style={{ color }} />
-                    <span className="w-16 shrink-0 text-xs font-bold text-gray-500">{KTV_META[metric].label}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-                      <div className="h-full rounded-full" style={{ width: `${ktvScore[metric]}%`, backgroundColor: color }} />
-                    </div>
-                    <span className="w-7 text-right font-mono text-xs font-black" style={{ color }}>{Math.round(ktvScore[metric])}</span>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${tagStyle}`}>{tag}</span>
-                  </div>
-                );
-              })}
-            </div>
-            {ktvEvents.length > 0 && (
-              <div className="mt-3 border-t border-gray-100 pt-2">
-                <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-gray-300">What moved</p>
-                <div className="space-y-1">
-                  {ktvEvents.slice(0, 4).map((e) => (
-                    <p key={e.id} className="text-xs font-semibold text-gray-500">
-                      <span className="font-black text-green-600">+{e.delta} {KTV_META[e.metric].label}</span> · {e.reason}
-                    </p>
-                  ))}
-                </div>
-              </div>
+          <section className="rounded-[1.25rem] border border-blue-100 bg-blue-50/40 p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-widest text-blue-500">One thing you did well</p>
+            <p className="mt-2 text-sm font-bold leading-relaxed text-gray-800">{takeaway.what_worked[0].point}</p>
+            {takeaway.what_worked[0].quote && (
+              <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/70 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                You said: “{takeaway.what_worked[0].quote}”
+              </p>
             )}
           </section>
         )}
@@ -634,7 +573,7 @@ export default function TakeawayPage() {
               Personalized advice needs the coach AI
             </div>
             <p className="mt-1.5 text-xs font-semibold leading-relaxed text-amber-600">
-              The AI didn't respond this run, so we're not inventing tips that don't match what you said. Your scores above are real — tap below to get the AI plan.
+              The AI didn't respond this run, so we're not inventing tips that don't match what you said. Your scores in "Your run in detail" below are real — tap to get the AI plan.
             </p>
             <button onClick={() => void generateTakeaway()} className="mt-3 rounded-xl bg-white px-4 py-2 text-xs font-black text-amber-700 shadow-sm active:scale-95">
               Try again
@@ -752,9 +691,90 @@ export default function TakeawayPage() {
         </>
         )}
 
-        {/* ═══════════ BLOCK ③ Coach — chatbox + go again ═══════════ */}
+        {/* ═══════════ BLOCK ③ Your run in detail — moved below Level up ═══════════ */}
         <div className="flex items-center gap-2 px-1 pt-3">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs font-black text-white">3</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-xs font-black text-white">3</span>
+          <h2 className="text-lg font-black text-gray-900">Your run in detail</h2>
+        </div>
+
+        {/* what you talked about */}
+        {takeaway && takeaway.summary.length > 0 && (
+          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">What you talked about</p>
+            <div className="mt-2 space-y-1.5">
+              {takeaway.summary.map((point) => (
+                <div key={point} className="flex gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{point}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* the rest of what you did well (the first one is shown up top) */}
+        {takeaway && takeaway.what_worked.length > 1 && (
+          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-widest text-blue-500">More you did well</p>
+            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+              {takeaway.what_worked.slice(1).map((item) => (
+                <div key={item.point}>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
+                  {item.quote && (
+                    <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                      You said: “{item.quote}”
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Your progress this run — scores + what moved */}
+        {takeaway && (
+          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your progress this run</p>
+              <TrendingUp size={15} className="text-green-500" />
+            </div>
+            <div className="space-y-2.5">
+              {(["flow", "words", "sentences", "story"] as KTVMetric[]).map((metric) => {
+                const level = trendLevel(ktvScore[metric]);
+                const tag = level === "strong" ? "Strong" : level === "growing" ? "Growing" : "Just starting";
+                const tagStyle = level === "strong" ? "bg-green-50 text-green-600" : level === "growing" ? "bg-blue-50 text-blue-600" : "bg-gray-50 text-gray-400";
+                const { Icon, color } = KTV_META[metric];
+                return (
+                  <div key={metric} className="flex items-center gap-2">
+                    <Icon size={15} className="w-5 shrink-0" style={{ color }} />
+                    <span className="w-16 shrink-0 text-xs font-bold text-gray-500">{KTV_META[metric].label}</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-full rounded-full" style={{ width: `${ktvScore[metric]}%`, backgroundColor: color }} />
+                    </div>
+                    <span className="w-7 text-right font-mono text-xs font-black" style={{ color }}>{Math.round(ktvScore[metric])}</span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${tagStyle}`}>{tag}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {ktvEvents.length > 0 && (
+              <div className="mt-3 border-t border-gray-100 pt-2">
+                <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-gray-300">What moved</p>
+                <div className="space-y-1">
+                  {ktvEvents.slice(0, 4).map((e) => (
+                    <p key={e.id} className="text-xs font-semibold text-gray-500">
+                      <span className="font-black text-green-600">+{e.delta} {KTV_META[e.metric].label}</span> · {e.reason}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ═══════════ BLOCK ④ Coach — chatbox + go again ═══════════ */}
+        <div className="flex items-center gap-2 px-1 pt-3">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs font-black text-white">4</span>
           <h2 className="text-lg font-black text-gray-900">Coach</h2>
         </div>
 

@@ -24,7 +24,7 @@
 
 ### 🟠 需要你先拍板（取舍/决定）
 - [x] 🟡 **说话中 KTV 露出 vs 隐藏**（P3-2）：**定调=保留作鼓励框架**，未得分弱化/灰、得分上色、刚加分高亮。`✅🧪`
-- [ ] ⏸ **Next Run Plan 置顶 hero**（P4-3）：=结束页"下一次怎么说"卡（Focus/Say this/Reuse words/One move），现在块② Level up 内；是否提为置顶 hero，待你定。
+- [x] 🟡 **Next Run Plan 提前**（P4-3）：定调=不置顶裸 hero，而是 Takeaway 重排为「精简鼓励 → ② Level up（含 Next Run Plan）→ ③ 详情 → ④ Coach」，价值不再被埋。`✅🧪` [spec](../specs/2026-06-15-takeaway-reorder.md)
 
 ### 🔵 受后台失效阻塞（需先恢复/重建 Supabase，本机无 CLI）
 - [ ] 🔴 **恢复/重建 Supabase 后台**（`jyofoabobuwfowpctbfd` 已 NXDOMAIN）——所有 AI 的总开关。步骤见 [PROJECT-MEMORY](./PROJECT-MEMORY.md) 后台节。

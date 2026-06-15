@@ -24,6 +24,11 @@
 - ✅🧪 **Takeaway 3 大块渲染重排完成**（`src/pages/TakeawayPage.tsx`，tsc+build 通过，未浏览器验证）：① Your run（Hero+鼓励+talked-about+What you did well+进步分值）② Level up（**Amplify 新上墙**+Change+Next Run Plan）③ Coach（Chatbox+Go again）。带数字徽标的大分区标题、长页下滑。审阅清单：[REVIEW-2026-06-14.md](./REVIEW-2026-06-14.md)。
 - ✅🧪 顺手 🟢：TakeawayPage KTV 图标 emoji→lucide 并上色，与练习页统一。
 
+## 📌 2026-06-15 — Gap 批次 + Takeaway 重排
+- ✅🧪 Gap 批次 `87a6cd6`：首页去 streak/去裸分/CTA 改 Start Practice + 主题活动卡；My 改名（Practice growth / Settings / Practice feedback only）；coach-mode 信任 chip 推广；KTV 未得分弱化+得分高亮；清死代码。[spec](../specs/2026-06-15-gap-batch.md)
+- ✅🧪 **Takeaway 重排**：精简鼓励(+1 quick win) → ② Level up（含 Next Run Plan，提前）→ ③ Your run in detail（讲了什么/更多做得好/进步条下移）→ ④ Coach。回应 PDF P4③"价值别被埋"。[spec](../specs/2026-06-15-takeaway-reorder.md)
+- 报告对应项已翻 ✅。剩：Trying Point 全 app 推广（待定方案）、Supabase 后台恢复（总开关）。
+
 ## 🚨 2026-06-14 — 根因确诊：Supabase 后台没了
 - 用户反馈"AI 不智能"。诊断琥珀条 reason = `Failed to send a request to the Edge Function`。
 - 实测 `nslookup jyofoabobuwfowpctbfd.supabase.co` → **NXDOMAIN**（域名不解析），`supabase.com` 正常 → **后台项目已失效**（暂停/回收）。
