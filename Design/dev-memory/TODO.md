@@ -10,21 +10,21 @@
 
 > 来源：[报告](../reports/iteration-report-2026-06-14.html) 里标 🟡/⛔ 的项 = 还没改的。按"能不能现在动手"分三档。
 
-### 🟢 现在就能改（纯前端，不依赖后台）
-- [ ] 🟡 **首页 streak 去压力**（PDF P2-1）：`Day 5 streak` → 学习证据钩子（如 "5 practices this week"）。文件 `src/pages/Home.tsx`。
-- [ ] 🟡 **首页 "92 pts" 去分数**（P2-2）：Last Highlight 的 `92 pts` → "2 phrases saved / 1 coach note" 类证据。`Home.tsx`。
-- [ ] 🟡 **首页 CTA 改词**（P2-3）：`Start Speaking` → 测 `Start Practice`。`Home.tsx`。
-- [ ] 🟡 **My 页改名**（P6-3）：`Ability portrait` → `Practice growth`。`src/pages/MyPage.tsx`。
-- [ ] 🟡 **My 页改名**（P7-2）：`User management` → `Settings`。`MyPage.tsx`。
-- [ ] 🟡 **My 页文案**（P7-3）：Coach mode 值 `Gentle prompts` → `Practice feedback only`（或 `Contest-safe coaching on`）。`MyPage.tsx`。
-- [ ] 🟡 **coach-mode 标签推广全 app**（P1/跨页）：现仅 Takeaway 有 "practice feedback only"，推广到练习页/My。
-- [ ] 🟡 **Trying Point 概念推广**（P6-2）：从 My 页扩散到全 app。
-- [ ] 🟡 **首页主题活动卡片区**（#5/P5）：科普英语 / TOEFL / 旅游 / 日常对话（+ 可选限时）。`Home.tsx`。
-- [ ] 🟢 清死代码：`recentLines`（PracticeRoom 无调用）、`index.css` 的 `practice-coach-strip / bubble-stack / listening-bubble*`。
+### 🟢 现在就能改（纯前端，不依赖后台）—— 2026-06-15 批次已做 `87a6cd6`
+- [x] 🟡 **首页 streak 去压力**（P2-1）：→ "5 practices this week"。`✅🧪` [spec](../specs/2026-06-15-gap-batch.md)
+- [x] 🟡 **首页 "92 pts" 去分数**（P2-2）：→ "Phrase saved · … win" 证据。`✅🧪`
+- [x] 🟡 **首页 CTA 改词**（P2-3）：`Start Speaking` → `Start Practice`（首页+练习页）。`✅🧪`
+- [x] 🟡 **My 页改名**（P6-3）：`Ability portrait` → `Practice growth`。`✅🧪`
+- [x] 🟡 **My 页改名**（P7-2）：`User management` → `Settings`。`✅🧪`
+- [x] 🟡 **My 页文案**（P7-3）：Coach mode → `Practice feedback only`。`✅🧪`
+- [x] 🟡 **coach-mode 标签推广**（P1/跨页）：信任 chip 推到练习页(开练前)+My 头部。`✅🧪`
+- [x] 🟡 **首页主题活动卡片区**（#5/P5）：科普/Exam/旅游/日常 4 卡，带 topic 进练习。`✅🧪`
+- [x] 🟢 清死代码：删 `recentLines` + 无用 `practice-coach-strip/bubble-stack/listening-bubble*`。`✅`
+- [ ] 🟡 **Trying Point 概念推广**（P6-2）：作为语言原则后续贯彻，本批未强行加组件。
 
 ### 🟠 需要你先拍板（取舍/决定）
-- [ ] 🟡 **说话中 KTV 露出 vs 隐藏**（P3-2）：现在保留露出 + Navigator 解释；PDF 建议说话中隐藏、结束后作 private evidence。二选一待定。
-- [ ] ⏸ **Next Run Plan 置顶 hero**（P4-3）：你之前说先放着；要不要提为结束页 hero。
+- [x] 🟡 **说话中 KTV 露出 vs 隐藏**（P3-2）：**定调=保留作鼓励框架**，未得分弱化/灰、得分上色、刚加分高亮。`✅🧪`
+- [ ] ⏸ **Next Run Plan 置顶 hero**（P4-3）：=结束页"下一次怎么说"卡（Focus/Say this/Reuse words/One move），现在块② Level up 内；是否提为置顶 hero，待你定。
 
 ### 🔵 受后台失效阻塞（需先恢复/重建 Supabase，本机无 CLI）
 - [ ] 🔴 **恢复/重建 Supabase 后台**（`jyofoabobuwfowpctbfd` 已 NXDOMAIN）——所有 AI 的总开关。步骤见 [PROJECT-MEMORY](./PROJECT-MEMORY.md) 后台节。

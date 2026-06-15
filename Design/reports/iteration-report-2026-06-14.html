@@ -180,9 +180,9 @@
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
       <div class="response">
-        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>Streak 制造压力</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：用 "5 practices this week" 代替 streak。</p><p class="now">🟡 首页仍是 "Day 5 streak"，下一步改成学习证据型钩子。</p></div></div>
-        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"92 pts" 像分数</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：换 "2 phrases saved / 1 coach note"。</p><p class="now">🟡 仍显示 pts，待替换为练习证据。</p></div></div>
-        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>CTA 偏比赛</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：测 "Start Practice"。</p><p class="now">🟡 仍为 "Start Speaking"，待 A/B。</p></div></div>
+        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>Streak 制造压力</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：用 "5 practices this week" 代替 streak。</p><p class="now">✅ 改为 <b>"5 practices this week"</b>，去掉 streak 压力。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"92 pts" 像分数</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：换 "2 phrases saved / 1 coach note"。</p><p class="now">✅ 去掉裸分，改为 <b>"Phrase saved · … win"</b> 证据。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>CTA 偏比赛</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：测 "Start Practice"。</p><p class="now">✅ 改为 <b>"Start Practice"</b>（首页 + 练习页）。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
         <div class="row"><span class="pin dir">+</span><div class="body"><div class="t"><b>新增：首页 Navigator 引导</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="now">新用户弹 3 步引导（模式/话题/Start），只出一次。<span class="refs"><span class="commit">63b78d4</span></span></p></div></div>
       </div>
     </div>
@@ -200,7 +200,7 @@
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
       <div class="response">
         <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>"AI moments" 模糊像分数</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改 "coach notes" 或移除。</p><p class="now">✅ 删掉模糊计数，换成顶部 <b>🎯 话题/模式</b>。<span class="refs"><span class="commit">f6392c9</span></span></p></div></div>
-        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>指标像实时评判</b><span class="chip s-part"><span class="dot"></span>取舍待定</span></div><p class="was">原建议：说话中隐藏指标，结束后作 private evidence。</p><p class="now">🟡 我们<b>保留 KTV 露出</b>并用 Navigator 解释"是私人信号、不是评分"——与"隐藏"是取舍，待你定。</p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>指标像实时评判</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：说话中隐藏指标，结束后作 private evidence。</p><p class="now">✅ 定调<b>保留作鼓励框架</b>，但未得分的指标弱化/灰掉、得分的上色、刚加分的高亮——注意力跟着分走。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
         <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>"AI is listening" 监控感</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改 "Coach is following your idea"。</p><p class="now">✅ 改为 <b>"Coach is following your story"</b> + 猫状态。<span class="refs"><span class="commit">fa5b2c2</span><span class="commit">35472de</span></span></p></div></div>
         <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>Loading 阻塞练习</b><span class="chip s-block"><span class="dot"></span>就绪·受后台影响</span></div><p class="was">原建议：允许先录后生成。</p><p class="now">✅ 预生成缓冲 + 多层 fallback；<b>停顿卡优先真 AI</b>（有缓冲秒弹，无则猫 thinking，断网才本地）。<span class="refs"><span class="commit">1936038</span></span></p></div></div>
       </div>
@@ -257,7 +257,7 @@
       <div class="response">
         <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>growth map 框架正确</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ 保留个人成长语言，不做公开排名。</p></div></div>
         <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"Trying Point" 很出色</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="was">原建议：推广到全 app。</p><p class="now">✅ Trying Point 保留；🟡 推广全 app 待办。</p></div></div>
-        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>"Ability Portrait" 像计分卡</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：改名 "Practice growth"。</p><p class="now">🟡 仍是 "Ability portrait"。<span class="refs"><span class="todo">→ Practice growth</span></span></p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>"Ability Portrait" 像计分卡</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改名 "Practice growth"。</p><p class="now">✅ 已改名 <b>"Practice growth"</b>。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
       </div>
     </div>
 
@@ -274,8 +274,8 @@
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
       <div class="response">
         <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>practice history 是有用证据</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ history 聚焦练习动作（"Added one example…"）。</p></div></div>
-        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"User management" 太内部</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议：改名 "Settings"。</p><p class="now">🟡 仍是 "User management"。<span class="refs"><span class="todo">→ Settings</span></span></p></div></div>
-        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>coach mode 应更明确</b><span class="chip s-part"><span class="dot"></span>待做</span></div><p class="was">原建议："Gentle prompts" → "Practice feedback only"。</p><p class="now">🟡 值仍是 "Gentle prompts"。<span class="refs"><span class="todo">→ Practice feedback only</span></span></p></div></div>
+        <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"User management" 太内部</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改名 "Settings"。</p><p class="now">✅ 已改名 <b>"Settings"</b>。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>coach mode 应更明确</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议："Gentle prompts" → "Practice feedback only"。</p><p class="now">✅ 改为 <b>"Practice feedback only"</b>；信任标签也推广到练习页 + My 头部。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
       </div>
     </div>
 
@@ -304,9 +304,9 @@
       <div class="refs"><span class="commit">fa5b2c2</span><span class="commit">838a68b</span><span class="commit">4bdaf81</span></div>
     </div>
     <div class="fb">
-      <div class="h"><span class="num">#5</span><b>首页主题化口语活动</b><span class="chip s-part"><span class="dot"></span>部分</span></div>
-      <div class="two"><div class="was"><p class="lab">原问题</p><p>首页是仪表盘，缺"接下来该练什么"的引导。</p></div><div class="now"><p class="lab">我们怎么改</p><p>已加练习模式选择 + 今日话题 Starter；完整"主题活动卡片区（科普/TOEFL/旅游/日常）"仍待做。</p></div></div>
-      <div class="refs"><span class="commit">9410ca1</span><span class="todo">themed-events 待做</span></div>
+      <div class="h"><span class="num">#5</span><b>首页主题化口语活动</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div>
+      <div class="two"><div class="was"><p class="lab">原问题</p><p>首页是仪表盘，缺"接下来该练什么"的引导。</p></div><div class="now"><p class="lab">我们怎么改</p><p>练习模式选择 + 今日话题 Starter + 新增<b>主题活动卡片区</b>（科普英语 / Exam / 旅游 / 日常对话），点击带 topic 进练习。</p></div></div>
+      <div class="refs"><span class="commit">9410ca1</span><span class="commit">87a6cd6</span></div>
     </div>
 
     <div class="foot">
