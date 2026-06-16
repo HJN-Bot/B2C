@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarCheck, Star, Volume2, ChevronRight, Lightbulb } from "lucide-react";
+import { CalendarCheck, Star, Volume2, ChevronRight, Lightbulb, Target } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
+import { currentTryingPoint } from "@/lib/trying-point";
 import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 
 const MOCK_USER = { name: "Alex", streak: 5 };
@@ -65,6 +66,21 @@ export default function Home() {
             <span className="text-sm text-gray-500">{MOCK_USER.streak} practices this week · nice work</span>
           </div>
         </div>
+
+        {/* This week's trying point — one private upgrade, shared with Takeaway + My */}
+        <button
+          onClick={() => navigate("/practice")}
+          className="flex items-center gap-3 rounded-2xl border border-green-100 bg-green-50/60 p-3.5 text-left transition active:scale-95"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-green-600">
+            <Target size={18} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-black uppercase tracking-widest text-green-600">This week's trying point</span>
+            <span className="mt-0.5 block text-sm font-bold leading-snug text-gray-800">{currentTryingPoint()}</span>
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-green-400" />
+        </button>
 
         {/* Practice mode — carried into PracticeRoom + Takeaway */}
         <div ref={modeRef}>

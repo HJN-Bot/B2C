@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight, ClipboardList, Settings, ShieldCheck, Sparkles, TrendingUp, UserRound } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { getSessions, type SessionRecord } from "@/lib/session-history";
+import { TRYING_POINTS } from "@/lib/trying-point";
 
 const ability = [
   { label: "Flow", value: 64, change: "+12", color: "#58A9FF" },
@@ -25,12 +26,6 @@ function sessionTitle(s: SessionRecord): string {
   const words = s.transcript.trim().split(/\s+/).filter(Boolean).slice(0, 6).join(" ");
   return words ? `${words}${s.transcript.trim().split(/\s+/).length > 6 ? "…" : ""}` : "Practice run";
 }
-
-const tryingPoints = [
-  "Add one real example after your first claim",
-  "Reuse two saved science words",
-  "Hold your opening thought for 20 seconds",
-];
 
 export default function MyPage() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
@@ -66,7 +61,7 @@ export default function MyPage() {
             <Sparkles size={18} className="text-green-500" />
           </div>
           <div className="space-y-2">
-            {tryingPoints.map((point, index) => (
+            {TRYING_POINTS.map((point, index) => (
               <div key={point} className="flex items-center gap-3 rounded-2xl bg-green-50/70 px-3 py-2.5">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-green-600">
                   {index + 1}

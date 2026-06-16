@@ -680,7 +680,7 @@ export default function TakeawayPage() {
                 ))}
               </div>
               <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2.5">
-                <p className="text-[11px] font-black uppercase tracking-widest text-amber-600">One move</p>
+                <p className="text-[11px] font-black uppercase tracking-widest text-amber-600">🎯 Your next trying point</p>
                 <div className="mt-1 max-h-20 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
                   <p className="text-sm font-bold leading-relaxed text-gray-800">{plan.one_move}</p>
                 </div>
