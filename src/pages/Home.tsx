@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CalendarCheck, Star, Volume2, ChevronRight, Lightbulb, Target } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
 import { currentTryingPoint } from "@/lib/trying-point";
+import AppTabBar from "@/components/AppTabBar";
 import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 
 const MOCK_USER = { name: "Alex", streak: 5 };
@@ -49,7 +50,7 @@ export default function Home() {
           ]}
         />
       )}
-      <div className="flex-1 flex flex-col px-5 pt-8 pb-10 gap-6">
+      <div className="flex-1 flex flex-col px-5 pt-8 pb-28 gap-6">
 
         {/* Greeting */}
         <div>
@@ -173,6 +174,7 @@ export default function Home() {
         </button>
 
       </div>
+      <AppTabBar />
     </div>
   );
 }
