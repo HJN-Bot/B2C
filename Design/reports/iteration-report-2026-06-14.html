@@ -75,6 +75,10 @@
   .phone.before .phlab{color:var(--faint)} .phone.before .phlab .tg{background:#eef1f6;color:var(--sub);border:1px solid var(--line)}
   .phone.after .phlab{color:var(--green)} .phone.after .phlab .tg{background:var(--green-bg);color:var(--green);border:1px solid var(--green-line)}
   .phone img{width:100%;max-width:300px;display:block;margin:0 auto;border-radius:11px;border:1px solid var(--rule)}
+  .phone img.shot-img{aspect-ratio:828/1538;object-fit:cover;object-position:top}
+  .phone img.shot-img.bottom{object-position:bottom}
+  .ph-cap{max-width:300px;margin:9px auto 0;text-align:center;font-size:11.5px;color:var(--sub);line-height:1.5}
+  .ph-cap code{font-family:ui-monospace,Menlo,monospace;background:#fff;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:11px}
   .ph-slot{max-width:300px;margin:0 auto;aspect-ratio:828/1538;border:1.5px dashed var(--blue-line);border-radius:14px;background:var(--blue-soft);
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;gap:8px}
   .ph-slot .ic{width:36px;height:36px;border-radius:11px;background:#fff;border:1px solid var(--blue-line);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:18px}
@@ -173,9 +177,10 @@
       <div class="page-head"><span class="page-no">PAGE 2</span><h2>Start Screen — Motivation Without Scoring</h2></div>
       <p class="page-sub">首屏友好，但分数/streak 会带来练习压力。</p>
       <div class="phones">
-        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-2.png" alt="原 Page 2 手机"></div>
-        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
-          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT H-HOME · H-TOUR</div><div class="sw">首页（模式 + 今日话题）/ 首页引导气泡</div><p class="se">路由 <code>#/</code>；引导清 <code>speakspark.homeOnboarded</code></p></div>
+        <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-2.png" alt="原 Page 2 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
+          <img class="shot-img" src="assets/phone/after-home.png" alt="V2 首页">
+          <p class="ph-cap">首页 V2（trying point + 主题卡 + 去 streak/分数）· <code>#/</code></p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
@@ -192,9 +197,10 @@
       <div class="page-head"><span class="page-no">PAGE 3</span><h2>Practice Screen — Reduce Judging Signals</h2></div>
       <p class="page-sub">说话当下，界面应像冷静的教练，不是实时评分表。</p>
       <div class="phones">
-        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-3.png" alt="原 Page 3 手机"></div>
-        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
-          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT P-FULL · P-PAUSE</div><div class="sw">练习页全景 / 停顿反馈卡</div><p class="se">路由 <code>#/practice</code> → Start。<span class="warn">⚠️ 真问题需后台恢复</span></p></div>
+        <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-3.png" alt="原 Page 3 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
+          <img class="shot-img" src="assets/phone/after-practice.png" alt="V2 练习页">
+          <p class="ph-cap">练习页 V2（KTV 未得分弱化 + 信任标签）· <code>#/practice</code></p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
@@ -211,8 +217,8 @@
       <div class="page-head"><span class="page-no">PAGE 4</span><h2>Takeaway Top — Put The Next Move Before The Trophy</h2></div>
       <p class="page-sub">结束页第一屏应该是教练计划，不是成绩单。</p>
       <div class="phones">
-        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-4.png" alt="原 Page 4 手机"></div>
-        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
+        <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-4.png" alt="原 Page 4 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
           <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT T-TOP · T-BLOCK1</div><div class="sw">Takeaway 顶部（Practice complete + headline）+ 块①</div><p class="se">路由 <code>#/session-end</code>。<span class="warn">⚠️ 真 AI 总结需后台</span></p></div>
         </div>
       </div>
@@ -230,8 +236,8 @@
       <div class="page-head"><span class="page-no">PAGE 5</span><h2>Takeaway Lower — Guard The Coach Chatbox</h2></div>
       <p class="page-sub">Chatbox 很强大，所以它的边界要在上线前明确可见。</p>
       <div class="phones">
-        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-5.png" alt="原 Page 5 手机"></div>
-        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
+        <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-5.png" alt="原 Page 5 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
           <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT T-COACH</div><div class="sw">Takeaway 块③ Coach（chatbox + presets "Ask me one question"）</div><p class="se">路由 <code>#/session-end</code> 到底。<span class="warn">⚠️ 真 AI 回答需后台</span></p></div>
         </div>
       </div>
@@ -248,9 +254,10 @@
       <div class="page-head"><span class="page-no">PAGE 6</span><h2>Growth Page Top — Keep The Trying Point, Rename The Scores</h2></div>
       <p class="page-sub">成长页框架是对的，但 "Ability Portrait" 仍像评估。</p>
       <div class="phones">
-        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-6.png" alt="原 Page 6 手机"></div>
-        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
-          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT M-TOP</div><div class="sw">My 页上半（Trying Point + Ability portrait 现状）</div><p class="se">路由 <code>#/my</code></p></div>
+        <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-6.png" alt="原 Page 6 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
+          <img class="shot-img" src="assets/phone/after-my.png" alt="V2 My 页上半">
+          <p class="ph-cap">My V2 上半（Trying Point + Practice growth）· <code>#/my</code></p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
@@ -266,9 +273,10 @@
       <div class="page-head"><span class="page-no">PAGE 7</span><h2>Growth Page Lower — Make Coach Mode A Trust Feature</h2></div>
       <p class="page-sub">设置页应让"内容安全边界"对家长/老师/学生都好理解。</p>
       <div class="phones">
-        <div class="phone before"><div class="phlab"><span class="tg">BEFORE</span>反馈方原稿</div><img src="assets/phone/before-7.png" alt="原 Page 7 手机"></div>
-        <div class="phone after"><div class="phlab"><span class="tg">AFTER</span>我们的新界面</div>
-          <div class="ph-slot"><div class="ic">📷</div><div class="sid">SHOT M-LOW</div><div class="sw">My 页下半（User management / Coach mode 现状）</div><p class="se">路由 <code>#/my</code> 下滑</p></div>
+        <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-7.png" alt="原 Page 7 手机"></div>
+        <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
+          <img class="shot-img bottom" src="assets/phone/after-my.png" alt="V2 My 页下半">
+          <p class="ph-cap">My V2 下半（Settings · Coach mode = Practice feedback only）· <code>#/my</code></p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
