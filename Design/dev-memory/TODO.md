@@ -18,7 +18,7 @@
 - [x] 🟡 **My 页改名**（P7-2）：`User management` → `Settings`。`✅🧪`
 - [x] 🟡 **My 页文案**（P7-3）：Coach mode → `Practice feedback only`。`✅🧪`
 - [x] 🟡 **coach-mode 标签推广**（P1/跨页）：信任 chip 推到练习页(开练前)+My 头部。`✅🧪`
-- [x] 🟡 **首页主题活动卡片区**（#5/P5）：科普/Exam/旅游/日常 4 卡，带 topic 进练习。`✅🧪`
+- [~] 🟡 **首页主题活动**（#5/P5）：曾加 4 张主题卡，但与 Practice Mode + Today's Starter 重复 → **已移除主题卡**（保留模式选择 + 今日话题覆盖"练什么"）。如需独立主题入口再单开。
 - [x] 🟢 清死代码：删 `recentLines` + 无用 `practice-coach-strip/bubble-stack/listening-bubble*`。`✅`
 - [x] 🟡 **Trying Point 概念推广**（P6-2）：抽共享源 `lib/trying-point.ts`；首页加「本周 trying point」卡（点击进练习）；My 读共享源；Takeaway 的 one move 改叫「Your next trying point」——闭环。`✅🧪` [spec](../specs/2026-06-16-trying-point-propagation.md)
 

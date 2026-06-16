@@ -15,13 +15,6 @@ const TOPIC_STARTERS = [
   "What makes CRISPR a revolutionary tool in genetics?",
 ];
 
-const THEMES = [
-  { emoji: "🔬", label: "Science English", blurb: "Explain how things work", topic: "How does AI change the way doctors diagnose diseases?" },
-  { emoji: "🎓", label: "Exam topics", blurb: "TOEFL / IELTS style", topic: "Describe a piece of technology you find useful and explain why." },
-  { emoji: "✈️", label: "Travel", blurb: "Trips & places", topic: "Talk about a place you'd love to visit and what you'd do there." },
-  { emoji: "💬", label: "Daily talk", blurb: "Everyday conversation", topic: "Tell me about your weekend plans and why you chose them." },
-];
-
 const MOCK_LAST_HIGHLIGHT = {
   text: "AI is transforming healthcare by analyzing millions of patient records to predict diseases before symptoms appear.",
   score: 92,
@@ -128,26 +121,6 @@ export default function Home() {
             >
               My own
             </button>
-          </div>
-        </div>
-
-        {/* Themed practice events — pick a direction */}
-        <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Practice themes</span>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {THEMES.map((theme) => (
-              <button
-                key={theme.label}
-                onClick={() => navigate("/practice", { state: { topic: theme.topic } })}
-                className="flex items-start gap-2.5 rounded-2xl border border-gray-100 bg-white p-3 text-left shadow-sm transition active:scale-95"
-              >
-                <span className="text-xl leading-none">{theme.emoji}</span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-black leading-tight text-gray-800">{theme.label}</span>
-                  <span className="mt-0.5 block text-xs font-semibold text-gray-400">{theme.blurb}</span>
-                </span>
-              </button>
-            ))}
           </div>
         </div>
 
