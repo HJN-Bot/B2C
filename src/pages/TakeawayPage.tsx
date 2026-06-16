@@ -82,14 +82,14 @@ function formatTime(seconds: number) {
 
 // P4-2: playful, non-scorecard headline for the top of the takeaway.
 const CELEBRATIONS = [
-  (t: string) => `Your spark stayed lit for ${t}! 🎉`,
+  (t: string) => `Your spark stayed lit for ${t}!`,
   (t: string) => `You kept your idea going for ${t} — that's a real run!`,
-  (t: string) => `${t} of you being brave enough to speak. Love it. 🎉`,
-  (t: string) => `That's ${t} of your own voice. Nice one! ✨`,
+  (t: string) => `${t} of you being brave enough to speak. Love it.`,
+  (t: string) => `That's ${t} of your own voice. Nice one!`,
 ];
 
 function celebrationHeadline(seconds: number) {
-  if (!seconds) return "You showed up to practice. That already counts! 🎉";
+  if (!seconds) return "You showed up to practice. That already counts!";
   return CELEBRATIONS[seconds % CELEBRATIONS.length](formatTime(seconds));
 }
 
