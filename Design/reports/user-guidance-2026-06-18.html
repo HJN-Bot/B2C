@@ -37,6 +37,11 @@
   .flow .arr{color:var(--faint);font-weight:800}
   .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0 0;box-shadow:var(--shadow)}
   .card h3{margin-top:0}
+  .card.split{display:grid;grid-template-columns:1fr 226px;gap:20px;align-items:start}
+  .shot img{width:100%;max-width:226px;max-height:392px;object-fit:cover;object-position:top;display:block;border-radius:12px;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .shot .cap{margin:8px 0 0;font-size:11.5px;color:var(--sub);line-height:1.55}
+  .shot .cap b{color:var(--blue)}
+  @media(max-width:640px){.card.split{grid-template-columns:1fr}.shot img{max-width:300px;margin:0 auto}}
   ol,ul{margin:8px 0 0;padding-left:22px}
   li{margin:4px 0;font-size:14px}
   .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -55,9 +60,9 @@
 <body>
   <header class="cover">
     <div class="in">
-      <div class="eyebrow">SpeakSpark · User Guidance</div>
-      <h1>怎么用、前后端怎么串</h1>
-      <p>一页讲清：练习一遍走完的流程、每个页面怎么操作、哪些跑在本机、哪些要后端，以及 AI 是怎么连上去的。</p>
+      <div class="eyebrow">SpeakSpark</div>
+      <h1>User Guidance</h1>
+      <p>团队 Handover ＋ 用户说明：怎么用、每页怎么操作、哪些本机 / 哪些要后端，以及 AI 怎么连上去。</p>
     </div>
   </header>
 
@@ -76,39 +81,55 @@
     </div>
 
     <h2><span class="n">02</span>每个页面怎么操作</h2>
-    <div class="card">
-      <h3>① Home 首页</h3>
-      <ul>
-        <li>选 <b>Practice Mode</b>（Free Talk / Exam Prep / Story）——决定教练风格。</li>
-        <li><b>Today's Starter</b>：「Use this topic」用推荐话题，或「My own」自带话题。</li>
-        <li>本周 <b>Trying Point</b> 卡：一句"这次就试这一个"，点它直接进练习。</li>
-        <li>底部导航：Start / Practice / Takeaway / My，四页互通。</li>
-      </ul>
+    <div class="card split">
+      <div>
+        <h3>① Home 首页</h3>
+        <ul>
+          <li>选 <b>Practice Mode</b>（Free Talk / Exam Prep / Story）——决定教练风格。</li>
+          <li><b>Today's Starter</b>：「Use this topic」用推荐话题，或「My own」自带话题。</li>
+          <li>本周 <b>Trying Point</b> 卡：一句"这次就试这一个"，点它直接进练习。</li>
+          <li>底部导航：Start / Practice / Takeaway / My，四页互通。</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/phone/after-home.png" alt="Home">
+        <p class="cap">📌 <b>本周 trying point</b> · 练习模式 · 今日话题（去 streak/分数压力）</p></div>
     </div>
-    <div class="card">
-      <h3>② Practice 练习页</h3>
-      <ul>
-        <li>点 <b>Start Practice</b> 开始（需 Chrome/Edge + 允许麦克风）。</li>
-        <li>说话时：字幕逐行上滚、当前句居中；KTV 四项里<b>得分的会亮、没动静的变灰</b>。</li>
-        <li><b>停顿约 2.5 秒</b>：猫下方弹出一个针对你刚说内容的小问题/提示 →「Use it」继续或「Skip」。</li>
-        <li>随时点右上 <b>End</b> 结束 → 进 Takeaway。</li>
-      </ul>
+    <div class="card split">
+      <div>
+        <h3>② Practice 练习页</h3>
+        <ul>
+          <li>点 <b>Start Practice</b> 开始（需 Chrome/Edge + 允许麦克风）。</li>
+          <li>说话时：字幕逐行上滚、当前句居中；KTV 四项里<b>得分的会亮、没动静的变灰</b>。</li>
+          <li><b>停顿约 2.5 秒</b>：猫下方弹出一个针对你刚说内容的小问题/提示 →「Use it」继续或「Skip」。</li>
+          <li>随时点右上 <b>End</b> 结束 → 进 Takeaway。</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/phone/after-practice.png" alt="Practice">
+        <p class="cap">📌 顶部话题/计时/End · <b>KTV 未得分变灰</b> · 猫教练 · 「Practice feedback only」</p></div>
     </div>
-    <div class="card">
-      <h3>③ Takeaway 结束页（自上而下）</h3>
-      <ul>
-        <li><b>① Your run</b>：一句鼓励 + 你做得好的一点（带原文引用）。</li>
-        <li><b>② Level up</b>：放大 / 改掉 / 下一次怎么说（= 你的下一个 Trying Point）。</li>
-        <li><b>③ Your run in detail</b>：讲了什么、更多做得好、四项进步分。</li>
-        <li><b>④ Coach</b>：追问框（presets 如「Ask me one question」，不替你作答）+ Practice Again。</li>
-      </ul>
+    <div class="card split">
+      <div>
+        <h3>③ Takeaway 结束页（自上而下）</h3>
+        <ul>
+          <li><b>① Your run</b>：一句鼓励 + 你做得好的一点（带原文引用）。</li>
+          <li><b>② Level up</b>：放大 / 改掉 / 下一次怎么说（= 你的下一个 Trying Point）。</li>
+          <li><b>③ Your run in detail</b>：讲了什么、更多做得好、四项进步分。</li>
+          <li><b>④ Coach</b>：追问框（presets 如「Ask me one question」，不替你作答）+ Practice Again。</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/phone/after-takeaway.png" alt="Takeaway">
+        <p class="cap">📌 新顺序：精简鼓励 → <b>Level up（提前）</b> → 详情 → Coach（截图后台失效，AI 计划未出）</p></div>
     </div>
-    <div class="card">
-      <h3>④ My 我的</h3>
-      <ul>
-        <li><b>Trying Point</b> / <b>Practice growth</b>（成长）/ <b>Practice history</b>（右上日期图标按 All/Week/Month 筛选）。</li>
-        <li><b>Settings</b>：Coach mode（信任边界，信息）· Saved phrase bank（点开看存过的短语）· <b>Coaching prompt</b>（点开可写自己的教练指令，会注入 AI）。</li>
-      </ul>
+    <div class="card split">
+      <div>
+        <h3>④ My 我的</h3>
+        <ul>
+          <li><b>Trying Point</b> / <b>Practice growth</b>（成长）/ <b>Practice history</b>（右上日期图标按 All/Week/Month 筛选）。</li>
+          <li><b>Settings</b>：Coach mode（信任边界，信息）· Saved phrase bank（点开看存过的短语）· <b>Coaching prompt</b>（点开可写自己的教练指令，会注入 AI）。</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/phone/after-my.png" alt="My">
+        <p class="cap">📌 Practice growth（改名）· 历史日期筛选 · 真实短语库 · 可编辑 Coaching prompt</p></div>
     </div>
 
     <h2><span class="n">03</span>前端 ↔ 后端怎么串</h2>
