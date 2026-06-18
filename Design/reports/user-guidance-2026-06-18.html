@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SpeakSpark · User Guidance · 2026-06-18</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0e1b2e;--navy-panel:#16273f;--navy-line:#27405e;
+    --ink:#16243c;--sub:#647389;--faint:#9aa7bb;
+    --blue:#3b6cf5;--blue-soft:#f2f5fd;--blue-line:#dde6fa;
+    --green:#1f9d57;--green-bg:#eef8f2;--green-line:#cfe9da;
+    --amber:#c1780f;--amber-bg:#fbf4e6;--amber-line:#ecdcbb;
+    --slate:#5a6b86;--slate-bg:#eef2f8;--slate-line:#dbe2ee;
+    --line:#e6ebf3;--rule:#f0f3f8;--bg:#f6f8fb;--paper:#fff;
+    --shadow:0 1px 2px rgba(15,30,60,.03),0 14px 34px -26px rgba(15,30,60,.22);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hanken Grotesk","PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:15px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.012em;line-height:1.12}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px 96px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;background:#fff;border:1px solid var(--line);border-radius:5px;padding:0 5px}
+  .cover{margin:0 -24px 28px;padding:0 24px;background:radial-gradient(130% 120% at 92% -10%,rgba(126,217,87,.15),transparent 55%),radial-gradient(120% 120% at 0% 0%,rgba(59,108,245,.18),transparent 50%),var(--navy);color:#fff}
+  .cover .in{max-width:880px;margin:0 auto;padding:52px 0 44px}
+  .cover .eyebrow{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#9db4d8}
+  .cover h1{font-size:clamp(28px,4.2vw,42px);margin:13px 0 9px}
+  .cover p{margin:0;font-size:16px;color:#c3d2e8;max-width:62ch}
+  h2{font-size:clamp(19px,2.6vw,24px);margin:42px 0 4px;padding-bottom:11px;border-bottom:2px solid var(--ink);display:flex;align-items:baseline;gap:11px}
+  h2 .n{font-size:13px;font-weight:800;color:var(--blue);letter-spacing:.08em}
+  h3{font-size:15.5px;margin:22px 0 6px}
+  p.lead{color:var(--sub);font-size:14px;margin:6px 0 0}
+  .flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:14px 0}
+  .flow .step{background:var(--blue-soft);border:1px solid var(--blue-line);border-radius:10px;padding:7px 12px;font-weight:700;font-size:12.5px}
+  .flow .arr{color:var(--faint);font-weight:800}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0 0;box-shadow:var(--shadow)}
+  .card h3{margin-top:0}
+  ol,ul{margin:8px 0 0;padding-left:22px}
+  li{margin:4px 0;font-size:14px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .tbl th,.tbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+  .tbl th{background:#f1f5fb;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--sub)}
+  .tbl tr:last-child td{border-bottom:0}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px}
+  .pill.local{background:var(--slate-bg);color:var(--slate);border:1px solid var(--slate-line)}
+  .pill.back{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line)}
+  .note{border:1px solid var(--amber-line);background:var(--amber-bg);border-radius:13px;padding:15px 18px;margin:16px 0 0}
+  .note b{color:var(--amber)}
+  .foot{margin-top:46px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint)}
+  @media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.cover{margin:0 0 16pt}.card,.note,.tbl{break-inside:avoid}}
+</style>
+</head>
+<body>
+  <header class="cover">
+    <div class="in">
+      <div class="eyebrow">SpeakSpark · User Guidance</div>
+      <h1>怎么用、前后端怎么串</h1>
+      <p>一页讲清：练习一遍走完的流程、每个页面怎么操作、哪些跑在本机、哪些要后端，以及 AI 是怎么连上去的。</p>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <h2><span class="n">01</span>一次练习的完整闭环</h2>
+    <p class="lead">用户从首页出发，一条线走到结束页，再回到 My 沉淀。</p>
+    <div class="flow">
+      <span class="step">Home 选模式/话题</span><span class="arr">→</span>
+      <span class="step">Practice 开口说</span><span class="arr">→</span>
+      <span class="step">实时字幕 + 猫教练 + KTV</span><span class="arr">→</span>
+      <span class="step">停顿 → AI 追问</span><span class="arr">→</span>
+      <span class="step">End</span><span class="arr">→</span>
+      <span class="step">Takeaway 复盘</span><span class="arr">→</span>
+      <span class="step">My 历史/短语/成长</span>
+    </div>
+
+    <h2><span class="n">02</span>每个页面怎么操作</h2>
+    <div class="card">
+      <h3>① Home 首页</h3>
+      <ul>
+        <li>选 <b>Practice Mode</b>（Free Talk / Exam Prep / Story）——决定教练风格。</li>
+        <li><b>Today's Starter</b>：「Use this topic」用推荐话题，或「My own」自带话题。</li>
+        <li>本周 <b>Trying Point</b> 卡：一句"这次就试这一个"，点它直接进练习。</li>
+        <li>底部导航：Start / Practice / Takeaway / My，四页互通。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>② Practice 练习页</h3>
+      <ul>
+        <li>点 <b>Start Practice</b> 开始（需 Chrome/Edge + 允许麦克风）。</li>
+        <li>说话时：字幕逐行上滚、当前句居中；KTV 四项里<b>得分的会亮、没动静的变灰</b>。</li>
+        <li><b>停顿约 2.5 秒</b>：猫下方弹出一个针对你刚说内容的小问题/提示 →「Use it」继续或「Skip」。</li>
+        <li>随时点右上 <b>End</b> 结束 → 进 Takeaway。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>③ Takeaway 结束页（自上而下）</h3>
+      <ul>
+        <li><b>① Your run</b>：一句鼓励 + 你做得好的一点（带原文引用）。</li>
+        <li><b>② Level up</b>：放大 / 改掉 / 下一次怎么说（= 你的下一个 Trying Point）。</li>
+        <li><b>③ Your run in detail</b>：讲了什么、更多做得好、四项进步分。</li>
+        <li><b>④ Coach</b>：追问框（presets 如「Ask me one question」，不替你作答）+ Practice Again。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>④ My 我的</h3>
+      <ul>
+        <li><b>Trying Point</b> / <b>Practice growth</b>（成长）/ <b>Practice history</b>（右上日期图标按 All/Week/Month 筛选）。</li>
+        <li><b>Settings</b>：Coach mode（信任边界，信息）· Saved phrase bank（点开看存过的短语）· <b>Coaching prompt</b>（点开可写自己的教练指令，会注入 AI）。</li>
+      </ul>
+    </div>
+
+    <h2><span class="n">03</span>前端 ↔ 后端怎么串</h2>
+    <p class="lead">前端不直连 Gemini；所有 AI 调用走 Supabase Edge Function 代理，把密钥藏在服务端。</p>
+    <div class="flow">
+      <span class="step">前端</span><span class="arr">→</span>
+      <span class="step">Supabase Edge Function <code>gemini-proxy</code></span><span class="arr">→</span>
+      <span class="step">Gemini（密钥在服务端）</span><span class="arr">→</span>
+      <span class="step">返回 JSON → 前端渲染</span>
+    </div>
+    <table class="tbl">
+      <thead><tr><th>能力</th><th>现在跑在哪</th></tr></thead>
+      <tbody>
+        <tr><td>实时字幕（语音转文字）</td><td><span class="pill local">本机</span> 浏览器 SpeechRecognition，不依赖后端</td></tr>
+        <tr><td>实时教练 / 停顿追问 / Takeaway 总结 / Chat</td><td><span class="pill back">需后端</span> 走 <code>gemini-proxy</code> → Gemini</td></tr>
+        <tr><td>历史 / 短语库 / trying point / prompt 偏好</td><td><span class="pill local">本机</span> localStorage（单设备，未绑定用户）</td></tr>
+        <tr><td>音频录音回放 / 跨设备 / 账号绑定</td><td><span class="pill back">需后端</span> 需 Auth + Supabase Storage + 数据表（尚未做）</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <p><b>⚠️ 当前：AI 不可用。</b>Supabase 后台 <code>jyofoabobuwfowpctbfd</code> 已失效（域名不解析），所有 AI 调用在网络层失败 → 自动回退到本地占位（Takeaway 会出现诚实提示条）。前端一切正常。</p>
+    </div>
+
+    <h2><span class="n">04</span>恢复 AI / 本地运行</h2>
+    <h3>本地跑前端</h3>
+    <ol>
+      <li>项目目录执行 <code>npm run dev</code>。</li>
+      <li>打开 <code>http://localhost:5173/#/</code>（路由要带 <code>#</code>）；Chrome/Edge + 允许麦克风。</li>
+    </ol>
+    <h3>让 AI 真正连上（需后端）</h3>
+    <ol>
+      <li>在 Supabase 控制台<b>恢复</b> <code>jyofoabobuwfowpctbfd</code>，或<b>新建</b>项目。</li>
+      <li>新建的话：更新 <code>src/integrations/supabase/client.ts</code>（URL + anon key）与 <code>supabase/config.toml</code>（project_id）。</li>
+      <li>部署函数：<code>supabase functions deploy gemini-proxy</code>（另含 analyze-voice / get-gemini-api-key）。</li>
+      <li>配密钥：<code>supabase secrets set GEMINI_API_KEY=…</code>。</li>
+      <li>回前端点 Try again；Takeaway 的诚实提示条消失即代表 AI 通了。</li>
+    </ol>
+    <h3>演示重置小贴士</h3>
+    <ul>
+      <li>重看首用引导：DevTools → Application → Local Storage 删 <code>speakspark.homeOnboarded</code> / <code>speakspark.practiceOnboarded</code> / <code>speakspark.practiceStartedTour</code>。</li>
+      <li>清历史/短语：删 <code>speakspark.sessionHistory</code>；清自定义 prompt：删 <code>speakspark.customPrompt</code>。</li>
+    </ul>
+
+    <div class="foot">
+      SpeakSpark · 私人练习教练，不是评分工具。配套文档：设计走查回应报告 <code>iteration-report-2026-06-14.html</code>（含后端与存储决策项）。
+    </div>
+  </div>
+</body>
+</html>

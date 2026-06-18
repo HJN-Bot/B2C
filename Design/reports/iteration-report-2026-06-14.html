@@ -122,6 +122,23 @@
   .foot{margin-top:54px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint);line-height:1.7}
   .foot code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
 
+  .feat{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin-top:12px}
+  .feat div{font-size:13.5px;color:var(--ink);padding-left:20px;position:relative;line-height:1.5}
+  .feat div::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800}
+  .tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .tbl th,.tbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+  .tbl th{background:#f1f5fb;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--sub)}
+  .tbl tr:last-child td{border-bottom:0}
+  .tbl .ok{color:var(--green);font-weight:700;white-space:nowrap}
+  .tbl .be{color:var(--slate);font-weight:700;white-space:nowrap}
+  .subh{margin:22px 0 0;font-size:15px;font-weight:800;color:var(--ink)}
+  .decide{margin:12px 0 0;padding:0;list-style:none}
+  .decide li{display:flex;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:var(--paper);margin-bottom:8px;font-size:13.5px;line-height:1.5;box-shadow:var(--shadow)}
+  .decide .box{flex:0 0 auto;width:15px;height:15px;border:2px solid var(--blue-line);border-radius:5px;margin-top:2px}
+  .flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:12px}
+  .flow .step{background:var(--blue-soft);border:1px solid var(--blue-line);border-radius:10px;padding:6px 11px;font-weight:700;color:var(--ink);font-size:12.5px}
+  .flow .arr{color:var(--faint);font-weight:800}
+
   @media (max-width:760px){
     .response{grid-template-columns:1fr}
     .cover .principles{grid-template-columns:1fr;gap:20px}
@@ -319,9 +336,67 @@
       <div class="refs"><span class="commit">9410ca1</span><span class="commit">87a6cd6</span></div>
     </div>
 
+    <!-- ───── C. Feature list ───── -->
+    <div class="sec-divider"><span class="n">C</span><h2>V2 已具备的功能（一览）</h2></div>
+    <p class="page-sub">这一阶段已落地、可演示的前端功能（AI 相关需后台恢复才出真实内容）。</p>
+    <div class="feat">
+      <div>练习页提词器字幕：当前句锁中间、旧句上滚淡出、固定高度</div>
+      <div>话题条 + 冷启动关键词（讲到自动变绿）</div>
+      <div>猫猫教练 + 单一固定状态槽（去音浪/去冗余）</div>
+      <div>KTV 四指标：未得分弱化、得分上色、刚加分高亮</div>
+      <div>停顿即接（预生成缓冲，优先真 AI，本地兜底）</div>
+      <div>Takeaway 新顺序：精简鼓励 → Level up → 详情 → Coach</div>
+      <div>建议带原文引用「You said: …」+ AI 失败时诚实兜底</div>
+      <div>首页：去 streak/分数压力、trying point、今日话题</div>
+      <div>Navigator 首用引导（首页 + 练习页两段）</div>
+      <div>My：Practice growth / Settings 改名、真实短语库</div>
+      <div>Trying Point 闭环（首页 → Takeaway → My）</div>
+      <div>可编辑 Coaching prompt（注入 AI）+ 历史按时间筛选</div>
+      <div>coach-mode 信任标签「Practice feedback only」推广全 app</div>
+      <div>四页底部导航打通（含修复首页缺失的导航栏）</div>
+    </div>
+
+    <!-- ───── D. Backend & storage plan + decisions ───── -->
+    <div class="sec-divider"><span class="n">D</span><h2>后端与存储规划 + 决策项</h2></div>
+    <p class="page-sub">现状：<b>没有登录系统</b>（"Alex" 是写死的 mock），历史 / 短语 / prompt 偏好都只存在<b>本机 localStorage</b>（换设备、清缓存即丢，且不绑定到任何用户）。要做"和用户绑定 + 跨设备 + 录音回放"，需要后端。</p>
+
+    <p class="subh">要存什么（按用户 / 按 session）</p>
+    <table class="tbl">
+      <thead><tr><th>数据</th><th>现在</th><th>是否需要后端</th></tr></thead>
+      <tbody>
+        <tr><td><b>用户账号</b>（who，admin）</td><td>mock "Alex"</td><td class="be">需 Auth 登录 — 一切的锚点</td></tr>
+        <tr><td><b>练习 session</b>（时间/模式/时长/分数）</td><td>localStorage，单设备</td><td class="be">需 <code>sessions</code> 表（按 user）</td></tr>
+        <tr><td><b>Transcript</b>（你说了什么）</td><td>存在 session 里（本机）</td><td class="be">随 session 存后端</td></tr>
+        <tr><td><b>音频录音</b></td><td>不录、不存</td><td class="be">需录音 + Supabase Storage（音频桶），关联 session</td></tr>
+        <tr><td><b>历史 coach</b>（每次的 AI 问答 / takeaway）</td><td>每次重生成、不保存</td><td class="be">按 session 存，才能回看</td></tr>
+        <tr><td><b>短语库 / trying point / prompt 偏好</b></td><td>本机推导/存储</td><td class="be">按 user 存（跨设备）</td></tr>
+        <tr><td>前端界面 / 交互</td><td>已完成</td><td class="ok">不需后端</td></tr>
+      </tbody>
+    </table>
+
+    <p class="subh">用户 admin 与多 session 怎么分</p>
+    <p style="font-size:13.5px;color:var(--sub);margin-top:8px;line-height:1.6">
+      一切以 <code>user_id</code>（来自登录）为根：每个用户只看到自己的数据（行级权限 RLS）。每次练习 = 一条 <code>sessions</code> 行（id · user_id · 时间 · 模式 · 时长 · 分数 · transcript · audio_path），其下挂 <code>highlights</code>、<code>coach_messages</code>（外键 session_id）。所谓"用户 admin" = 现在缺失的登录/账号层。
+    </p>
+
+    <p class="subh">决策项（请团队拍板）</p>
+    <ul class="decide">
+      <li><span class="box"></span><span><b>是否现在做真正的登录 / 账号（auth）？</b>这是"绑定用户 + 跨设备 + 录音"的前提。不做就维持单设备 localStorage（够 demo）。</span></li>
+      <li><span class="box"></span><span><b>音频要不要录 + 存？</b>面向 11–15 岁未成年人，涉及隐私 / 同意 / 存储成本。或先只存 transcript、不做回放。</span></li>
+      <li><span class="box"></span><span><b>后端用哪个：</b>恢复旧 Supabase 项目，还是新建？需建 Postgres 表（sessions/highlights/coach_messages）+ Storage 桶 + RLS。</span></li>
+      <li><span class="box"></span><span><b>数据保留 / 隐私：</b>未成年人数据（尤其音频）的留存期、同意、删除机制。</span></li>
+      <li><span class="box"></span><span><b>额度 / 成本：</b>Gemini 调用与存储的配额、谁承担、限额策略。</span></li>
+    </ul>
+
+    <div class="notice" style="margin-top:22px">
+      <h3>⚠️ 当前阻塞</h3>
+      <p>Supabase 后台 <code>jyofoabobuwfowpctbfd</code> 已失效（NXDOMAIN）。AI（实时教练 / takeaway 总结）全部走本地兜底，无法演示真实效果。前端与函数源码均无问题——<b>恢复/重建 Supabase 即可点亮 AI</b>；上面的存储/账号项是"要不要更进一步"的决策。详细操作见单独的 <b>User Guidance</b>。</p>
+    </div>
+
     <div class="foot">
       SpeakSpark · 面向 6–9 年级中学生的英文科普演讲实时陪练 · 私人练习教练，不是评分工具。<br>
-      导出 PDF：浏览器打开本文件 → 打印（Cmd/Ctrl+P）→ 另存为 PDF，开启「背景图形」。AFTER 截图位标 ⚠️ 的需 Supabase 后台恢复后再截。BEFORE 手机图裁自 <code>Design/iterations/speakspark-labelled-design-walkthrough.pdf</code>。
+配套：操作 + 前后端串联说明见 <code>user-guidance-2026-06-18.html</code>；各改动技术 spec 在 <code>Design/specs/</code>。<br>
+      导出 PDF：浏览器打开本文件 → 打印（Cmd/Ctrl+P）→ 另存为 PDF，开启「背景图形」。BEFORE 手机图裁自 <code>Design/iterations/speakspark-labelled-design-walkthrough.pdf</code>。
     </div>
 
   </div>
