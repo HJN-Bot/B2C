@@ -5,6 +5,7 @@ import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { getPracticeMode } from "@/lib/practice-mode";
 import { getCustomPrompt } from "@/lib/coach-prefs";
+import { setNextTryingPoint } from "@/lib/trying-point";
 import { saveSession } from "@/lib/session-history";
 
 const MODEL_NAME = "gemini-2.5-flash";
@@ -404,6 +405,8 @@ export default function TakeawayPage() {
       if (!parsed) throw new Error("AI returned an unreadable takeaway format");
       setTakeaway(parsed);
       setTakeawayStatus("ready");
+      // Close the loop: this run's "one move" becomes Home's next trying point.
+      setNextTryingPoint(parsed.next_run_plan.one_move);
       const openingLines = [
         parsed.encouragement,
         `Next focus: ${parsed.next_run_plan.focus}`,

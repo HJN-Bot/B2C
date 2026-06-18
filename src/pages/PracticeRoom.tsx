@@ -1563,17 +1563,32 @@ export default function PracticeRoom() {
               </div>
             </>
           ) : (
-            <div className="relative z-[1] mt-auto flex flex-col items-center gap-3 pt-8">
-              <button ref={startBtnRef} onClick={startSession}
-                disabled={apiStatus === "loading"}
-                className="rounded-2xl px-8 py-4 text-base font-black text-white shadow-md transition-transform active:scale-95 disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)", boxShadow: "0 6px 20px rgba(88,169,255,0.3)" }}>
-                {apiStatus === "loading" ? "Loading AI..." : "🎙️ Start Practice"}
-              </button>
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-600">
-                <ShieldCheck size={11} /> Practice feedback only
-              </span>
-            </div>
+            <>
+              {/* Pre-start: faint placeholders so the coach card + transcript
+                  positions are visible (reads as "ready", not an empty page). */}
+              <div className="practice-coach-slot relative z-[1] mt-1 flex items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white/30">
+                <span className="text-xs font-semibold text-gray-300">A short coach tip appears here when you pause</span>
+              </div>
+              <div className="practice-transcript-shell relative z-[1] mx-auto mt-2 flex w-full max-w-[330px] min-h-0 flex-1 flex-col justify-center">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-300">
+                  <MessageCircle size={11} />Transcript
+                </div>
+                <div className="practice-transcript-reel flex items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white/30">
+                  <span className="text-[14px] italic text-gray-300">Your words will appear here…</span>
+                </div>
+              </div>
+              <div className="relative z-[1] mt-3 flex flex-col items-center gap-2 pb-1">
+                <button ref={startBtnRef} onClick={startSession}
+                  disabled={apiStatus === "loading"}
+                  className="rounded-2xl px-8 py-4 text-base font-black text-white shadow-md transition-transform active:scale-95 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)", boxShadow: "0 6px 20px rgba(88,169,255,0.3)" }}>
+                  {apiStatus === "loading" ? "Loading AI..." : "🎙️ Start Practice"}
+                </button>
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-600">
+                  <ShieldCheck size={11} /> Practice feedback only
+                </span>
+              </div>
+            </>
           )}
 
           {started && highlightWords.length > 0 && (

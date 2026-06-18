@@ -12,9 +12,31 @@ export const TRYING_POINTS = [
   "Hold your opening thought for 20 seconds",
 ];
 
-// The single focus to surface outside the My list (e.g. on Home). Stable within
-// a week so it feels like "this week's" upgrade rather than random each load.
+const NEXT_KEY = "speakspark.nextTryingPoint";
+
+// Closed loop: the Takeaway saves its "one move" as the next trying point,
+// and Home shows exactly that until the next run updates it.
+export function setNextTryingPoint(value: string): void {
+  try {
+    if (value && value.trim()) window.localStorage.setItem(NEXT_KEY, value.trim());
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getNextTryingPoint(): string {
+  try {
+    return (window.localStorage.getItem(NEXT_KEY) || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+// The single focus to surface on Home: the one move from the last practice if
+// there is one; otherwise a stable weekly default from the list.
 export function currentTryingPoint(): string {
+  const fromLastRun = getNextTryingPoint();
+  if (fromLastRun) return fromLastRun;
   const weekIndex = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
   return TRYING_POINTS[weekIndex % TRYING_POINTS.length];
 }
