@@ -180,13 +180,13 @@
 
     <div class="notice">
       <h3>⚠️ 一个前提：AI 后台当前失效，AI 相关效果暂看不到真实输出</h3>
-      <p>2026-06-14 实测 Supabase 后台 <code>jyofoabobuwfowpctbfd</code> 已失效（<code>nslookup</code> 返回 NXDOMAIN，免费版长期不活动被回收）。前端所有 Gemini 调用在网络层失败，AI 总结 / 实时追问全程走本地兜底。<b>前端与函数源码均无问题</b>——凡标<b style="color:var(--slate)">灰蓝色</b>的项都是"代码已就绪、待后台恢复即生效"。</p>
+      <p><b>更新（2026-06-18）：Supabase 后台已恢复，AI 全部跑通。</b>已实测 <code>gemini-proxy</code> 返回真实内容；Takeaway 现给出基于原文的总结、对准最弱 KTV 维度的建议、同义词升级与连贯的 say_this。<br>过程中还修了一个真 bug：gemini-2.5-flash 的"思考"约吃 700–800 token，原 <code>maxOutputTokens:1600</code> 会把 takeaway JSON 截断 → 退本地；已调到 4000，恢复正常。</p>
     </div>
 
     <div class="legend">
       <span class="chip s-ship"><span class="dot"></span>已上线（本阶段已实现，待浏览器验证）</span>
       <span class="chip s-part"><span class="dot"></span>部分 / 待做</span>
-      <span class="chip s-block"><span class="dot"></span>代码已就绪 · 受后台失效暂不可见</span>
+      <span class="chip s-block"><span class="dot"></span>依赖后端（现已恢复，AI 跑通）</span>
     </div>
 
     <!-- ───── PAGE 2 ───── -->
@@ -225,7 +225,7 @@
         <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>"AI moments" 模糊像分数</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改 "coach notes" 或移除。</p><p class="now">✅ 删掉模糊计数，换成顶部 <b>🎯 话题/模式</b>。<span class="refs"><span class="commit">f6392c9</span></span></p></div></div>
         <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>指标像实时评判</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：说话中隐藏指标，结束后作 private evidence。</p><p class="now">✅ 定调<b>保留作鼓励框架</b>，但未得分的指标弱化/灰掉、得分的上色、刚加分的高亮——注意力跟着分走。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
         <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>"AI is listening" 监控感</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改 "Coach is following your idea"。</p><p class="now">✅ 改为 <b>"Coach is following your story"</b> + 猫状态。<span class="refs"><span class="commit">fa5b2c2</span><span class="commit">35472de</span></span></p></div></div>
-        <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>Loading 阻塞练习</b><span class="chip s-block"><span class="dot"></span>就绪·受后台影响</span></div><p class="was">原建议：允许先录后生成。</p><p class="now">✅ 预生成缓冲 + 多层 fallback；<b>停顿卡优先真 AI</b>（有缓冲秒弹，无则猫 thinking，断网才本地）。<span class="refs"><span class="commit">1936038</span></span></p></div></div>
+        <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>Loading 阻塞练习</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：允许先录后生成。</p><p class="now">✅ 预生成缓冲 + 多层 fallback；<b>停顿卡优先真 AI</b>（有缓冲秒弹，无则猫 thinking，断网才本地）。后台已恢复，真 AI 跑通。<span class="refs"><span class="commit">1936038</span></span></p></div></div>
       </div>
     </div>
 
@@ -237,7 +237,7 @@
         <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-4.png" alt="原 Page 4 手机"></div>
         <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
           <img class="shot-img" src="assets/phone/after-takeaway.png" alt="V2 Takeaway 顶部">
-          <p class="ph-cap">Takeaway V2 新顺序：① 精简鼓励 → <b>② Level up（提前）</b> → ③ 详情 → ④ Coach · <code>#/session-end</code>。<span style="color:var(--slate);font-weight:700">⚠️ 块② 的 AI 计划因后台失效未出（真机停顿/练完后才有）</span></p>
+          <p class="ph-cap">Takeaway V2（<b>真实 AI</b>）：① 精简鼓励 → <b>② Level up</b>（Amplify/Change 对准最弱 KTV + 升级 say_this）→ ③ 详情 → ④ Coach · <code>#/session-end</code></p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
@@ -257,7 +257,7 @@
         <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-5.png" alt="原 Page 5 手机"></div>
         <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
           <img src="assets/phone/after-takeaway-coach.png" alt="V2 Takeaway Coach 块">
-          <p class="ph-cap">块④ Coach：chatbox + "Ask me one question" 等 presets（避免代答）+ Practice Again。<span style="color:var(--slate);font-weight:700">⚠️ 真 AI 回答需后台</span></p>
+          <p class="ph-cap">块④ Coach（<b>真实 AI 回复</b>）：基于本次的开场语 + "Ask me one question" 等 presets（避免代答）+ Practice Again。</p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
@@ -326,7 +326,7 @@
       <div class="refs"><span class="commit">dee6b0f</span><span class="commit">f6392c9</span></div>
     </div>
     <div class="fb">
-      <div class="h"><span class="num">#4</span><b>Takeaway 自上而下 + 原文引用</b><span class="chip s-block"><span class="dot"></span>结构已上线·AI 内容受后台影响</span></div>
+      <div class="h"><span class="num">#4</span><b>Takeaway 自上而下 + 原文引用</b><span class="chip s-ship"><span class="dot"></span>已上线（真 AI 跑通）</span></div>
       <div class="two"><div class="was"><p class="lab">原问题</p><p>建议和实际说的内容脱节，看不到"因为我说了 X 所以建议 Y"。</p></div><div class="now"><p class="lab">我们怎么改</p><p>先"讲了什么"→ 再建议；每条带 "You said: …" 引用。重构为 3 大块长页（总结鼓励 / Level up / Coach）。</p></div></div>
       <div class="refs"><span class="commit">fa5b2c2</span><span class="commit">838a68b</span><span class="commit">4bdaf81</span></div>
     </div>
@@ -338,7 +338,7 @@
 
     <!-- ───── C. Feature list ───── -->
     <div class="sec-divider"><span class="n">C</span><h2>V2 已具备的功能（一览）</h2></div>
-    <p class="page-sub">这一阶段已落地、可演示的前端功能（AI 相关需后台恢复才出真实内容）。</p>
+    <p class="page-sub">这一阶段已落地、可演示的功能（后台已恢复，AI 相关均出真实内容）。</p>
     <div class="feat">
       <div>练习页提词器字幕：当前句锁中间、旧句上滚淡出、固定高度</div>
       <div>话题条 + 冷启动关键词（讲到自动变绿）</div>
@@ -389,8 +389,8 @@
     </ul>
 
     <div class="notice" style="margin-top:22px">
-      <h3>⚠️ 当前阻塞</h3>
-      <p>Supabase 后台 <code>jyofoabobuwfowpctbfd</code> 已失效（NXDOMAIN）。AI（实时教练 / takeaway 总结）全部走本地兜底，无法演示真实效果。前端与函数源码均无问题——<b>恢复/重建 Supabase 即可点亮 AI</b>；上面的存储/账号项是"要不要更进一步"的决策。详细操作见单独的 <b>User Guidance</b>。</p>
+      <h3>✅ 后台状态：已恢复</h3>
+      <p>Supabase 后台已恢复，AI（实时教练 / takeaway 总结 / Coach 问答）<b>已跑通可演示</b>。上面的存储 / 账号 / 录音项是"要不要更进一步绑定用户、做跨设备"的决策，与当前可用性无关。详细操作见单独的 <b>User Guidance</b>。</p>
     </div>
 
     <div class="foot">

@@ -20,9 +20,10 @@ SpeakSpark = 面向 6–9 年级（11–15 岁）中学生的**英文科普演�
 - 部署：Vercel，`vercel.json`（build=vite, output=dist, SPA rewrites）。
 
 ## 后台（Supabase）
-- ⛔ **2026-06-14 实测：项目 `jyofoabobuwfowpctbfd` 已失效——`nslookup` 返回 NXDOMAIN，域名根本不解析**（免费版长期不活动被暂停/回收）。后果：前端**所有** Gemini 调用在网络层失败 → 全程走本地兜底模板，Takeaway/KTV/停顿追问全都"假装智能"。前端代码与函数源码均无问题，纯后台没了。
-- **恢复路径**：① Supabase 控制台看该项目能否 Restore（仅暂停）；②若已回收 → 新建项目，改 `src/integrations/supabase/client.ts`(URL+anon key) 与 `supabase/config.toml`(project_id)，部署 3 个函数(gemini-proxy/analyze-voice/get-gemini-api-key)，`supabase secrets set GEMINI_API_KEY=…`。本机无 supabase CLI，部署需用户侧。
-- project_id：`jyofoabobuwfowpctbfd`（已失效，见上）
+- ✅ **2026-06-18：项目 `jyofoabobuwfowpctbfd` 已恢复**，`gemini-proxy` 实测返回真实内容、key 已配；AI（takeaway/coach/停顿追问）全部跑通。（曾 2026-06-14 失效 NXDOMAIN = 免费版不活动被暂停。）
+- ⚠️ **token 截断坑（已修，记牢）**：`gemini-2.5-flash` 的"思考"约吃 **700–800 token 且计入 `maxOutputTokens`**。Takeaway 大 JSON 在 `1600` 下被截断 → `normalizeTakeaway` 返 null → 退本地（界面 "unreadable takeaway format"）。已调 takeaway→**4000**、chat→2000。以后加复杂 JSON 输出务必留足 token，或在 edge function 加 `thinkingConfig:{thinkingBudget:0}`（需部署）。
+- 若再次失效：控制台 Restore；若被回收则新建项目改 `client.ts`+`config.toml`、部署函数(gemini-proxy/analyze-voice/get-gemini-api-key) + `supabase secrets set GEMINI_API_KEY`。本机无 supabase CLI。
+- project_id：`jyofoabobuwfowpctbfd`（已恢复）
 - Gemini API key 存在 Supabase，**不暴露到前端 / 日志 / 提交**。
 - 前端所有 Gemini 调用走 Edge Function 代理 `gemini-proxy`（不再前端直连）。
   - 封装：`src/lib/gemini-proxy.ts`（支持 `systemInstruction` / `responseMimeType` / `temperature` / `maxOutputTokens`）。

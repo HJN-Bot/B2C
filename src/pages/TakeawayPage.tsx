@@ -395,7 +395,9 @@ export default function TakeawayPage() {
         model: MODEL_NAME,
         responseMimeType: "application/json",
         temperature: 0.68,
-        maxOutputTokens: 1600,
+        // gemini-2.5-flash spends ~700-800 "thinking" tokens that count against
+        // this budget, so keep ample room or the JSON truncates -> fallback.
+        maxOutputTokens: 4000,
         contents: [{ role: "user", parts: [{ text: buildTakeawayPrompt(sessionContext, practiceMode.coachStyle) }] }],
       });
       const parsed = normalizeTakeaway(parseJson<Partial<AiTakeaway>>(text));
@@ -449,7 +451,7 @@ export default function TakeawayPage() {
         systemInstruction: buildChatSystemPrompt(sessionContext, takeaway, practiceMode.coachStyle),
         responseMimeType: "application/json",
         temperature: 0.68,
-        maxOutputTokens: 900,
+        maxOutputTokens: 2000,
         contents: chatHistoryRef.current,
       });
       const parsed = parseJson<{ answer?: string }>(text);
