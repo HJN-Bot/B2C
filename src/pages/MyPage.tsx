@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { CalendarDays, ChevronRight, ClipboardList, Settings, ShieldCheck, Sparkles, TrendingUp, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Settings, ShieldCheck, Sparkles, TrendingUp, UserRound } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { getSessions, type SessionRecord } from "@/lib/session-history";
 import { TRYING_POINTS } from "@/lib/trying-point";
@@ -29,7 +29,12 @@ function sessionTitle(s: SessionRecord): string {
 
 export default function MyPage() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
+  const [phrasesOpen, setPhrasesOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
   useEffect(() => { setSessions(getSessions()); }, []);
+
+  // Real saved phrase bank — unique highlighted words across past runs.
+  const savedPhrases = Array.from(new Set(sessions.flatMap((s) => s.highlightWords).map((w) => w.trim()).filter(Boolean)));
 
   return (
     <div className="min-h-dvh bg-gray-50">
@@ -46,7 +51,11 @@ export default function MyPage() {
                 <ShieldCheck size={11} /> Practice feedback only
               </span>
             </div>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-400">
+            <button
+              onClick={() => settingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-400 active:scale-95"
+              aria-label="Settings"
+            >
               <Settings size={18} />
             </button>
           </div>
@@ -123,21 +132,46 @@ export default function MyPage() {
           </div>
         </section>
 
-        <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+        <section ref={settingsRef} className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <p className="mb-3 text-xs font-black uppercase tracking-widest text-gray-400">Settings</p>
           <div className="space-y-2">
-            {[
-              { icon: ShieldCheck, label: "Coach mode", value: "Practice feedback only" },
-              { icon: Sparkles, label: "Saved phrase bank", value: "12 phrases" },
-              { icon: Settings, label: "Prompt settings", value: "Science presentation" },
-            ].map(({ icon: Icon, label, value }) => (
-              <button key={label} className="flex w-full items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-left">
-                <Icon size={17} className="text-blue-500" />
-                <span className="flex-1 text-sm font-bold text-gray-800">{label}</span>
-                <span className="text-xs font-semibold text-gray-400">{value}</span>
-                <ChevronRight size={15} className="text-gray-300" />
-              </button>
-            ))}
+            {/* Coach mode — a fixed trust boundary, shown as info (not a toggle) */}
+            <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3">
+              <ShieldCheck size={17} className="text-green-500" />
+              <span className="flex-1 text-sm font-bold text-gray-800">Coach mode</span>
+              <span className="text-xs font-semibold text-green-600">Practice feedback only</span>
+            </div>
+
+            {/* Saved phrase bank — real, aggregated from your practice history */}
+            <button
+              onClick={() => setPhrasesOpen((o) => !o)}
+              className="flex w-full items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-left active:scale-[0.99]"
+            >
+              <Sparkles size={17} className="text-blue-500" />
+              <span className="flex-1 text-sm font-bold text-gray-800">Saved phrase bank</span>
+              <span className="text-xs font-semibold text-gray-400">{savedPhrases.length} {savedPhrases.length === 1 ? "phrase" : "phrases"}</span>
+              <ChevronDown size={15} className="text-gray-300 transition-transform" style={{ transform: phrasesOpen ? "rotate(180deg)" : "none" }} />
+            </button>
+            {phrasesOpen && (
+              <div className="rounded-2xl bg-blue-50/50 px-3 py-3">
+                {savedPhrases.length === 0 ? (
+                  <p className="text-xs font-semibold text-gray-400">No saved phrases yet — finish a practice and your highlighted words show up here.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {savedPhrases.map((p) => (
+                      <span key={p} className="rounded-full border border-blue-100 bg-white px-2 py-1 text-xs font-bold text-blue-600">{p}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Prompt focus — info row */}
+            <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3">
+              <Settings size={17} className="text-blue-500" />
+              <span className="flex-1 text-sm font-bold text-gray-800">Prompt focus</span>
+              <span className="text-xs font-semibold text-gray-400">Science presentation</span>
+            </div>
           </div>
         </section>
       </div>

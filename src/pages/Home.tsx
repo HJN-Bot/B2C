@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarCheck, Star, Volume2, ChevronRight, Lightbulb, Target } from "lucide-react";
+import { CalendarCheck, Star, ChevronRight, Lightbulb, Target } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
 import { currentTryingPoint } from "@/lib/trying-point";
 import AppTabBar from "@/components/AppTabBar";
@@ -125,16 +125,19 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Last highlight */}
+        {/* Last highlight — opens the history/library on My */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Last Highlight ✨</span>
-            <button className="flex items-center gap-1 text-xs font-medium text-blue-500">
+            <button onClick={() => navigate("/my")} className="flex items-center gap-1 text-xs font-medium text-blue-500">
               Library <ChevronRight size={13} />
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-amber-100">
+          <button
+            onClick={() => navigate("/my")}
+            className="w-full text-left bg-white rounded-2xl p-4 shadow-sm border border-amber-100 transition active:scale-95"
+          >
             <div className="flex items-end gap-0.5 h-7 mb-3">
               {MOCK_LAST_HIGHLIGHT.wave.map((h, i) => (
                 <div key={i} className="flex-1 rounded-full"
@@ -150,11 +153,9 @@ export default function Home() {
                 <span className="text-sm font-bold text-amber-500">Phrase saved</span>
                 <span className="text-xs text-gray-400">· {MOCK_LAST_HIGHLIGHT.dimension} win</span>
               </div>
-              <button className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-50">
-                <Volume2 size={14} className="text-blue-500" />
-              </button>
+              <span className="flex items-center gap-1 text-xs font-bold text-blue-500">View <ChevronRight size={13} /></span>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="flex-1" />
