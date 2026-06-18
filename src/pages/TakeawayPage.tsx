@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowUpRight, Blocks, BookOpen, Brain, ChevronRight, Mes
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { getPracticeMode } from "@/lib/practice-mode";
+import { getCustomPrompt } from "@/lib/coach-prefs";
 import { saveSession } from "@/lib/session-history";
 
 const MODEL_NAME = "gemini-2.5-flash";
@@ -279,8 +280,9 @@ function createLocalChatAnswer(request: string, takeaway: AiTakeaway | null, tra
 }
 
 function buildTakeawayPrompt(context: string, coachStyle: string) {
+  const own = getCustomPrompt();
   return `You are SpeakSpark, an AI speaking coach for Chinese middle-school students practicing English science presentations.
-${coachStyle}
+${coachStyle}${own ? `\nThe student set their own focus: "${own}". Honour it as long as it stays within coaching (no full speeches, no scores).` : ""}
 
 First UNDERSTAND what the student was actually arguing — read the whole transcript as a real talk on a real topic, not a bag of words. Then coach with advice tied to THAT topic and to their KTV scores.
 Rules:
@@ -313,8 +315,9 @@ ${context}`;
 }
 
 function buildChatSystemPrompt(context: string, takeaway: AiTakeaway | null, coachStyle: string) {
+  const own = getCustomPrompt();
   return `You are SpeakSpark's post-practice coach for a Chinese middle-school student.
-${coachStyle}
+${coachStyle}${own ? `\nThe student set their own focus: "${own}". Honour it within coaching limits.` : ""}
 Answer ONLY based on this session. Keep answers short, concrete, and next-run focused.
 Coach mode: practice feedback only. Never write a full speech or a complete answer for the student — coach by asking one question, giving a frame, or offering small reusable pieces (words, examples).
 If the student asks you to "ask me a question", ask exactly ONE short question and do NOT answer it yourself.

@@ -3,6 +3,17 @@ import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Settings, Shiel
 import AppTabBar from "@/components/AppTabBar";
 import { getSessions, type SessionRecord } from "@/lib/session-history";
 import { TRYING_POINTS } from "@/lib/trying-point";
+import { getCustomPrompt, setCustomPrompt } from "@/lib/coach-prefs";
+
+type HistoryRange = "all" | "week" | "month";
+const RANGE_LABEL: Record<HistoryRange, string> = { all: "All", week: "This week", month: "This month" };
+const RANGE_NEXT: Record<HistoryRange, HistoryRange> = { all: "week", week: "month", month: "all" };
+
+function withinRange(iso: string, range: HistoryRange): boolean {
+  if (range === "all") return true;
+  const days = range === "week" ? 7 : 30;
+  return Date.now() - new Date(iso).getTime() <= days * 86400000;
+}
 
 const ability = [
   { label: "Flow", value: 64, change: "+12", color: "#58A9FF" },
@@ -30,11 +41,15 @@ function sessionTitle(s: SessionRecord): string {
 export default function MyPage() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
+  const [range, setRange] = useState<HistoryRange>("all");
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [customPrompt, setCustomPromptState] = useState<string>(() => getCustomPrompt());
   const settingsRef = useRef<HTMLDivElement>(null);
   useEffect(() => { setSessions(getSessions()); }, []);
 
   // Real saved phrase bank — unique highlighted words across past runs.
   const savedPhrases = Array.from(new Set(sessions.flatMap((s) => s.highlightWords).map((w) => w.trim()).filter(Boolean)));
+  const visibleSessions = sessions.filter((s) => withinRange(s.createdAt, range));
 
   return (
     <div className="min-h-dvh bg-gray-50">
@@ -107,15 +122,23 @@ export default function MyPage() {
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-black uppercase tracking-widest text-gray-400">Practice history</p>
-            <CalendarDays size={16} className="text-gray-400" />
+            <button
+              onClick={() => setRange((r) => RANGE_NEXT[r])}
+              className="flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-bold text-gray-500 active:scale-95"
+            >
+              <CalendarDays size={14} className="text-gray-400" />
+              {RANGE_LABEL[range]}
+            </button>
           </div>
           <div className="space-y-2">
-            {sessions.length === 0 && (
+            {visibleSessions.length === 0 && (
               <p className="rounded-2xl bg-gray-50 px-3 py-4 text-center text-xs font-semibold text-gray-400">
-                No practice runs saved yet. Finish a practice and it shows up here.
+                {sessions.length === 0
+                  ? "No practice runs saved yet. Finish a practice and it shows up here."
+                  : `No runs in ${RANGE_LABEL[range].toLowerCase()}. Tap the date filter to widen it.`}
               </p>
             )}
-            {sessions.map((item) => (
+            {visibleSessions.map((item) => (
               <button key={item.id} className="flex w-full items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-left">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-500">
                   <ClipboardList size={17} />
@@ -166,12 +189,30 @@ export default function MyPage() {
               </div>
             )}
 
-            {/* Prompt focus — info row */}
-            <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3">
+            {/* Coaching prompt — your own instruction, sent to the AI coach */}
+            <button
+              onClick={() => setPromptOpen((o) => !o)}
+              className="flex w-full items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-left active:scale-[0.99]"
+            >
               <Settings size={17} className="text-blue-500" />
-              <span className="flex-1 text-sm font-bold text-gray-800">Prompt focus</span>
-              <span className="text-xs font-semibold text-gray-400">Science presentation</span>
-            </div>
+              <span className="flex-1 text-sm font-bold text-gray-800">Coaching prompt</span>
+              <span className="text-xs font-semibold text-gray-400">{customPrompt ? "Custom" : "Default"}</span>
+              <ChevronDown size={15} className="text-gray-300 transition-transform" style={{ transform: promptOpen ? "rotate(180deg)" : "none" }} />
+            </button>
+            {promptOpen && (
+              <div className="rounded-2xl bg-gray-50 px-3 py-3">
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => { setCustomPromptState(e.target.value); setCustomPrompt(e.target.value); }}
+                  rows={3}
+                  placeholder="e.g. Help me sound more confident and reuse science words. Ask me one tough question when I pause."
+                  className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 outline-none placeholder:text-gray-300 focus:border-blue-300"
+                />
+                <p className="mt-1.5 text-[11px] font-semibold leading-relaxed text-gray-400">
+                  Added to the coach as an extra instruction (still feedback-only — no full speeches or scores). Leave empty for the default.
+                </p>
+              </div>
+            )}
           </div>
         </section>
       </div>

@@ -7,6 +7,14 @@ import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 const PRESTART_TOUR = "speakspark.practiceOnboarded";
 const STARTED_TOUR = "speakspark.practiceStartedTour";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
+import { getCustomPrompt } from "@/lib/coach-prefs";
+
+// The student's own coaching instruction (from My > Settings), appended to the
+// system prompt within coaching limits. Empty unless they set one.
+function withOwnFocus(base: string): string {
+  const own = getCustomPrompt();
+  return own ? `${base}\nThe student set their own focus: "${own}". Honour it within coaching limits (no full speeches, no scores).` : base;
+}
 import { getPracticeMode } from "@/lib/practice-mode";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -825,7 +833,7 @@ export default function PracticeRoom() {
       const audioB64 = await blobToBase64(wavBlob);
       const parts = firstSentRef.current
         ? [{ inlineData: { mimeType: "audio/wav", data: audioB64 } }]
-        : [{ text: SYSTEM_PROMPT }, { inlineData: { mimeType: "audio/wav", data: audioB64 } }];
+        : [{ text: withOwnFocus(SYSTEM_PROMPT) }, { inlineData: { mimeType: "audio/wav", data: audioB64 } }];
       firstSentRef.current = true;
 
       const { text } = await callGeminiProxy({
@@ -855,7 +863,7 @@ export default function PracticeRoom() {
       model: MODEL_NAME,
       responseMimeType: "application/json",
       temperature: 0.7,
-      contents: [{ role: "user", parts: [{ text: SYSTEM_PROMPT }, { text: `${FOLLOW_UP_PROMPT}\n\n${context}` }] }],
+      contents: [{ role: "user", parts: [{ text: withOwnFocus(SYSTEM_PROMPT) }, { text: `${FOLLOW_UP_PROMPT}\n\n${context}` }] }],
     });
     const parsed = parseGeminiJson(text);
     if (!parsed?.follow_up?.trim()) return null;
