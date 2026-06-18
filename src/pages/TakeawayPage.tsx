@@ -700,10 +700,13 @@ export default function TakeawayPage() {
         )}
 
         {/* ═══════════ BLOCK ③ Your run in detail — moved below Level up ═══════════ */}
+        {/* Only show once there's a real run; otherwise it's an empty heading. */}
+        {takeaway && (
         <div className="flex items-center gap-2 px-1 pt-3">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-xs font-black text-white">3</span>
           <h2 className="text-lg font-black text-gray-900">Your run in detail</h2>
         </div>
+        )}
 
         {/* what you talked about */}
         {takeaway && takeaway.summary.length > 0 && (
@@ -782,7 +785,7 @@ export default function TakeawayPage() {
 
         {/* ═══════════ BLOCK ④ Coach — chatbox + go again ═══════════ */}
         <div className="flex items-center gap-2 px-1 pt-3">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs font-black text-white">4</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs font-black text-white">{takeaway ? 4 : 3}</span>
           <h2 className="text-lg font-black text-gray-900">Coach</h2>
         </div>
 
