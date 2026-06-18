@@ -26,10 +26,32 @@
 - [x] 🟡 **说话中 KTV 露出 vs 隐藏**（P3-2）：**定调=保留作鼓励框架**，未得分弱化/灰、得分上色、刚加分高亮。`✅🧪`
 - [x] 🟡 **Next Run Plan 提前**（P4-3）：定调=不置顶裸 hero，而是 Takeaway 重排为「精简鼓励 → ② Level up（含 Next Run Plan）→ ③ 详情 → ④ Coach」，价值不再被埋。`✅🧪` [spec](../specs/2026-06-15-takeaway-reorder.md)
 
-### 🔵 受后台失效阻塞（需先恢复/重建 Supabase，本机无 CLI）
-- [ ] 🔴 **恢复/重建 Supabase 后台**（`jyofoabobuwfowpctbfd` 已 NXDOMAIN）——所有 AI 的总开关。步骤见 [PROJECT-MEMORY](./PROJECT-MEMORY.md) 后台节。
-- [ ] ⛔ 后台恢复后**验证真 AI**：Takeaway 真实主题总结 / 同义词升级 / 对准 KTV 维度的建议 / 连贯 say_this；停顿卡真 AI 追问。（代码已就绪，见 commit `1936038`/`ca2982f`）
-- [ ] 🔴 Supabase `sessions` + `highlights` 真·落库（替 localStorage）。
+### 🔵 后台相关
+- [x] 🔴 **Supabase 后台已恢复**（2026-06-18，`jyofoabobuwfowpctbfd`）；`gemini-proxy` 实测真实返回。
+- [x] ⛔ **验证真 AI**：Takeaway 真实主题总结/同义词/对准最弱 KTV 维度建议/连贯 say_this，Coach 真回复——已验证。**并修了 token 截断 bug**（thinking 吃 token，maxOutputTokens 1600→4000）`ef98cbf`。
+- [ ] 🔴 Supabase `sessions` + `highlights` 真·落库（替 localStorage）——依赖账号体系，见下。
+
+---
+
+## 🧪 PM 走查 backlog（2026-06-18 · 一点点改）
+
+> 来源：以最严格 PM 视角走查 + 用户反馈。配套 [报告](../reports/iteration-report-2026-06-14.html) 决策项。
+
+### 已做（今天）
+- [x] 练习页**开练前 faint 占位框**（coach 卡 + Transcript 框浅浅框出位置，不再像空页）`1f5b195`
+- [x] **Trying Point 真闭环**：Takeaway 的 one_move → 存 `speakspark.nextTryingPoint` → 首页显示那一个、练完更新（`lib/trying-point` set/getNextTryingPoint）`1f5b195`
+
+### P0 · 决定项（report 里作为"待你拍板"）
+- [ ] 🔴 **真账号体系（auth）**：现全是 localStorage + mock "Alex"。要绑定用户/跨设备/家长/付费都靠它。推荐 Supabase Auth（邮箱/手机/OAuth）→ 拿 `user_id` → 表加 user_id + RLS。这是 `sessions/highlights` 落库 + 录音的前置。
+- [ ] 🔴 **录音 + 合规**（checkpoint，一起想）：要不要录音/存音频（Supabase Storage）；11–15 岁未成年人隐私/同意/留存/删除。先决定再开发。
+- [ ] 🟡 **移动端语音识别**：现用浏览器 SpeechRecognition（移动端 Safari 不支持）。备选：① 走 `analyze-voice` Edge Function 把音频发云端 STT（仓库已有该函数雏形）；② 接第三方 STT（如 Deepgram / Google STT / Whisper API）。需选型。
+- [ ] 🟡 **KTV 计分校准**：当前是本地启发式（参考 IELTS/TOEFL 维度，非真打分）。要不要拿真人录音校准阈值、或改成 AI 评分。
+
+### P1 · 体验
+- [ ] 🟡 **AI 延迟 < 3s**：edge function 给实时调用加 `thinkingConfig:{thinkingBudget:0}`（gemini-2.5-flash thinking 吃 700-800 token + 延时）；继续用预生成缓冲冲淡。**需改 `gemini-proxy` 并部署**（本机无 CLI）。
+- [ ] 🟢 首次/空数据态更鼓励（0 phrases、空历史）。
+- [ ] 🟢 **埋点/分析**：不在 UI 显示，是后台记录用户行为事件（如"完成练习/点了 Try Again/停顿弹卡"）→ 看漏斗/留存。可接 PostHog / Supabase 自建表。"用数据鼓励" = 用真实证据（练了几次、进步在哪、存了哪些词）做正向反馈，而非压力型 streak。
+- [ ] 🟢 Practice 麦克风拒绝/无语音/断网兜底文案过一遍。
 
 ---
 
