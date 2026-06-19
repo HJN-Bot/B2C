@@ -37,12 +37,6 @@
   .cover .eyebrow{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#9db4d8}
   .cover h1{font-size:clamp(29px,4.4vw,48px);margin:14px 0 10px;max-width:20ch}
   .cover .lede{font-size:16.5px;color:#c3d2e8;max-width:62ch;margin:0}
-  .cover .principles{margin:38px 0 8px;display:grid;grid-template-columns:repeat(2,1fr);gap:24px 54px;
-    background:var(--navy-panel);border:1px solid var(--navy-line);border-radius:20px;padding:30px 34px}
-  .cover .principles .k{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin:0 0 5px}
-  .cover .principles .k.risk{color:var(--orange)}
-  .cover .principles .k.dir{color:#6f9bff}
-  .cover .principles p{margin:0;font-size:15px;color:#e6eefb;line-height:1.5}
   .cover .meta{margin-top:28px;display:flex;flex-wrap:wrap;gap:9px 26px;font-size:13px;color:#9db4d8}
   .cover .meta b{color:#fff;font-weight:700}
 
@@ -138,7 +132,6 @@
 
   @media (max-width:760px){
     .response{grid-template-columns:1fr}
-    .cover .principles{grid-template-columns:1fr;gap:20px}
     .fb .two{grid-template-columns:1fr}
   }
   @media (max-width:440px){ .phones{grid-template-columns:1fr} }
@@ -159,12 +152,6 @@
       <div class="eyebrow">SpeakSpark · 设计走查回应与进展</div>
       <h1>UI Review & Product Logic Response</h1>
       <p class="lede">这份报告回应 7 页 UI / 产品逻辑走查：逐页对照原稿红点，说明我们如何把 SpeakSpark 调整成更像私人练习教练的体验；另列出新增的 Navigator 引导、Trying Point 闭环和历史日历视角。</p>
-      <div class="principles">
-        <div><p class="k risk">PRIMARY RISK</p><p>UI 容易被读成评分、评判或比赛准备。</p></div>
-        <div><p class="k dir">PRODUCT DIRECTION</p><p>把 SpeakSpark 定位成私人练习教练，不是评分者。</p></div>
-        <div><p class="k dir">LAUNCH RULE</p><p>只做 coach process：prompts、frames、词汇选择、一个 next-run plan。</p></div>
-        <div><p class="k dir">AVOID</p><p>完整演讲、比赛分数、排名语言、实时纠错、暴露 AI provider 报错。</p></div>
-      </div>
       <div class="meta">
         <span>报告日期 <b>2026-06-19</b></span>
         <span>对应原件 <b>speakspark-labelled-design-walkthrough.pdf</b></span>
@@ -229,15 +216,17 @@
         <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-4.png" alt="原 Page 4 手机"></div>
         <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
           <img class="shot-img" src="assets/phone/after-takeaway.png" alt="V2 Takeaway 顶部">
-          <p class="ph-cap">Takeaway V2（<b>真实 AI</b>）：① 精简鼓励 → <b>② Level up</b>（Amplify + Change/Next time 合并块：改什么、怎么说、复用词、trying point）→ ③ 详情 → ④ Coach · <code>#/session-end</code></p>
+          <p class="ph-cap">Takeaway V2（<b>真实 AI</b>）· <code>#/session-end</code></p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
       <div class="response">
         <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>奖杯像夺冠/排名</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：notebook/check + "Practice complete"。</p><p class="now">✅ 改为 <b>"Practice complete" + 🎉</b>，无奖杯无排名。<span class="refs"><span class="commit">838a68b</span></span></p></div></div>
         <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>stats 像成绩单</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：先一句人话再谈数据。</p><p class="now">✅ 先 <b>人话 headline</b>（"You kept your idea going…"）。<span class="refs"><span class="commit">838a68b</span></span></p></div></div>
-        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>Next Run Plan 应是 hero</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：提为置顶 hero card。</p><p class="now">✅ Takeaway 重排：顶部只留精简鼓励 + 1 个 quick win，<b>Level up（含 Next Run Plan）提前为块②</b>；并把 Change 与 Next time 合并，读法变成"一个要改的点 → 下一次直接怎么说"。<span class="refs"><span class="commit">见 reorder spec</span><span class="commit">6e889dd</span></span></p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>Next Run Plan 应是 hero</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：提为置顶 hero card。</p><p class="now">✅ Next Run Plan 已提前到第一屏的 <b>Level up</b>，不再像结束后的附属建议。<span class="refs"><span class="commit">fd71e59</span></span></p></div></div>
         <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>红色 AI 失败像出错</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：中性文案。</p><p class="now">✅ 改为<b>中性诚实琥珀提示</b>（正是靠它定位到后台失效）。<span class="refs"><span class="commit">1936038</span><span class="commit">ca2982f</span></span></p></div></div>
+        <div class="row"><span class="pin dir">+</span><div class="body"><div class="t"><b>新增：Takeaway V2 信息架构</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="now">结束页重排为 ① 精简鼓励 → ② Level up → ③ 详情 → ④ Coach；Level up 合并 Amplify + Change/Next time，直接告诉用户改什么、怎么说、复用哪些词、下一次 trying point 是什么。<span class="refs"><span class="commit">fd71e59</span><span class="commit">6e889dd</span></span></p></div></div>
+        <div class="row"><span class="pin dir">+</span><div class="body"><div class="t"><b>新增：真实 AI 的具体化反馈</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="now">Takeaway 基于本次原文生成，不再说最低分；输出具体句式、词汇升级和可复用表达。<span class="refs"><span class="commit">1936038</span><span class="commit">ef98cbf</span><span class="commit">6e889dd</span></span></p></div></div>
       </div>
     </div>
 
