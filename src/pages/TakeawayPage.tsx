@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowUpRight, Blocks, BookOpen, Brain, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, TrendingUp, Waves, Wrench, type LucideIcon } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
@@ -80,6 +80,23 @@ function makeId() {
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
   return mins > 0 ? `${mins}m ${seconds % 60}s` : `${seconds}s`;
+}
+
+// The model occasionally emits light Markdown (*, **, _). Render it as real
+// emphasis instead of showing literal asterisks. (Prompt also asks for none.)
+function renderInline(text: string): ReactNode {
+  if (!text || !/[*_]/.test(text)) return text;
+  const out: ReactNode[] = [];
+  const re = /\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_/g;
+  let last = 0, k = 0, m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    if (m[1]) out.push(<strong key={k++}>{m[1]}</strong>);
+    else out.push(<em key={k++}>{m[2] ?? m[3]}</em>);
+    last = re.lastIndex;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
 }
 
 // P4-2: playful, non-scorecard headline for the top of the takeaway.
@@ -282,11 +299,14 @@ function createLocalChatAnswer(request: string, takeaway: AiTakeaway | null, tra
 
 function buildTakeawayPrompt(context: string, coachStyle: string) {
   const own = getCustomPrompt();
-  return `You are SpeakSpark, an AI speaking coach for Chinese middle-school students practicing English science presentations.
+  return `You are SpeakSpark, a warm, encouraging IELTS-style speaking coach for Chinese middle-school students (ages 11-15) practicing English science presentations.
 ${coachStyle}${own ? `\nThe student set their own focus: "${own}". Honour it as long as it stays within coaching (no full speeches, no scores).` : ""}
 
 First UNDERSTAND what the student was actually arguing — read the whole transcript as a real talk on a real topic, not a bag of words. Then coach with advice tied to THAT topic and to their KTV scores.
 Rules:
+- BE CONCISE. Every field is ONE short sentence (~16 words max). No long explanations, no second sentences, no lists inside a field. Short and warm wins.
+- PLAIN TEXT ONLY. No Markdown — no asterisks (*), no **bold**, no _italics_, no # headings, no bullet characters.
+- Ground feedback in IELTS speaking bands (fluency, vocabulary, grammar range, coherence) but phrase it simply and kindly for a kid, and always end on encouragement.
 - Use ONLY ideas supported by the transcript, highlights, and score events. Never invent a topic. If the transcript is too thin to tell the topic, say so plainly instead of guessing.
 - "summary": 1-2 COMPLETE SENTENCES naming the actual topic and the point they were making (e.g. "You explained how renewable energy could replace coal, and gave wind power as an example."). NEVER output a list of disconnected words.
 - The "encouragement" should be warm and a little playful, not a score.
@@ -322,7 +342,8 @@ ${coachStyle}${own ? `\nThe student set their own focus: "${own}". Honour it wit
 Answer ONLY based on this session. Keep answers short, concrete, and next-run focused.
 Coach mode: practice feedback only. Never write a full speech or a complete answer for the student — coach by asking one question, giving a frame, or offering small reusable pieces (words, examples).
 If the student asks you to "ask me a question", ask exactly ONE short question and do NOT answer it yourself.
-ALWAYS return ONLY valid JSON: { "answer": "2-5 short lines" }
+Be concise and warm. Plain text only — NO Markdown (no *, **, _, #).
+ALWAYS return ONLY valid JSON: { "answer": "2-3 short lines, plain text" }
 
 Current takeaway:
 ${takeaway ? JSON.stringify(takeaway, null, 2) : "Not generated yet."}
@@ -557,7 +578,7 @@ export default function TakeawayPage() {
         {takeaway && takeaway.what_worked.length > 0 && (
           <section className="rounded-[1.25rem] border border-blue-100 bg-blue-50/40 p-4 shadow-sm">
             <p className="text-xs font-black uppercase tracking-widest text-blue-500">One thing you did well</p>
-            <p className="mt-2 text-sm font-bold leading-relaxed text-gray-800">{takeaway.what_worked[0].point}</p>
+            <p className="mt-2 text-sm font-bold leading-relaxed text-gray-800">{renderInline(takeaway.what_worked[0].point)}</p>
             {takeaway.what_worked[0].quote && (
               <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/70 px-2 py-1 text-xs font-semibold italic text-gray-500">
                 You said: “{takeaway.what_worked[0].quote}”
@@ -599,7 +620,7 @@ export default function TakeawayPage() {
             <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
               {takeaway.amplify.map((item) => (
                 <div key={item.point}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
                   {item.quote && (
                     <p className="mt-1 rounded-lg border-l-2 border-green-200 bg-green-50/70 px-2 py-1 text-xs font-semibold italic text-gray-500">
                       You said: “{item.quote}”
@@ -621,7 +642,7 @@ export default function TakeawayPage() {
             <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
               {takeaway.make_stronger.map((item) => (
                 <div key={item.point}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
                   {item.quote && (
                     <p className="mt-1 rounded-lg border-l-2 border-orange-200 bg-orange-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
                       You said: “{item.quote}”
@@ -672,12 +693,12 @@ export default function TakeawayPage() {
             <div className="space-y-3">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-widest text-gray-300">Focus</p>
-                <p className="mt-1 text-sm font-black leading-relaxed text-gray-900">{plan.focus}</p>
+                <p className="mt-1 text-sm font-black leading-relaxed text-gray-900">{renderInline(plan.focus)}</p>
               </div>
               <div className="rounded-2xl bg-green-50 px-3 py-3">
                 <p className="text-[11px] font-black uppercase tracking-widest text-green-600">Say this next</p>
                 <div className="mt-1 max-h-24 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  <p className="text-sm font-black leading-relaxed text-gray-900">"{plan.say_this}"</p>
+                  <p className="text-sm font-black leading-relaxed text-gray-900">"{renderInline(plan.say_this)}"</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -690,7 +711,7 @@ export default function TakeawayPage() {
               <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2.5">
                 <p className="text-[11px] font-black uppercase tracking-widest text-amber-600">🎯 Your next trying point</p>
                 <div className="mt-1 max-h-20 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{plan.one_move}</p>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(plan.one_move)}</p>
                 </div>
               </div>
             </div>
@@ -716,7 +737,7 @@ export default function TakeawayPage() {
               {takeaway.summary.map((point) => (
                 <div key={point} className="flex gap-2">
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{point}</p>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(point)}</p>
                 </div>
               ))}
             </div>
@@ -730,7 +751,7 @@ export default function TakeawayPage() {
             <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
               {takeaway.what_worked.slice(1).map((item) => (
                 <div key={item.point}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{item.point}</p>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
                   {item.quote && (
                     <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
                       You said: “{item.quote}”
@@ -811,7 +832,7 @@ export default function TakeawayPage() {
                     ? "rounded-2xl bg-amber-50 px-3 py-2 text-amber-700"
                     : "mr-8 rounded-2xl bg-white px-3 py-2 text-gray-800 shadow-sm"}
                 >
-                  <p className="whitespace-pre-line text-sm font-semibold leading-relaxed">{message.text}</p>
+                  <p className="whitespace-pre-line text-sm font-semibold leading-relaxed">{renderInline(message.text)}</p>
                 </div>
               ))}
               {chatStatus === "thinking" && <div className="mr-8 h-9 animate-pulse rounded-2xl bg-white shadow-sm" />}

@@ -1355,22 +1355,28 @@ export default function PracticeRoom() {
 
       {/* ── Top bar ── */}
       <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between gap-2 mb-2">
+        {/* Controls row: timer + status on the left, a clear End on the right */}
+        <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-xs font-bold text-gray-600">🎯 {topic || practiceMode.label}</span>
+            <Clock size={14} className="shrink-0 text-gray-400" />
+            <span className="font-mono text-sm font-bold text-gray-700">{fmt(timer)}</span>
             {apiStatus === "loading" && <span className="shrink-0 text-xs text-blue-400">· loading…</span>}
             {apiStatus === "error"   && <span className="shrink-0 text-xs text-red-400">· offline</span>}
             {micDenied              && <span className="shrink-0 text-xs text-amber-500">· mic off (demo)</span>}
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <Clock size={13} className="text-gray-400" />
-            <span className="font-mono text-sm font-bold text-gray-700">{fmt(timer)}</span>
-          </div>
           <button onClick={endSession}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform border"
-            style={{ background: "rgba(255,122,92,0.1)", borderColor: "rgba(255,122,92,0.4)", color: "#EF4444" }}>
-            <StopCircle size={13} />End
+            className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-black text-white shadow-sm active:scale-95 transition-transform"
+            style={{ background: "linear-gradient(135deg,#FF8A6B,#EF4444)" }}>
+            <StopCircle size={15} />End
           </button>
+        </div>
+
+        {/* Topic window — full topic, wraps up to 2 lines (no truncation) */}
+        <div className="mt-2 flex items-start gap-2 rounded-xl border border-gray-100 bg-white px-3 py-2 shadow-sm">
+          <span className="mt-0.5 shrink-0 text-sm">🎯</span>
+          <p className="text-[13px] font-bold leading-snug text-gray-700 line-clamp-2" title={topic || practiceMode.label}>
+            {topic || practiceMode.label}
+          </p>
         </div>
 
 
