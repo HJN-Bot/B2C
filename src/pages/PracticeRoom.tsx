@@ -341,6 +341,17 @@ function detectSentencePattern(text: string) {
   return SENTENCE_PATTERNS.find(({ pattern }) => pattern.test(text));
 }
 
+// Universal, topic-agnostic prompts — work for any science talk, so the
+// fallback stays useful (and varied) when there's no specific cue to grab.
+const UNIVERSAL_PAUSE = [
+  "What's one real example that proves your point?",
+  "Why does this matter in everyday life?",
+  "Can you add one fact or number to back that up?",
+  "What happens as a result of this?",
+  "How would you explain this to a younger kid?",
+  "What's the most surprising part of this for you?",
+];
+
 // Layer-1 fast local pause reply: content-aware (not canned), so it can show
 // instantly while a deeper Gemini reply is still loading.
 function localPauseReply(transcript: string, words: string[]): { follow_up: string; feedback: string; kind: "question" | "nudge" } {
@@ -356,7 +367,7 @@ function localPauseReply(transcript: string, words: string[]): { follow_up: stri
   if (lastSentence && lastSentence.length > 24) {
     return { kind: "question", feedback: "Good start.", follow_up: `Why does "${lastSentence.slice(0, 40)}…" matter?` };
   }
-  return { kind: "question", feedback: "Let's keep it going.", follow_up: "What's one example, one reason, or one impact you can add?" };
+  return { kind: "question", feedback: "Let's keep it going.", follow_up: UNIVERSAL_PAUSE[Math.floor(Math.random() * UNIVERSAL_PAUSE.length)] };
 }
 
 // ─── Helper: highlight vocab in transcript text ───────────────────────────────
@@ -472,6 +483,7 @@ export default function PracticeRoom() {
 
   // Transcript scroll
   const transcriptScrollRef = useRef<HTMLDivElement>(null);
+  const chipsRef = useRef<HTMLDivElement>(null);
   // Coachmark targets for the first-run tour.
   const ktvBarRef = useRef<HTMLDivElement>(null);
   const coachRef = useRef<HTMLDivElement>(null);
@@ -685,6 +697,13 @@ export default function PracticeRoom() {
     if (!reel) return;
     reel.scrollTo({ top: reel.scrollHeight, behavior: "smooth" });
   }, [transcript, interimTranscript]);
+
+  // Captured-words strip: keep it a single fixed line; new chips slide in from
+  // the right and older ones scroll off to the left.
+  useEffect(() => {
+    const el = chipsRef.current;
+    if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+  }, [highlightWords]);
 
   const stopLiveCaptions = useCallback((clearText = false) => {
     shouldRestartRecognitionRef.current = false;
@@ -1602,9 +1621,9 @@ export default function PracticeRoom() {
           )}
 
           {started && highlightWords.length > 0 && (
-            <div className="relative z-[1] mt-2 flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-              {highlightWords.slice(-5).map((w) => (
-                <span key={w} className="flex-shrink-0 rounded-full px-2 py-1 text-xs font-semibold"
+            <div ref={chipsRef} className="relative z-[1] mt-2 flex h-8 flex-nowrap items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {highlightWords.slice(-12).map((w, i) => (
+                <span key={`${w}-${i}`} className="flex-shrink-0 whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold"
                   style={{ background: "rgba(88,169,255,0.13)", color: "#2563EB" }}>
                   <Sparkles size={10} className="mr-1 inline" />{w}
                 </span>

@@ -312,8 +312,9 @@ Rules:
 - The "encouragement" should be warm and a little playful, not a score.
 - "reuse_words": 3-5 SYNONYM UPGRADES — for words the student actually used, give a stronger/more precise alternative fitting their topic. Format each as "their word → upgrade" (e.g. "good → remarkable", "a lot of → a vast amount of"). Pick words they really said.
 - "say_this": rewrite ONE real sentence the student said into a higher-level version of THE SAME point — keep their meaning, upgrade the structure/connectors (e.g. "X is significant because…", "One striking example is…"). It must read as a coherent sentence about their topic, never echo a single keyword.
-- Tie advice to "ktv_score": find the LOWEST metric and aim "focus", "one_move" and "make_stronger" at it — flow=keep one idea going, words=stronger/precise vocabulary, sentences=fuller complete sentences, story=claim+example+why it matters. NAME the metric in the advice so it feels custom (e.g. "Your Story score is lowest — add why it matters").
-- "amplify": the metric/skill they did BEST on, with how to do even more of it next time.
+- Pick the biggest GROWTH AREA from "ktv_score" (their weakest of flow/words/sentences/story) and aim "say_this", "one_move" and "make_stronger" at it. Do NOT mention raw scores or say "your X score is the lowest / highest" — frame it warmly (e.g. "A great next step is to finish your point with why it matters"). flow=keep one idea going, words=stronger/precise words, sentences=fuller complete sentences, story=claim+example+why.
+- "amplify": the skill they did BEST, with a CONCRETE way to do more of it — give a specific example or sentence frame, not vague praise.
+- BE CONCRETE, never vague: each "amplify"/"make_stronger" point includes a usable example, a sentence frame, or exact words — not "do more of this".
 - For every "what_worked", "amplify" and "make_stronger" item, include a SHORT exact quote (3-8 words) copied verbatim from the transcript as "quote". If no fitting quote exists, use "".
 
 Return ONLY valid JSON:
@@ -321,14 +322,14 @@ Return ONLY valid JSON:
   "encouragement": "one warm, playful sentence",
   "summary": ["1-2 full sentences naming the real topic and their point"],
   "next_run_plan": {
-    "focus": "one specific focus, naming the lowest KTV metric",
+    "focus": "one specific growth focus (no score talk)",
     "say_this": "their own sentence upgraded — same point, stronger structure (not a repeat, not a keyword)",
     "reuse_words": ["3-5 'their word → stronger synonym' upgrades, drawn from words they used"],
-    "one_move": "one tiny concrete action for the next run, aimed at the lowest metric"
+    "one_move": "one tiny concrete action for the next run, with a specific example"
   },
-  "what_worked": [{ "point": "what they did well", "quote": "exact short phrase they said, or empty" }],
-  "amplify": [{ "point": "the skill/metric they did best on and how to do more of it", "quote": "the phrase it builds on, or empty" }],
-  "make_stronger": [{ "point": "one thing to change, tied to the lowest metric (name it)", "quote": "the phrase this refers to, or empty" }]
+  "what_worked": [{ "point": "what they did well (concrete)", "quote": "exact short phrase they said, or empty" }],
+  "amplify": [{ "point": "best skill + a concrete way/example to do more", "quote": "the phrase it builds on, or empty" }],
+  "make_stronger": [{ "point": "one concrete change with an example/frame (no score talk)", "quote": "the phrase this refers to, or empty" }]
 }
 
 Session:
@@ -632,33 +633,14 @@ export default function TakeawayPage() {
           </section>
         )}
 
-        {/* Change — one thing to fix */}
-        {takeaway && takeaway.make_stronger.length > 0 && (
-          <section className="rounded-[1.25rem] border border-orange-100 bg-orange-50/40 p-4 shadow-sm">
+        {/* Change + how to say it next time — merged into one block to cut reading cost */}
+        <section className="rounded-[1.25rem] border border-orange-100 bg-orange-50/40 p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wrench size={16} className="text-orange-500" />
-              <p className="text-xs font-black uppercase tracking-widest text-orange-500">Change · one thing to fix</p>
+              <p className="text-xs font-black uppercase tracking-widest text-orange-500">Change · and how to say it next time</p>
             </div>
-            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-              {takeaway.make_stronger.map((item) => (
-                <div key={item.point}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
-                  {item.quote && (
-                    <p className="mt-1 rounded-lg border-l-2 border-orange-200 bg-orange-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
-                      You said: “{item.quote}”
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* How to say it next time */}
-        <section className="rounded-[1.25rem] border border-green-100 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-green-500">Next time, say it like this</p>
-            <span className="rounded-full bg-green-50 px-2 py-1 text-[10px] font-black text-green-600">
+            <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-black text-orange-600">
               {takeawayStatus === "thinking" ? "Thinking…" : takeawayStatus === "idle" ? "Practice first" : "From this run"}
             </span>
           </div>
@@ -691,23 +673,35 @@ export default function TakeawayPage() {
 
           {plan && takeawayStatus === "ready" && (
             <div className="space-y-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-widest text-gray-300">Focus</p>
-                <p className="mt-1 text-sm font-black leading-relaxed text-gray-900">{renderInline(plan.focus)}</p>
-              </div>
+              {/* the one thing to change, with the exact words it refers to */}
+              {takeaway?.make_stronger.map((item) => (
+                <div key={item.point}>
+                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
+                  {item.quote && (
+                    <p className="mt-1 rounded-lg border-l-2 border-orange-200 bg-orange-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                      You said: “{item.quote}”
+                    </p>
+                  )}
+                </div>
+              ))}
               <div className="rounded-2xl bg-green-50 px-3 py-3">
-                <p className="text-[11px] font-black uppercase tracking-widest text-green-600">Say this next</p>
+                <p className="text-[11px] font-black uppercase tracking-widest text-green-600">Say this next time</p>
                 <div className="mt-1 max-h-24 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
                   <p className="text-sm font-black leading-relaxed text-gray-900">"{renderInline(plan.say_this)}"</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {plan.reuse_words.map((word) => (
-                  <span key={word} className="rounded-full bg-blue-50 px-2 py-1 text-xs font-bold text-blue-600">
-                    <Sparkles size={10} className="mr-1 inline" />{word}
-                  </span>
-                ))}
-              </div>
+              {plan.reuse_words.length > 0 && (
+                <div>
+                  <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-blue-500">Words to reuse</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {plan.reuse_words.map((word) => (
+                      <span key={word} className="rounded-full bg-blue-50 px-2 py-1 text-xs font-bold text-blue-600">
+                        <Sparkles size={10} className="mr-1 inline" />{word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2.5">
                 <p className="text-[11px] font-black uppercase tracking-widest text-amber-600">🎯 Your next trying point</p>
                 <div className="mt-1 max-h-20 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>

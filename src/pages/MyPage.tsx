@@ -121,7 +121,7 @@ export default function MyPage() {
 
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Practice history</p>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Practice history{visibleSessions.length > 3 ? ` · ${visibleSessions.length}` : ""}</p>
             <button
               onClick={() => setRange((r) => RANGE_NEXT[r])}
               className="flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-bold text-gray-500 active:scale-95"
@@ -130,7 +130,7 @@ export default function MyPage() {
               {RANGE_LABEL[range]}
             </button>
           </div>
-          <div className="space-y-2">
+          <div className="max-h-[252px] space-y-2 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
             {visibleSessions.length === 0 && (
               <p className="rounded-2xl bg-gray-50 px-3 py-4 text-center text-xs font-semibold text-gray-400">
                 {sessions.length === 0
