@@ -189,6 +189,11 @@
       <span class="chip s-block"><span class="dot"></span>依赖后端（现已恢复，AI 跑通）</span>
     </div>
 
+    <div class="notice" style="border-color:var(--green-line);background:var(--green-bg)">
+      <h3 style="color:var(--green)">TL;DR · 这一阶段</h3>
+      <p style="color:#2f6b48">对照 7 页走查 + 5 条文字反馈：练习页 / Takeaway / 首页 / My <b>整体改版已上线，AI 已真跑通</b>。<b>需要你拍板或支持的只有几件</b>：① 真账号体系（auth）② 录音 + 未成年人合规 ③ 移动端语音识别选型 ④ 重新部署 <code>gemini-proxy</code>（让 AI 提速生效）。明细见文末「下一步 / V3」。</p>
+    </div>
+
     <!-- ───── PAGE 2 ───── -->
     <div class="page">
       <div class="page-head"><span class="page-no">PAGE 2</span><h2>Start Screen — Motivation Without Scoring</h2></div>
@@ -354,6 +359,10 @@
       <div>可编辑 Coaching prompt（注入 AI）+ 历史按时间筛选</div>
       <div>coach-mode 信任标签「Practice feedback only」推广全 app</div>
       <div>四页底部导航打通（含修复首页缺失的导航栏）</div>
+      <div>首页 Last Highlight 接真实历史 + 首次空状态（去掉写死假数据）</div>
+      <div>练习页开练前 faint 占位框（coach 卡 + Transcript，不像空页）</div>
+      <div>麦克风关 / 不支持 / 断网 兜底文案友好可操作</div>
+      <div>AI 延迟：实时调用关 thinking 提速（Takeaway 保留思考保质量）</div>
     </div>
 
     <!-- ───── D. Backend & storage plan + decisions ───── -->
@@ -392,6 +401,18 @@
       <h3>✅ 后台状态：已恢复</h3>
       <p>Supabase 后台已恢复，AI（实时教练 / takeaway 总结 / Coach 问答）<b>已跑通可演示</b>。上面的存储 / 账号 / 录音项是"要不要更进一步绑定用户、做跨设备"的决策，与当前可用性无关。详细操作见单独的 <b>User Guidance</b>。</p>
     </div>
+
+    <!-- ───── E. Next / V3 roadmap ───── -->
+    <div class="sec-divider"><span class="n">E</span><h2>下一步 / V3 路线图</h2></div>
+    <p class="page-sub">持续迭代中。按优先级排，逐步推进。</p>
+    <ul class="decide">
+      <li><span class="box"></span><span>🔴 <b>真账号体系（auth）+ 落库</b>：Supabase Auth → <code>user_id</code> + RLS；<code>sessions/highlights/coach_messages</code> 入库（替 localStorage）。一切跨设备/绑定用户的前提。</span></li>
+      <li><span class="box"></span><span>🔴 <b>录音 + 未成年人合规</b>：是否录/存音频（Storage）、同意/留存/删除——先决定再做。</span></li>
+      <li><span class="box"></span><span>🟡 <b>移动端语音识别</b>：浏览器 STT 不支持移动 Safari → 走服务端 STT（仓库已有 <code>analyze-voice</code> 雏形）或接第三方（Deepgram/Whisper）。</span></li>
+      <li><span class="box"></span><span>🟡 <b>KTV 计分校准</b>：现为本地启发式（IELTS/TOEFL 维度方向对、分数未校准）→ 真人录音校准 或 改 AI 评分。</span></li>
+      <li><span class="box"></span><span>🟡 <b>部署 <code>gemini-proxy</code></b>：让"实时调用关 thinking 提速"真正生效（代码已就绪）。</span></li>
+      <li><span class="box"></span><span>🟢 <b>埋点 / 分析</b>：后台记录行为事件看漏斗/留存；用真实证据做正向反馈，不用压力型 streak。</span></li>
+    </ul>
 
     <div class="foot">
       SpeakSpark · 面向 6–9 年级中学生的英文科普演讲实时陪练 · 私人练习教练，不是评分工具。<br>
