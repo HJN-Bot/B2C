@@ -157,8 +157,8 @@
   <header class="cover">
     <div class="in">
       <div class="eyebrow">SpeakSpark · 设计走查回应与进展</div>
-      <h1>对照那份 7 页走查，我们逐页改了什么</h1>
-      <p class="lede">每页顶部并排：左 = 反馈方原稿手机（带红点 ①②③④），右 = 我们的新界面截图位；下方是对每个红点的逐条回应——怎么改的、状态、对应提交。</p>
+      <h1>UI Review & Product Logic Response</h1>
+      <p class="lede">这份报告回应 7 页 UI / 产品逻辑走查：逐页对照原稿红点，说明我们如何把 SpeakSpark 调整成更像私人练习教练的体验；另列出新增的 Navigator 引导、Trying Point 闭环和历史日历视角。</p>
       <div class="principles">
         <div><p class="k risk">PRIMARY RISK</p><p>UI 容易被读成评分、评判或比赛准备。</p></div>
         <div><p class="k dir">PRODUCT DIRECTION</p><p>把 SpeakSpark 定位成私人练习教练，不是评分者。</p></div>
@@ -175,20 +175,10 @@
 
   <div class="wrap">
 
-    <div class="notice" style="border-color:var(--green-line);background:var(--green-bg)">
-      <h3 style="color:var(--green)">✅ 后台状态：AI 已恢复并跑通</h3>
-      <p><b>更新（2026-06-18）：Supabase 后台已恢复，AI 全部跑通。</b>已实测 <code>gemini-proxy</code> 返回真实内容；Takeaway 现给出基于原文的总结、温和指出一个 growth area、同义词升级与连贯的 say_this，不再用分数高低压用户。<br>过程中还修了一个真 bug：gemini-2.5-flash 的"思考"约吃 700–800 token，原 <code>maxOutputTokens:1600</code> 会把 takeaway JSON 截断 → 退本地；已调到 4000，恢复正常。</p>
-    </div>
-
     <div class="legend">
       <span class="chip s-ship"><span class="dot"></span>已上线</span>
       <span class="chip s-part"><span class="dot"></span>部分 / 待做</span>
       <span class="chip s-block"><span class="dot"></span>依赖后端（现已恢复，AI 跑通）</span>
-    </div>
-
-    <div class="notice" style="border-color:var(--green-line);background:var(--green-bg)">
-      <h3 style="color:var(--green)">TL;DR · 这一阶段</h3>
-      <p style="color:#2f6b48">对照 7 页走查 + 5 条文字反馈：练习页 / Takeaway / 首页 / My <b>整体改版已上线，AI 已真跑通</b>。2026-06-19 又补了一轮细节：Takeaway 把 Change + Next time 合并成一个可执行块，练习页 captured words 与 My history 都改成固定滚动；My history 右上角也从时间 filter 改为 calendar 视角，有练习的日期可点选。<b>需要你拍板或支持的只有几件</b>：① 真账号体系（auth）② 录音 + 未成年人合规 ③ 移动端语音识别选型 ④ 重新部署 <code>gemini-proxy</code>（让 AI 提速生效）。明细见文末「下一步 / V3」。</p>
     </div>
 
     <!-- ───── PAGE 2 ───── -->
