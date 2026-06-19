@@ -11,6 +11,9 @@ export interface GeminiProxyRequest {
   responseMimeType?: string;
   temperature?: number;
   maxOutputTokens?: number;
+  // gemini-2.5-flash spends ~700-800 "thinking" tokens (latency + budget).
+  // Pass { thinkingBudget: 0 } on real-time calls to turn it off.
+  thinkingConfig?: { thinkingBudget: number };
 }
 
 export interface GeminiProxyResponse {

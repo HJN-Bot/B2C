@@ -840,6 +840,7 @@ export default function PracticeRoom() {
         model: MODEL_NAME,
         responseMimeType: "application/json",
         temperature: 0.7,
+        thinkingConfig: { thinkingBudget: 0 }, // real-time: speed over deliberation
         contents: [{ role: "user", parts }],
       });
       const parsed = parseGeminiJson(text.trim());
@@ -863,6 +864,7 @@ export default function PracticeRoom() {
       model: MODEL_NAME,
       responseMimeType: "application/json",
       temperature: 0.7,
+      thinkingConfig: { thinkingBudget: 0 }, // real-time pause reply: keep it fast
       contents: [{ role: "user", parts: [{ text: withOwnFocus(SYSTEM_PROMPT) }, { text: `${FOLLOW_UP_PROMPT}\n\n${context}` }] }],
     });
     const parsed = parseGeminiJson(text);
@@ -1358,7 +1360,7 @@ export default function PracticeRoom() {
             <span className="truncate text-xs font-bold text-gray-600">🎯 {topic || practiceMode.label}</span>
             {apiStatus === "loading" && <span className="shrink-0 text-xs text-blue-400">· loading…</span>}
             {apiStatus === "error"   && <span className="shrink-0 text-xs text-red-400">· offline</span>}
-            {micDenied              && <span className="shrink-0 text-xs text-gray-400">· demo</span>}
+            {micDenied              && <span className="shrink-0 text-xs text-amber-500">· mic off (demo)</span>}
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <Clock size={13} className="text-gray-400" />
@@ -1553,10 +1555,12 @@ export default function PracticeRoom() {
                   ) : (
                     <p className="text-[15px] italic text-gray-300">
                       {captionStatus === "unsupported"
-                        ? "Live captions need Chrome or Edge..."
+                        ? "Live captions work best in Chrome or Edge — you can still talk, the coach keeps listening."
                         : captionStatus === "error"
-                        ? "Live captions paused..."
-                        : "Your words will appear here..."}
+                        ? "Captions paused — keep talking, the coach still hears you."
+                        : micDenied
+                        ? "Mic is off — allow microphone access to see your words here."
+                        : "Your words will appear here…"}
                     </p>
                   )}
                 </div>

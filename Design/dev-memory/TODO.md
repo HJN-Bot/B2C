@@ -48,10 +48,10 @@
 - [ ] 🟡 **KTV 计分校准**：当前是本地启发式（参考 IELTS/TOEFL 维度，非真打分）。要不要拿真人录音校准阈值、或改成 AI 评分。
 
 ### P1 · 体验
-- [ ] 🟡 **AI 延迟 < 3s**：edge function 给实时调用加 `thinkingConfig:{thinkingBudget:0}`（gemini-2.5-flash thinking 吃 700-800 token + 延时）；继续用预生成缓冲冲淡。**需改 `gemini-proxy` 并部署**（本机无 CLI）。
-- [ ] 🟢 首次/空数据态更鼓励（0 phrases、空历史）。
+- [~] 🟡 **AI 延迟 < 3s**：代码已就绪——`gemini-proxy` 转发 `thinkingConfig`、lib 加字段、练习页两处实时调用传 `thinkingBudget:0`（gemini-2.5-flash thinking 吃 700-800 token + 延时）。`2026-06-19` ⚠️ **edge function 需用户侧部署才生效**（本机无 CLI）。Takeaway 保留 thinking。[spec](../specs/2026-06-19-polish-batch.md)
+- [x] 🟢 首次/空数据态更鼓励：**首页 Last Highlight 接真实历史 + 首次空状态**（删了写死的假 highlight）。`✅🧪`（My 的空历史/0 phrases 文案此前已有）
 - [ ] 🟢 **埋点/分析**：不在 UI 显示，是后台记录用户行为事件（如"完成练习/点了 Try Again/停顿弹卡"）→ 看漏斗/留存。可接 PostHog / Supabase 自建表。"用数据鼓励" = 用真实证据（练了几次、进步在哪、存了哪些词）做正向反馈，而非压力型 streak。
-- [ ] 🟢 Practice 麦克风拒绝/无语音/断网兜底文案过一遍。
+- [x] 🟢 Practice 麦克风拒绝/无语音/断网兜底文案过一遍：不支持/出错/麦克风关 三种文案改友好可操作。`✅🧪`
 
 ---
 

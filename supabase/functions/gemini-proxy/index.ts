@@ -56,6 +56,9 @@ Deno.serve(async (req) => {
     if (typeof body?.maxOutputTokens === "number") {
       generationConfig.maxOutputTokens = body.maxOutputTokens;
     }
+    if (body?.thinkingConfig && typeof body.thinkingConfig === "object") {
+      generationConfig.thinkingConfig = body.thinkingConfig;
+    }
 
     const payload: Record<string, unknown> = { contents };
     if (systemInstruction) payload.systemInstruction = systemInstruction;

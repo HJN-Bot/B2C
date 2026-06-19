@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CalendarCheck, Star, ChevronRight, Lightbulb, Target } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
 import { currentTryingPoint } from "@/lib/trying-point";
+import { getSessions } from "@/lib/session-history";
 import AppTabBar from "@/components/AppTabBar";
 import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 
@@ -16,17 +17,18 @@ const TOPIC_STARTERS = [
   "What makes CRISPR a revolutionary tool in genetics?",
 ];
 
-const MOCK_LAST_HIGHLIGHT = {
-  text: "AI is transforming healthcare by analyzing millions of patient records to predict diseases before symptoms appear.",
-  score: 92,
-  dimension: "Vocabulary",
-  wave: [3, 5, 8, 12, 9, 6, 14, 10, 7, 11, 8, 5, 9, 12, 7, 4, 10, 6, 8, 5],
-};
+const HIGHLIGHT_WAVE = [3, 5, 8, 12, 9, 6, 14, 10, 7, 11, 8, 5, 9, 12, 7, 4, 10, 6, 8, 5];
+
+function snippet(text: string, max = 120): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t.length > max ? `${t.slice(0, max).trim()}…` : t;
+}
 
 export default function Home() {
   const navigate = useNavigate();
   const topic = TOPIC_STARTERS[Math.floor(Math.random() * TOPIC_STARTERS.length)];
   const [modeId, setModeId] = useState<PracticeModeId>(() => getPracticeMode().id);
+  const [lastSession] = useState(() => getSessions()[0] ?? null);
   const [showTour, setShowTour] = useState(() => !hasSeenTour(HOME_TOUR));
   const modeRef = useRef<HTMLDivElement>(null);
   const topicRef = useRef<HTMLDivElement>(null);
@@ -125,7 +127,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Last highlight — opens the history/library on My */}
+        {/* Last highlight — real last run, or an encouraging empty state */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Last Highlight ✨</span>
@@ -134,28 +136,41 @@ export default function Home() {
             </button>
           </div>
 
-          <button
-            onClick={() => navigate("/my")}
-            className="w-full text-left bg-white rounded-2xl p-4 shadow-sm border border-amber-100 transition active:scale-95"
-          >
-            <div className="flex items-end gap-0.5 h-7 mb-3">
-              {MOCK_LAST_HIGHLIGHT.wave.map((h, i) => (
-                <div key={i} className="flex-1 rounded-full"
-                  style={{ height: `${h * 2.2}px`, background: `hsl(${36 + i * 5}, 88%, 56%)`, opacity: 0.7 }} />
-              ))}
-            </div>
-            <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 mb-3">
-              "{MOCK_LAST_HIGHLIGHT.text}"
-            </p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Star size={13} className="text-amber-400" />
-                <span className="text-sm font-bold text-amber-500">Phrase saved</span>
-                <span className="text-xs text-gray-400">· {MOCK_LAST_HIGHLIGHT.dimension} win</span>
+          {lastSession ? (
+            <button
+              onClick={() => navigate("/my")}
+              className="w-full text-left bg-white rounded-2xl p-4 shadow-sm border border-amber-100 transition active:scale-95"
+            >
+              <div className="flex items-end gap-0.5 h-7 mb-3">
+                {HIGHLIGHT_WAVE.map((h, i) => (
+                  <div key={i} className="flex-1 rounded-full"
+                    style={{ height: `${h * 2.2}px`, background: `hsl(${36 + i * 5}, 88%, 56%)`, opacity: 0.7 }} />
+                ))}
               </div>
-              <span className="flex items-center gap-1 text-xs font-bold text-blue-500">View <ChevronRight size={13} /></span>
-            </div>
-          </button>
+              <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 mb-3">
+                "{snippet(lastSession.transcript) || "You completed a practice run."}"
+              </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star size={13} className="text-amber-400" />
+                  <span className="text-sm font-bold text-amber-500">
+                    {lastSession.highlightWords.length ? `${lastSession.highlightWords.length} phrases saved` : "Run saved"}
+                  </span>
+                  <span className="text-xs text-gray-400">· {lastSession.mode}</span>
+                </div>
+                <span className="flex items-center gap-1 text-xs font-bold text-blue-500">View <ChevronRight size={13} /></span>
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/practice")}
+              className="w-full text-left bg-white rounded-2xl p-4 shadow-sm border border-dashed border-amber-200 transition active:scale-95"
+            >
+              <p className="text-sm font-bold text-gray-700">No highlights yet ✨</p>
+              <p className="mt-1 text-xs font-semibold text-gray-400">Finish your first practice and your best phrases show up here.</p>
+              <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-500">Start your first run <ChevronRight size={13} /></span>
+            </button>
+          )}
         </div>
 
         <div className="flex-1" />
