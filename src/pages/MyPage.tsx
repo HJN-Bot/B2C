@@ -1,19 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Settings, ShieldCheck, Sparkles, TrendingUp, UserRound } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
+import { Calendar } from "@/components/ui/calendar";
 import { getSessions, type SessionRecord } from "@/lib/session-history";
 import { TRYING_POINTS } from "@/lib/trying-point";
 import { getCustomPrompt, setCustomPrompt } from "@/lib/coach-prefs";
-
-type HistoryRange = "all" | "week" | "month";
-const RANGE_LABEL: Record<HistoryRange, string> = { all: "All", week: "This week", month: "This month" };
-const RANGE_NEXT: Record<HistoryRange, HistoryRange> = { all: "week", week: "month", month: "all" };
-
-function withinRange(iso: string, range: HistoryRange): boolean {
-  if (range === "all") return true;
-  const days = range === "week" ? 7 : 30;
-  return Date.now() - new Date(iso).getTime() <= days * 86400000;
-}
 
 const ability = [
   { label: "Flow", value: 64, change: "+12", color: "#58A9FF" },
@@ -33,6 +24,14 @@ function relativeDay(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function dayKey(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function sameDay(a: Date, b: Date): boolean {
+  return dayKey(a) === dayKey(b);
+}
+
 function sessionTitle(s: SessionRecord): string {
   const words = s.transcript.trim().split(/\s+/).filter(Boolean).slice(0, 6).join(" ");
   return words ? `${words}${s.transcript.trim().split(/\s+/).length > 6 ? "…" : ""}` : "Practice run";
@@ -41,7 +40,8 @@ function sessionTitle(s: SessionRecord): string {
 export default function MyPage() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
-  const [range, setRange] = useState<HistoryRange>("all");
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [promptOpen, setPromptOpen] = useState(false);
   const [customPrompt, setCustomPromptState] = useState<string>(() => getCustomPrompt());
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -49,7 +49,18 @@ export default function MyPage() {
 
   // Real saved phrase bank — unique highlighted words across past runs.
   const savedPhrases = Array.from(new Set(sessions.flatMap((s) => s.highlightWords).map((w) => w.trim()).filter(Boolean)));
-  const visibleSessions = sessions.filter((s) => withinRange(s.createdAt, range));
+  const practicedDates = Array.from(
+    new Map(sessions.map((s) => {
+      const date = new Date(s.createdAt);
+      return [dayKey(date), date] as const;
+    })).values()
+  );
+  const visibleSessions = selectedDate
+    ? sessions.filter((s) => sameDay(new Date(s.createdAt), selectedDate))
+    : sessions;
+  const historyLabel = selectedDate
+    ? selectedDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : "All days";
 
   return (
     <div className="min-h-dvh bg-gray-50">
@@ -123,19 +134,57 @@ export default function MyPage() {
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-black uppercase tracking-widest text-gray-400">Practice history{visibleSessions.length > 3 ? ` · ${visibleSessions.length}` : ""}</p>
             <button
-              onClick={() => setRange((r) => RANGE_NEXT[r])}
+              onClick={() => setCalendarOpen((open) => !open)}
               className="flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-bold text-gray-500 active:scale-95"
             >
               <CalendarDays size={14} className="text-gray-400" />
-              {RANGE_LABEL[range]}
+              {historyLabel}
             </button>
           </div>
+          {calendarOpen && (
+            <div className="mb-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-2">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                modifiers={{ practiced: practicedDates }}
+                modifiersClassNames={{
+                  practiced: "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-blue-500",
+                }}
+                className="mx-auto w-fit p-1"
+                classNames={{
+                  caption_label: "text-xs font-black text-gray-700",
+                  head_cell: "w-8 text-[10px] font-bold text-gray-400",
+                  cell: "relative h-8 w-8 p-0 text-center",
+                  day: "h-8 w-8 rounded-full p-0 text-xs font-bold text-gray-600 hover:bg-blue-50 hover:text-blue-600",
+                  day_today: "bg-green-50 text-green-600",
+                  day_selected: "bg-blue-500 text-white hover:bg-blue-500 hover:text-white focus:bg-blue-500 focus:text-white",
+                  day_outside: "text-gray-300 opacity-50",
+                }}
+              />
+              <div className="mt-1 flex items-center justify-between px-2 pb-1">
+                <span className="text-[11px] font-semibold text-gray-400">
+                  Blue dots mean practice days.
+                </span>
+                {selectedDate && (
+                  <button
+                    onClick={() => setSelectedDate(undefined)}
+                    className="rounded-full bg-white px-2 py-1 text-[11px] font-black text-blue-500 shadow-sm active:scale-95"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <div className="max-h-[252px] space-y-2 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
             {visibleSessions.length === 0 && (
               <p className="rounded-2xl bg-gray-50 px-3 py-4 text-center text-xs font-semibold text-gray-400">
                 {sessions.length === 0
                   ? "No practice runs saved yet. Finish a practice and it shows up here."
-                  : `No runs in ${RANGE_LABEL[range].toLowerCase()}. Tap the date filter to widen it.`}
+                  : selectedDate
+                    ? "No runs on this date. Pick a day with a blue dot, or clear the date."
+                    : "No practice runs found."}
               </p>
             )}
             {visibleSessions.map((item) => (

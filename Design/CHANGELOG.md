@@ -4,6 +4,36 @@
 
 ---
 
+## [2026-06-19] PM Polish — Takeaway 合并块 + 滚动边界
+
+### 背景与原因
+
+- **Takeaway 阅读成本**：`Change` 和 `Next time` 分成两块时，用户要自己把"要改什么"和"下次怎么说"拼起来。
+- **文案风险**：AI 建议不能用分数高低压用户，需要保持 coach 语气，用 growth area 表达。
+- **页面增长问题**：captured words 与 Practice history 都可能越积越长，影响手机页节奏。
+- **日期视角问题**：右上角不应该只是 All/Week/Month filter，而应该像 calendar 一样能看到哪天练过、点日期看当天记录。
+
+### 变更文件
+
+| 文件 | 类型 | 变更说明 |
+|------|------|---------|
+| `src/pages/TakeawayPage.tsx` | 更新 | 合并 `Change` + `Next time, say it like this` 为一个 Level up 块：改进点 → say_this → reuse words → next trying point |
+| `src/pages/TakeawayPage.tsx` | 更新 | Takeaway prompt 要求具体句式/词/例子；禁止输出 raw score / "lowest score" 话术 |
+| `src/pages/PracticeRoom.tsx` | 更新 | Pause 本地兜底问题库改为通用 topic-agnostic 轮换问题；captured words 改固定单行横向滚动 |
+| `src/pages/MyPage.tsx` | 更新 | Practice history 改固定高度滚动区；右上角改为 calendar 日期视角，有练习日期带蓝点，点日期看当天 sessions |
+| `Design/reports/iteration-report-2026-06-14.html` | 更新 | 同步最新截图说明、TL;DR、功能清单和对应 commit |
+| `Design/reports/assets/phone/after-takeaway*.png` | 更新 | 保存真实 AI Takeaway 与 Coach 区截图 |
+
+### 测试状态
+
+| 测试项 | 结果 |
+|--------|------|
+| TypeScript | ✅ `npx tsc --noEmit` 通过 |
+| Production build | ✅ `npm run build` 通过 |
+| Takeaway 截图 | ✅ 已保存 `Design/reports/assets/phone/after-takeaway.png` 和 `after-takeaway-coach.png` |
+
+---
+
 ## [2026-05-02] Sprint 2 — AI Takeaway Builder + Real Coach Chatbox
 
 ### 背景与原因
@@ -395,5 +425,3 @@
 - [ ] PracticeRoom → 拆分为子组件（WaveformCompanion、KTVScoreBar、BottleneckCard 等）
 - [ ] `usePracticeSession` hook 抽象录音逻辑
 - [ ] E2E 测试（Playwright）：核心用户流程
-
-

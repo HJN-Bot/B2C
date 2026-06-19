@@ -28,7 +28,7 @@
 
 ### 🔵 后台相关
 - [x] 🔴 **Supabase 后台已恢复**（2026-06-18，`jyofoabobuwfowpctbfd`）；`gemini-proxy` 实测真实返回。
-- [x] ⛔ **验证真 AI**：Takeaway 真实主题总结/同义词/对准最弱 KTV 维度建议/连贯 say_this，Coach 真回复——已验证。**并修了 token 截断 bug**（thinking 吃 token，maxOutputTokens 1600→4000）`ef98cbf`。
+- [x] ⛔ **验证真 AI**：Takeaway 真实主题总结/同义词/温和 growth-area 建议/连贯 say_this，Coach 真回复——已验证。**并修了 token 截断 bug**（thinking 吃 token，maxOutputTokens 1600→4000）`ef98cbf`；后续又去掉"lowest score"直白话术并合并 Change + Next time `6e889dd`。
 - [ ] 🔴 Supabase `sessions` + `highlights` 真·落库（替 localStorage）——依赖账号体系，见下。
 
 ---
@@ -40,6 +40,10 @@
 ### 已做（今天）
 - [x] 练习页**开练前 faint 占位框**（coach 卡 + Transcript 框浅浅框出位置，不再像空页）`1f5b195`
 - [x] **Trying Point 真闭环**：Takeaway 的 one_move → 存 `speakspark.nextTryingPoint` → 首页显示那一个、练完更新（`lib/trying-point` set/getNextTryingPoint）`1f5b195`
+- [x] Takeaway **Change + Next time 合并**：改成一个块里讲"改什么 → 下一次怎么说 → 复用词 → trying point"，prompt 要求具体句式/词/例子，不再用分数高低压用户。`6e889dd`
+- [x] 练习页 **captured words 固定单行横向滚动**，最多展示最近 12 个，新词从右侧进入，页面不被 chips 撑高。`6e889dd`
+- [x] My 页 **Practice history 固定高度滚动**，超过 3 条标题显示数量，历史不会无限拉长页面。`6e889dd`
+- [x] My 页 **history 右上角改 calendar 视角**：有练习的日期带蓝点；点某一天后，下方固定高度列表只显示当天 sessions；Clear 回到全部。`working tree`
 
 ### P0 · 决定项（report 里作为"待你拍板"）
 - [ ] 🔴 **真账号体系（auth）**：现全是 localStorage + mock "Alex"。要绑定用户/跨设备/家长/付费都靠它。推荐 Supabase Auth（邮箱/手机/OAuth）→ 拿 `user_id` → 表加 user_id + RLS。这是 `sessions/highlights` 落库 + 录音的前置。
@@ -111,9 +115,9 @@
 ### P3 · 结束页 Takeaway（很杂、不言之有物）
 
 - [x] 🔴 **G 拆 4 块**（R7）：① 鼓励 → ② 进步(分数+什么涨了) → ③ Coach → ④ 再试。`✅🧪`
-- [x] 🔴 **按指标建议 + 高级句式/词汇**：prompt 升级——make_stronger 对准最低指标，say_this 给高级模型句、reuse_words 给升级词。`✅🧪`
+- [x] 🔴 **按指标建议 + 高级句式/词汇**：prompt 升级——内部参考薄弱维度，但展示为温和 growth area；say_this 给高级模型句、reuse_words 给升级词。`✅🧪`
 - [x] 🔴 **引用原对话**：#4 的 summary + "You said: …" 引用保留。`✅🧪`
-- [x] 🔴 **Takeaway 重构为 3 大块（长页）**：① Your run（鼓励+讲了什么+做得好+分值）② Level up（**Amplify**+Change+Next Run Plan）③ Coach（Chatbox+Go again）；KTV 图标 emoji→lucide 上色。`✅🧪` [spec](../specs/2026-06-11-takeaway-3blocks.md) · [审阅](./REVIEW-2026-06-14.md)
+- [x] 🔴 **Takeaway 重构为 3 大块（长页）**：① Your run（鼓励+讲了什么+做得好+分值）② Level up（**Amplify** + 合并后的 Change/Next time + Next Run Plan）③ Coach（Chatbox+Go again）；KTV 图标 emoji→lucide 上色。`✅🧪` [spec](../specs/2026-06-11-takeaway-3blocks.md) · [审阅](./REVIEW-2026-06-14.md)
 - [ ] ⏸ P4-3 Next Run Plan 置顶 hero（仍暂缓）。
 - [ ] 🟡 更"懂我过去说了什么"——可在 prompt 里带入历史 sessions，下一轮做。
 

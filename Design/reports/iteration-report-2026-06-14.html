@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SpeakSpark · 设计走查回应与进展 · 2026-06-14</title>
+<title>SpeakSpark · 设计走查回应与进展 · 2026-06-19</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -119,9 +119,6 @@
   .fb .two p{margin:0;font-size:13px} .fb .was p{color:var(--sub)} .fb .now p{color:var(--ink)}
   .fb .refs{margin-top:11px}
 
-  .foot{margin-top:54px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint);line-height:1.7}
-  .foot code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
-
   .feat{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin-top:12px}
   .feat div{font-size:13.5px;color:var(--ink);padding-left:20px;position:relative;line-height:1.5}
   .feat div::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800}
@@ -169,7 +166,7 @@
         <div><p class="k dir">AVOID</p><p>完整演讲、比赛分数、排名语言、实时纠错、暴露 AI provider 报错。</p></div>
       </div>
       <div class="meta">
-        <span>报告日期 <b>2026-06-14</b></span>
+        <span>报告日期 <b>2026-06-19</b></span>
         <span>对应原件 <b>speakspark-labelled-design-walkthrough.pdf</b></span>
         <span>立场 <b>私人练习教练，不是评分工具</b></span>
       </div>
@@ -178,20 +175,20 @@
 
   <div class="wrap">
 
-    <div class="notice">
-      <h3>⚠️ 一个前提：AI 后台当前失效，AI 相关效果暂看不到真实输出</h3>
-      <p><b>更新（2026-06-18）：Supabase 后台已恢复，AI 全部跑通。</b>已实测 <code>gemini-proxy</code> 返回真实内容；Takeaway 现给出基于原文的总结、对准最弱 KTV 维度的建议、同义词升级与连贯的 say_this。<br>过程中还修了一个真 bug：gemini-2.5-flash 的"思考"约吃 700–800 token，原 <code>maxOutputTokens:1600</code> 会把 takeaway JSON 截断 → 退本地；已调到 4000，恢复正常。</p>
+    <div class="notice" style="border-color:var(--green-line);background:var(--green-bg)">
+      <h3 style="color:var(--green)">✅ 后台状态：AI 已恢复并跑通</h3>
+      <p><b>更新（2026-06-18）：Supabase 后台已恢复，AI 全部跑通。</b>已实测 <code>gemini-proxy</code> 返回真实内容；Takeaway 现给出基于原文的总结、温和指出一个 growth area、同义词升级与连贯的 say_this，不再用分数高低压用户。<br>过程中还修了一个真 bug：gemini-2.5-flash 的"思考"约吃 700–800 token，原 <code>maxOutputTokens:1600</code> 会把 takeaway JSON 截断 → 退本地；已调到 4000，恢复正常。</p>
     </div>
 
     <div class="legend">
-      <span class="chip s-ship"><span class="dot"></span>已上线（本阶段已实现，待浏览器验证）</span>
+      <span class="chip s-ship"><span class="dot"></span>已上线</span>
       <span class="chip s-part"><span class="dot"></span>部分 / 待做</span>
       <span class="chip s-block"><span class="dot"></span>依赖后端（现已恢复，AI 跑通）</span>
     </div>
 
     <div class="notice" style="border-color:var(--green-line);background:var(--green-bg)">
       <h3 style="color:var(--green)">TL;DR · 这一阶段</h3>
-      <p style="color:#2f6b48">对照 7 页走查 + 5 条文字反馈：练习页 / Takeaway / 首页 / My <b>整体改版已上线，AI 已真跑通</b>。<b>需要你拍板或支持的只有几件</b>：① 真账号体系（auth）② 录音 + 未成年人合规 ③ 移动端语音识别选型 ④ 重新部署 <code>gemini-proxy</code>（让 AI 提速生效）。明细见文末「下一步 / V3」。</p>
+      <p style="color:#2f6b48">对照 7 页走查 + 5 条文字反馈：练习页 / Takeaway / 首页 / My <b>整体改版已上线，AI 已真跑通</b>。2026-06-19 又补了一轮细节：Takeaway 把 Change + Next time 合并成一个可执行块，练习页 captured words 与 My history 都改成固定滚动；My history 右上角也从时间 filter 改为 calendar 视角，有练习的日期可点选。<b>需要你拍板或支持的只有几件</b>：① 真账号体系（auth）② 录音 + 未成年人合规 ③ 移动端语音识别选型 ④ 重新部署 <code>gemini-proxy</code>（让 AI 提速生效）。明细见文末「下一步 / V3」。</p>
     </div>
 
     <!-- ───── PAGE 2 ───── -->
@@ -242,14 +239,14 @@
         <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-4.png" alt="原 Page 4 手机"></div>
         <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
           <img class="shot-img" src="assets/phone/after-takeaway.png" alt="V2 Takeaway 顶部">
-          <p class="ph-cap">Takeaway V2（<b>真实 AI</b>）：① 精简鼓励 → <b>② Level up</b>（Amplify/Change 对准最弱 KTV + 升级 say_this）→ ③ 详情 → ④ Coach · <code>#/session-end</code></p>
+          <p class="ph-cap">Takeaway V2（<b>真实 AI</b>）：① 精简鼓励 → <b>② Level up</b>（Amplify + Change/Next time 合并块：改什么、怎么说、复用词、trying point）→ ③ 详情 → ④ Coach · <code>#/session-end</code></p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
       <div class="response">
         <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>奖杯像夺冠/排名</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：notebook/check + "Practice complete"。</p><p class="now">✅ 改为 <b>"Practice complete" + 🎉</b>，无奖杯无排名。<span class="refs"><span class="commit">838a68b</span></span></p></div></div>
         <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>stats 像成绩单</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：先一句人话再谈数据。</p><p class="now">✅ 先 <b>人话 headline</b>（"You kept your idea going…"）。<span class="refs"><span class="commit">838a68b</span></span></p></div></div>
-        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>Next Run Plan 应是 hero</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：提为置顶 hero card。</p><p class="now">✅ Takeaway 重排：顶部只留精简鼓励 + 1 个 quick win，<b>Level up（含 Next Run Plan）提前为块②</b>，详细进步/讲了什么下移到块③。价值不再被埋。<span class="refs"><span class="commit">见 reorder spec</span></span></p></div></div>
+        <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>Next Run Plan 应是 hero</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：提为置顶 hero card。</p><p class="now">✅ Takeaway 重排：顶部只留精简鼓励 + 1 个 quick win，<b>Level up（含 Next Run Plan）提前为块②</b>；并把 Change 与 Next time 合并，读法变成"一个要改的点 → 下一次直接怎么说"。<span class="refs"><span class="commit">见 reorder spec</span><span class="commit">6e889dd</span></span></p></div></div>
         <div class="row"><span class="pin">4</span><div class="body"><div class="t"><b>红色 AI 失败像出错</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：中性文案。</p><p class="now">✅ 改为<b>中性诚实琥珀提示</b>（正是靠它定位到后台失效）。<span class="refs"><span class="commit">1936038</span><span class="commit">ca2982f</span></span></p></div></div>
       </div>
     </div>
@@ -299,13 +296,13 @@
       <div class="phones">
         <div class="phone before"><div class="phlab"><span class="tg">VERSION 1</span>反馈方原稿</div><img src="assets/phone/before-7.png" alt="原 Page 7 手机"></div>
         <div class="phone after"><div class="phlab"><span class="tg">VERSION 2</span>现在（本阶段）</div>
-          <img class="shot-img bottom" src="assets/phone/after-my.png" alt="V2 My 页下半">
-          <p class="ph-cap">My V2 下半：历史可<b>按时间筛选</b>（All/Week/Month）· Settings 真实化（Coach mode 信息行 · 真实短语库 · <b>可编辑 Coaching prompt</b>）· <code>#/my</code></p>
+          <img class="shot-img" src="assets/phone/after-my-calendar.png" alt="V2 My 页日历历史">
+          <p class="ph-cap">My V2 下半：历史右上角是<b>日历视角</b>（有练习的日期带蓝点，点日期后下面只列当天练习），且列表固定高度滚动，不再无限长 · Settings 真实化（Coach mode 信息行 · 真实短语库 · <b>可编辑 Coaching prompt</b>）· <code>#/my</code></p>
         </div>
       </div>
       <p class="resp-cap">我们的回应 · OUR RESPONSE <span>（编号对应上方手机红点）</span></p>
       <div class="response">
-        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>practice history 是有用证据</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ history 聚焦练习动作（"Added one example…"）。</p></div></div>
+        <div class="row"><span class="pin">1</span><div class="body"><div class="t"><b>practice history 是有用证据</b><span class="chip s-ship"><span class="dot"></span>已保留</span></div><p class="now">✅ history 聚焦练习动作（"Added one example…"），并改为固定高度滚动区；右上角打开 calendar，有练习的日期带蓝点，点一天后下方只显示当天记录。<span class="refs"><span class="commit">6e889dd</span><span class="commit">本次更新</span></span></p></div></div>
         <div class="row"><span class="pin">2</span><div class="body"><div class="t"><b>"User management" 太内部</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议：改名 "Settings"。</p><p class="now">✅ 已改名 <b>"Settings"</b>。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
         <div class="row"><span class="pin">3</span><div class="body"><div class="t"><b>coach mode 应更明确</b><span class="chip s-ship"><span class="dot"></span>已上线</span></div><p class="was">原建议："Gentle prompts" → "Practice feedback only"。</p><p class="now">✅ 改为 <b>"Practice feedback only"</b>；信任标签也推广到练习页 + My 头部。<span class="refs"><span class="commit">87a6cd6</span></span></p></div></div>
       </div>
@@ -332,8 +329,8 @@
     </div>
     <div class="fb">
       <div class="h"><span class="num">#4</span><b>Takeaway 自上而下 + 原文引用</b><span class="chip s-ship"><span class="dot"></span>已上线（真 AI 跑通）</span></div>
-      <div class="two"><div class="was"><p class="lab">原问题</p><p>建议和实际说的内容脱节，看不到"因为我说了 X 所以建议 Y"。</p></div><div class="now"><p class="lab">我们怎么改</p><p>先"讲了什么"→ 再建议；每条带 "You said: …" 引用。重构为 3 大块长页（总结鼓励 / Level up / Coach）。</p></div></div>
-      <div class="refs"><span class="commit">fa5b2c2</span><span class="commit">838a68b</span><span class="commit">4bdaf81</span></div>
+      <div class="two"><div class="was"><p class="lab">原问题</p><p>建议和实际说的内容脱节，看不到"因为我说了 X 所以建议 Y"。</p></div><div class="now"><p class="lab">我们怎么改</p><p>先"讲了什么"→ 再建议；每条带 "You said: …" 引用。重构为 3 大块长页；最新版本把 Change + Next time 合并，并要求具体句式/词/例子，不讲"最低分"。</p></div></div>
+      <div class="refs"><span class="commit">fa5b2c2</span><span class="commit">838a68b</span><span class="commit">4bdaf81</span><span class="commit">6e889dd</span></div>
     </div>
     <div class="fb">
       <div class="h"><span class="num">#5</span><b>首页主题化口语活动</b><span class="chip s-part"><span class="dot"></span>已合并（去冗余）</span></div>
@@ -349,14 +346,16 @@
       <div>话题条 + 冷启动关键词（讲到自动变绿）</div>
       <div>猫猫教练 + 单一固定状态槽（去音浪/去冗余）</div>
       <div>KTV 四指标：未得分弱化、得分上色、刚加分高亮</div>
-      <div>停顿即接（预生成缓冲，优先真 AI，本地兜底）</div>
+      <div>停顿即接（预生成缓冲，优先真 AI，本地兜底；通用兜底问题库已扩充）</div>
+      <div>Captured words 固定单行横向滚动，新词从右侧进入，旧词自然滑出</div>
       <div>Takeaway 新顺序：精简鼓励 → Level up → 详情 → Coach</div>
+      <div>Takeaway 合并 Change + Next time：一个改进点直接接升级句式、复用词和 trying point</div>
       <div>建议带原文引用「You said: …」+ AI 失败时诚实兜底</div>
       <div>首页：去 streak/分数压力、trying point、今日话题</div>
       <div>Navigator 首用引导（首页 + 练习页两段）</div>
-      <div>My：Practice growth / Settings 改名、真实短语库</div>
+      <div>My：Practice growth / Settings 改名、真实短语库、历史列表固定高度滚动 + calendar 日期视角</div>
       <div>Trying Point 闭环（首页 → Takeaway → My）</div>
-      <div>可编辑 Coaching prompt（注入 AI）+ 历史按时间筛选</div>
+      <div>可编辑 Coaching prompt（注入 AI）+ 历史按 calendar 日期查看</div>
       <div>coach-mode 信任标签「Practice feedback only」推广全 app</div>
       <div>四页底部导航打通（含修复首页缺失的导航栏）</div>
       <div>首页 Last Highlight 接真实历史 + 首次空状态（去掉写死假数据）</div>
@@ -413,12 +412,6 @@
       <li><span class="box"></span><span>🟡 <b>部署 <code>gemini-proxy</code></b>：让"实时调用关 thinking 提速"真正生效（代码已就绪）。</span></li>
       <li><span class="box"></span><span>🟢 <b>埋点 / 分析</b>：后台记录行为事件看漏斗/留存；用真实证据做正向反馈，不用压力型 streak。</span></li>
     </ul>
-
-    <div class="foot">
-      SpeakSpark · 面向 6–9 年级中学生的英文科普演讲实时陪练 · 私人练习教练，不是评分工具。<br>
-配套：操作 + 前后端串联说明见 <code>user-guidance-2026-06-18.html</code>；各改动技术 spec 在 <code>Design/specs/</code>。<br>
-      导出 PDF：浏览器打开本文件 → 打印（Cmd/Ctrl+P）→ 另存为 PDF，开启「背景图形」。BEFORE 手机图裁自 <code>Design/iterations/speakspark-labelled-design-walkthrough.pdf</code>。
-    </div>
 
   </div>
 </body>
