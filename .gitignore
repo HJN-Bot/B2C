@@ -16,6 +16,11 @@ vite.config.ts.timestamp-*.mjs
 supabase/functions/.env
 supabase/.temp/
 
+# Local env (never commit API keys — Deepgram / Gemini etc.)
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

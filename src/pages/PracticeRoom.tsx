@@ -156,6 +156,24 @@ interface WindowWithSpeechRecognition extends Window {
   webkitSpeechRecognition?: new () => SpeechRecognitionLike;
 }
 
+/**
+ * iOS (Safari / Chrome / any WKWebView) exposes `webkitSpeechRecognition` but
+ * it is unreliable — it often throws `network`/`service-not-allowed` or never
+ * fires a result. So we must NOT take the Web Speech path on iOS; we go straight
+ * to the cloud STT (Deepgram) fallback instead. iPadOS 13+ reports as Mac, so we
+ * also sniff a touch-capable "Macintosh".
+ */
+function isIOSDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const iOS = /iPad|iPhone|iPod/.test(ua);
+  const iPadOS =
+    ua.includes("Macintosh") &&
+    typeof document !== "undefined" &&
+    "ontouchend" in document;
+  return iOS || iPadOS;
+}
+
 // ─── Audio helpers (from Practice.tsx) ───────────────────────────────────────
 
 function float32To16BitPCM(float32Array: Float32Array): DataView {
@@ -788,13 +806,70 @@ export default function PracticeRoom() {
     }
   }, [apiStatus, bumpKtvScore, promotePassiveHighlights]);
 
+  const startCloudCaptions = useCallback(() => {
+    // Cloud STT (Deepgram) — used on iOS and any browser without a working
+    // Web Speech API. Requires VITE_DEEPGRAM_API_KEY.
+    const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY as string | undefined;
+    if (!apiKey) {
+      console.warn("[PracticeRoom] VITE_DEEPGRAM_API_KEY not set — cloud STT unavailable.");
+      setCaptionStatus("unsupported");
+      setAiState("Live captions unavailable");
+      return;
+    }
+
+    stopLiveCaptions(false);
+    finalCaptionRef.current = "";
+    setInterimTranscript("");
+
+    const stt = createCloudSTT(apiKey, {
+      onTranscript(text, isFinal) {
+        onTranscript(text, isFinal);
+      },
+      onError(err) {
+        console.error("[PracticeRoom] Deepgram STT error:", err);
+        setCaptionStatus("error");
+        setAiState("Cloud captions paused");
+      },
+    });
+    cloudSttRef.current = stt;
+
+    // Use the existing mic stream to also feed Deepgram via MediaRecorder.
+    const stream = streamRef.current;
+    if (stream) {
+      try {
+        const recorder = new MediaRecorder(stream, {
+          mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+            ? "audio/webm;codecs=opus"
+            : undefined,
+        });
+        // Log the negotiated container so real-device tests can spot iOS's
+        // non-streamable audio/mp4 output (see HANDOVER §4 #2, risk B).
+        console.log("[PracticeRoom] cloud STT recorder mimeType:", recorder.mimeType);
+        recorder.ondataavailable = (e: BlobEvent) => {
+          if (e.data.size > 0) {
+            stt.send(e.data);
+          }
+        };
+        recorder.start(500); // 500ms chunks — low enough latency for real-time STT
+        mediaRecorderRef.current = recorder;
+      } catch (err) {
+        console.error("[PracticeRoom] MediaRecorder start failed:", err);
+      }
+    }
+
+    setCaptionStatus("listening");
+    setAiState("Cloud captions on");
+  }, [onTranscript, stopLiveCaptions]);
+
   const startLiveCaptions = useCallback(() => {
     const SpeechRecognitionCtor =
       (window as WindowWithSpeechRecognition).SpeechRecognition ||
       (window as WindowWithSpeechRecognition).webkitSpeechRecognition;
 
-    // ── Desktop path: SpeechRecognition (unchanged) ─────────────────────────
-    if (SpeechRecognitionCtor) {
+    // ── Desktop / Android path: SpeechRecognition ───────────────────────────
+    // Skip on iOS: webkitSpeechRecognition exists there but is unreliable, so
+    // we fall through to the cloud STT path instead.
+    if (SpeechRecognitionCtor && !isIOSDevice()) {
       stopLiveCaptions(false);
       finalCaptionRef.current = "";
       setInterimTranscript("");
@@ -830,6 +905,23 @@ export default function PracticeRoom() {
       recognition.onerror = (event) => {
         if (event.error === "no-speech" || event.error === "aborted") return;
         console.warn("Speech recognition error:", event.error);
+        // Fatal errors (esp. on mobile) → fall back to cloud STT instead of
+        // leaving the user with dead captions.
+        if (
+          event.error === "network" ||
+          event.error === "not-allowed" ||
+          event.error === "service-not-allowed" ||
+          event.error === "language-not-supported"
+        ) {
+          shouldRestartRecognitionRef.current = false;
+          try {
+            recognition.stop();
+          } catch {
+            /* noop */
+          }
+          startCloudCaptions();
+          return;
+        }
         setCaptionStatus("error");
         setInterimTranscript("");
         setAiState("Live captions paused");
@@ -861,55 +953,9 @@ export default function PracticeRoom() {
       return;
     }
 
-    // ── Mobile fallback: Deepgram Nova-2 via WebSocket ──────────────────────
-    const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY as string | undefined;
-    if (!apiKey) {
-      console.warn("[PracticeRoom] VITE_DEEPGRAM_API_KEY not set — cloud STT unavailable.");
-      setCaptionStatus("unsupported");
-      setAiState("Live captions unavailable");
-      return;
-    }
-
-    stopLiveCaptions(false);
-    finalCaptionRef.current = "";
-    setInterimTranscript("");
-
-    const stt = createCloudSTT(apiKey, {
-      onTranscript(text, isFinal) {
-        onTranscript(text, isFinal);
-      },
-      onError(err) {
-        console.error("[PracticeRoom] Deepgram STT error:", err);
-        setCaptionStatus("error");
-        setAiState("Cloud captions paused");
-      },
-    });
-    cloudSttRef.current = stt;
-
-    // Use the existing mic stream to also feed Deepgram via MediaRecorder.
-    const stream = streamRef.current;
-    if (stream) {
-      try {
-        const recorder = new MediaRecorder(stream, {
-          mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-            ? "audio/webm;codecs=opus"
-            : undefined,
-        });
-        recorder.ondataavailable = (e: BlobEvent) => {
-          if (e.data.size > 0) {
-            stt.send(e.data);
-          }
-        };
-        recorder.start(500); // 500ms chunks — low enough latency for real-time STT
-        mediaRecorderRef.current = recorder;
-      } catch (err) {
-        console.error("[PracticeRoom] MediaRecorder start failed:", err);
-      }
-    }
-
-    setCaptionStatus("listening");
-    setAiState("Cloud captions on");
-  }, [apiStatus, bumpKtvScore, onTranscript, promotePassiveHighlights, stopLiveCaptions]);
+    // ── iOS / no Web Speech: cloud STT (Deepgram) ───────────────────────────
+    startCloudCaptions();
+  }, [apiStatus, bumpKtvScore, onTranscript, promotePassiveHighlights, startCloudCaptions, stopLiveCaptions]);
 
   // ── Proxy-ready status ────────────────────────────────────────────────────
   useEffect(() => {

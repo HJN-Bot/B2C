@@ -43,9 +43,11 @@
 |----|------------|------|
 | **GitHub（主仓库）** | https://github.com/HJN-Bot/B2C.git （remote `origin`） | 当前活跃分支 `jianan/speakspark` |
 | GitHub（旧 remote） | https://github.com/dounan1/meaningfully.git （remote `meaningfully`） | 项目前身 meaningfully，保留备查 |
-| **部署（Vercel）** | 项目名 `speakspark`（projectId `prj_2ClAaZSum8Rc4AC2QVML9vA3sJg3`） | 静态托管 dist，SPA rewrites |
+| **部署（海外 · Vercel）** | https://speakspark.vercel.app（项目 `speakspark`，projectId `prj_2ClAaZSum8Rc4AC2QVML9vA3sJg3`） | 静态托管 dist，SPA rewrites |
+| **部署（国内 · 腾讯云 EdgeOne Pages）** | https://speakspark-0zgkikod.edgeone.cool（ProjectId `makers-uefwmvwbhogy`） | 国内 CDN，接 GitHub，`edgeone makers deploy`。**实测主用这个链接** |
 | **后端（Supabase）** | 项目 ref `jyofoabobuwfowpctbfd`（2026-06-18 已恢复） | Postgres + Edge Functions + Gemini key broker |
-| AI | Google Gemini（`gemini-2.5-flash`，走 Edge Function 代理） | key 存 Supabase，不暴露前端 |
+| AI（教练） | Google Gemini（`gemini-2.5-flash`，走 Edge Function 代理） | key 存 Supabase，不暴露前端 |
+| AI（移动端 STT） | **Deepgram Nova-2**（实时 WebSocket，`src/lib/cloud-stt.ts`） | 免费 200h/月；key 走 `VITE_DEEPGRAM_API_KEY`（⚠️ 客户端注入，见 §4 #2） |
 | 来源平台 | Lovable project `77aef02a-...`（README 里） | 最初用 Lovable 生成，已迁出本地开发 |
 
 **技术栈**：Vite + React 18 + TypeScript + TailwindCSS + shadcn/ui；路由用 **HashRouter**（带 `#`，刷新子页不 404）。
@@ -85,7 +87,7 @@
 | # | 缺口 | 为什么挡住付费用户 | 现状 | 决策/行动 |
 |---|------|--------------------|------|-----------|
 | 1 | **没有真账号体系（auth）** | 现在全是 localStorage + mock "Alex"。无法绑定一个真实用户、跨设备、绑定家长、绑定付费。**没有它就没有"谁在用、谁来付钱"。** | 🔲 未做 | 推荐 Supabase Auth（邮箱/手机/OAuth）→ `user_id` → 表加 user_id + RLS。这是落库和录音的前置。 |
-| 2 | **移动端语音识别不工作** | 现用浏览器 `SpeechRecognition`，**移动端 Safari 不支持**。但目标用户（中学生/家长）大概率用手机 → 直接劝退一大批测试用户。 | 🔲 未做 | 选型：① 走 `analyze-voice` Edge Function 发云端 STT（仓库已有雏形）；② 接第三方（Deepgram / Google STT / Whisper）。 |
+| 2 | **移动端语音识别** | 浏览器 `SpeechRecognition` 移动端 Safari/微信/WKWebView 不支持，会劝退大批手机测试用户。 | 🟡 **代码已实施（`945a1ae`）**，待 key + 部署配置才能真跑 | 已接 **Deepgram Nova-2**（`src/lib/cloud-stt.ts` + PracticeRoom 双路）。**落地三件事**：① 注册 Deepgram 拿 key 配 `.env` 的 `VITE_DEEPGRAM_API_KEY`；② EdgeOne/Vercel 构建环境也要设这个变量（CI 没有本地 .env）；③ Deepgram Console domain 白名单加 `*.edgeone.cool` + `*.vercel.app` + `localhost`。⚠️ key 客户端注入会被公开 → 验证期靠免费额度+白名单+可轮换兜底，正式前应改服务端代理。✅ **iOS 强制走云端 + 桌面路径致命错误自动 fallback 已在代码落地**（`PracticeRoom.tsx` 的 `isIOSDevice()` + onerror→`startCloudCaptions`）。⚠️ 仍需真机确认 iOS `MediaRecorder` 输出格式（可能 `audio/mp4` 不可流式，控制台已打 `recorder.mimeType` 日志，risk B）。 |
 | 3 | **录音 + 未成年人合规** | 11–15 岁未成年人，隐私/同意/留存/删除是硬合规问题，也是家长付费前会问的第一件事。 | 🔲 未决 | 先决定要不要存音频（Supabase Storage）+ 同意流程，再开发。 |
 | 4 | **数据未真·落库** | sessions/highlights 仍在 localStorage → 换设备/清缓存就没了，"系统记得我"的留存承诺立不住。 | 🔲 未做 | Supabase `sessions` + `highlights` 表，依赖 #1 auth。 |
 | 5 | **AI 延迟 <3s 优化未上线** | 练习中停顿后 AI 反应慢会破坏"真人陪练"体感。代码已就绪（`thinkingBudget:0`），但 **Edge Function 需部署才生效**。 | 🟡 待部署 | 在有 supabase CLI 的环境 deploy `gemini-proxy`。 |
@@ -162,6 +164,37 @@
 3. **定 MVP-for-testing 范围**：auth + 移动端 STT + 埋点，三选一先动哪个（建议先 STT，因为它直接决定能不能招手机用户）。
 4. **招募第一批 5–10 个真实用户**，按 §5.2 循环跑第一轮。
 5. **每轮把 pinpoint 写进 `Design/specs/`**，保持 spec ↔ TODO 双向 link 的既有约定。
+
+---
+
+## 10. 决策与分阶段路线图（2026-06-23 定）
+
+### 已定决策
+
+| 主题 | 决策 | 要点 |
+|------|------|------|
+| 移动端 STT | **Deepgram Nova-2** | 验证期免费（$200 credit / 200h 月）；不需先绑卡。超量约 $0.0043/min |
+| iOS STT 坑 | **已修（代码）** | iOS 强制走云端 + 桌面致命错误 fallback；待真机确认 mp4 格式坑 |
+| Supabase | **迁到我自己的项目**（现在做） | 还没真 DB 数据 = 迁移成本最低窗口。不交账号密码，给 URL+anon key + 自己跑 CLI / scoped token |
+| 认证 | **Supabase Auth Magic Link，建在我自己的新项目上** | 认证绑 Supabase 项目 → 必须和「Supabase 接管」一起做，否则做两遍 |
+| 教练 LLM / API | **下一里程碑换国内便宜模型**（DeepSeek / Qwen / GLM-4-Flash） | STT 已交 Deepgram，LLM 只需文本 → 重写 `gemini-proxy` 为 OpenAI 兼容即可。现在先沿用 Gemini key |
+| 埋点 | **PostHog 或 Supabase 自建 events 表**（现在做） | 匿名 id 起步，Auth 后 alias 到 user_id。事件表见 `Design/specs/2026-06-23-analytics-events.md` |
+
+### 分阶段优先级
+
+**阶段一 · 让手机能测 + 认得出用户（现在，高优先）**
+1. ✅ iOS STT 修复（本轮已落地代码）
+2. 🔲 **开我自己的 Supabase 项目**（提前到认证之前；改 client.ts + config.toml + 重部署 3 个函数 + 设 GEMINI_API_KEY）
+3. 🔲 **认证**（Supabase Auth Magic Link，建在我的新项目上）
+4. 🔲 **埋点**（事件 + 匿名 id，Auth 后 alias）
+   - Gemini key：先把现值拷进我的新项目 secret，不阻塞
+
+**阶段二 · 完全接管技术栈（下一里程碑）**
+5. 🔲 **API / 模型接管**：换 DeepSeek / Qwen / GLM-4-Flash，重写 `gemini-proxy` 为文本 LLM 代理
+6. 🔲 **DB 落库**：sessions / highlights 进 Supabase，替 localStorage（依赖阶段一认证）
+7. 🔲 **录音 + 未成年人合规**
+
+> 阶段一的唯一硬 KR：**一台真 iPhone 上字幕能实时出来**（配好 Deepgram key + 真机确认 mp4 坑没踩）。它没绿之前，认证/埋点做了也没人能用。
 
 ---
 
