@@ -23,7 +23,7 @@ SpeakSpark = 面向 6–9 年级（11–15 岁）中学生的**英文科普演�
 - ✅ **2026-06-18：项目 `jyofoabobuwfowpctbfd` 已恢复**，`gemini-proxy` 实测返回真实内容、key 已配；AI（takeaway/coach/停顿追问）全部跑通。（曾 2026-06-14 失效 NXDOMAIN = 免费版不活动被暂停。）
 - ⚠️ **token 截断坑（已修，记牢）**：`gemini-2.5-flash` 的"思考"约吃 **700–800 token 且计入 `maxOutputTokens`**。Takeaway 大 JSON 在 `1600` 下被截断 → `normalizeTakeaway` 返 null → 退本地（界面 "unreadable takeaway format"）。已调 takeaway→**4000**、chat→2000。以后加复杂 JSON 输出务必留足 token，或在 edge function 加 `thinkingConfig:{thinkingBudget:0}`（需部署）。
 - 若再次失效：控制台 Restore；若被回收则新建项目改 `client.ts`+`config.toml`、部署函数(gemini-proxy/analyze-voice/get-gemini-api-key) + `supabase secrets set GEMINI_API_KEY`。本机无 supabase CLI。
-- project_id：`jyofoabobuwfowpctbfd`（已恢复）
+- project_id：**`mgufxtpqbcjoyadqcxzg`（2026-06-23 迁入 Jianan 自有账号；前端 client.ts+config.toml 已指向）**。旧借用项目 `jyofoabobuwfowpctbfd` 已弃用。⚠️ 新项目待部署 Edge Function（gemini-proxy/get-gemini-api-key/analyze-voice）+ `supabase secrets set GEMINI_API_KEY`，否则 AI 走本地兜底。
 - Gemini API key 存在 Supabase，**不暴露到前端 / 日志 / 提交**。
 - 前端所有 Gemini 调用走 Edge Function 代理 `gemini-proxy`（不再前端直连）。
   - 封装：`src/lib/gemini-proxy.ts`（支持 `systemInstruction` / `responseMimeType` / `temperature` / `maxOutputTokens`）。
