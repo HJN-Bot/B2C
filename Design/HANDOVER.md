@@ -45,8 +45,8 @@
 | GitHub（旧 remote） | https://github.com/dounan1/meaningfully.git （remote `meaningfully`） | 项目前身 meaningfully，保留备查 |
 | **部署（海外 · Vercel）** | https://speakspark.vercel.app（项目 `speakspark`，projectId `prj_2ClAaZSum8Rc4AC2QVML9vA3sJg3`） | 静态托管 dist，SPA rewrites |
 | **部署（国内 · 腾讯云 EdgeOne Pages）** | https://speakspark-0zgkikod.edgeone.cool（ProjectId `makers-uefwmvwbhogy`） | 国内 CDN，接 GitHub，`edgeone makers deploy`。**实测主用这个链接** |
-| **后端（Supabase · 我自己的）** | 项目 ref `mgufxtpqbcjoyadqcxzg`（2026-06-23 迁入，前端已指向） | Postgres + Edge Functions + Gemini key broker。⚠️ 函数 + GEMINI_API_KEY 待部署到新项目 |
-| 后端（旧 · 创始团队） | 项目 ref `jyofoabobuwfowpctbfd`（已弃用） | 迁移前的借用项目，保留备查 |
+| **后端（Supabase · 当前在用）** | 项目 ref `jyofoabobuwfowpctbfd`（创始团队，前端指向它） | Postgres + Edge Functions + Gemini key broker。**暂时沿用旧后端**（Gemini 可用，China→海外有延迟） |
+| 后端（自有 · 待迁） | 项目 ref `mgufxtpqbcjoyadqcxzg`（已建好，前端**未**指向） | 阶段二再迁：部署函数 + 设 GEMINI_API_KEY 后切过去。现在切过去 Gemini 会断 |
 | AI（教练） | Google Gemini（`gemini-2.5-flash`，走 Edge Function 代理） | key 存 Supabase，不暴露前端 |
 | AI（移动端 STT） | **Deepgram Nova-2**（实时 WebSocket，`src/lib/cloud-stt.ts`） | 免费 200h/月；key 走 `VITE_DEEPGRAM_API_KEY`（⚠️ 客户端注入，见 §4 #2） |
 | 来源平台 | Lovable project `77aef02a-...`（README 里） | 最初用 Lovable 生成，已迁出本地开发 |
@@ -176,7 +176,7 @@
 |------|------|------|
 | 移动端 STT | **Deepgram Nova-2** | 验证期免费（$200 credit / 200h 月）；不需先绑卡。超量约 $0.0043/min |
 | iOS STT 坑 | **已修（代码）** | iOS 强制走云端 + 桌面致命错误 fallback；待真机确认 mp4 格式坑 |
-| Supabase | ✅ **已迁到我自己的项目 `mgufxtpqbcjoyadqcxzg`**（前端 client.ts + config.toml 已改） | 趁还没真 DB 数据迁移，成本最低。⏳ 剩：部署 3 个 Edge Function + 设 GEMINI_API_KEY secret |
+| Supabase | ⏸ **暂缓迁移**：前端切回旧后端 `jyofoabobuwfowpctbfd`，保 Gemini 可用 | 自有项目 `mgufxtpqbcjoyadqcxzg` 已建好，但部署函数+设 key 之前不切过去。当前重点=国内能直接打开的链接 |
 | 认证 | **Supabase Auth Magic Link，建在我自己的新项目上** | 认证绑 Supabase 项目 → 必须和「Supabase 接管」一起做，否则做两遍 |
 | 教练 LLM / API | **下一里程碑换国内便宜模型**（DeepSeek / Qwen / GLM-4-Flash） | STT 已交 Deepgram，LLM 只需文本 → 重写 `gemini-proxy` 为 OpenAI 兼容即可。现在先沿用 Gemini key |
 | 埋点 | **PostHog 或 Supabase 自建 events 表**（现在做） | 匿名 id 起步，Auth 后 alias 到 user_id。事件表见 `Design/specs/2026-06-23-analytics-events.md` |
@@ -185,7 +185,7 @@
 
 **阶段一 · 让手机能测 + 认得出用户（现在，高优先）**
 1. ✅ iOS STT 修复（本轮已落地代码）
-2. 🟡 **开我自己的 Supabase 项目**（`mgufxtpqbcjoyadqcxzg`）：✅ 前端 client.ts + config.toml 已改；⏳ 待部署 3 个函数 + 设 GEMINI_API_KEY secret
+2. ⏸ **Supabase 自有化暂缓**（前端仍用旧后端保 Gemini）。自有项目 `mgufxtpqbcjoyadqcxzg` 已建好，阶段二再切（部署函数 + GEMINI_API_KEY 后）
 3. 🔲 **认证**（Supabase Auth Magic Link，建在我的新项目上）
 4. 🔲 **埋点**（事件 + 匿名 id，Auth 后 alias）
    - Gemini key：先把现值拷进我的新项目 secret，不阻塞

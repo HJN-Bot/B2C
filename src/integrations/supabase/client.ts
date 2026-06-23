@@ -2,9 +2,10 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://mgufxtpqbcjoyadqcxzg.supabase.co";
-// Publishable (anon) key — safe to ship in the frontend.
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_UxmT0sDKlErW4gsieJbOaQ_0qkY2w5J";
+// 暂时沿用旧后端（创始团队 Supabase + 其 Gemini key），等阶段二再迁到自有项目。
+// 自有项目 mgufxtpqbcjoyadqcxzg 已建好但 Edge Function 未部署，切过去 Gemini 会断。
+const SUPABASE_URL = "https://jyofoabobuwfowpctbfd.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5b2ZvYWJvYnV3Zm93cGN0YmZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NTg4MjcsImV4cCI6MjA4OTUzNDgyN30._Sq6px-4f9fL5ZYdS182P1FnHGZOhC2jRyn3LAjobpM";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
