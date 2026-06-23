@@ -16,6 +16,7 @@ function withOwnFocus(base: string): string {
   return own ? `${base}\nThe student set their own focus: "${own}". Honour it within coaching limits (no full speeches, no scores).` : base;
 }
 import { getPracticeMode } from "@/lib/practice-mode";
+import { createCloudSTT, type CloudSTT } from "@/lib/cloud-stt";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -493,6 +494,10 @@ export default function PracticeRoom() {
   const shouldRestartRecognitionRef = useRef(false);
   const finalCaptionRef = useRef("");
 
+  // Cloud STT (Deepgram) — used on mobile when SpeechRecognition is unavailable
+  const cloudSttRef = useRef<CloudSTT | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
   // Gemini refs
   const apiReadyRef     = useRef(true);
   const chatSessionRef  = useRef<any>(null);
@@ -719,6 +724,15 @@ export default function PracticeRoom() {
       }
       recognitionRef.current = null;
     }
+    // Stop cloud STT (Deepgram) if active
+    if (cloudSttRef.current) {
+      cloudSttRef.current.close();
+      cloudSttRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      try { mediaRecorderRef.current.stop(); } catch { /* noop */ }
+      mediaRecorderRef.current = null;
+    }
     setCaptionStatus("idle");
     setInterimTranscript("");
     if (clearText) {
@@ -728,116 +742,174 @@ export default function PracticeRoom() {
     }
   }, []);
 
+  // ── OnTranscript handler — shared by SpeechRecognition and Deepgram ─────
+  const onTranscript = useCallback((text: string, isFinal: boolean) => {
+    if (isFinal) {
+      finalCaptionRef.current = [finalCaptionRef.current, text]
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      transcriptRef.current = finalCaptionRef.current;
+      setTranscript(finalCaptionRef.current);
+    }
+
+    setInterimTranscript(isFinal ? "" : text.replace(/\s+/g, " ").trim());
+    setCaptionStatus("listening");
+    if (apiStatus === "ready") setAiState("Live captions on");
+
+    // Slow path: throttle analysis (>=700ms or on a final).
+    const now = Date.now();
+    if (!isFinal && now - lastCaptionAnalysisAtRef.current < 700) return;
+    lastCaptionAnalysisAtRef.current = now;
+
+    const fullCaption = isFinal
+      ? finalCaptionRef.current
+      : [finalCaptionRef.current, text].filter(Boolean).join(" ");
+    const tail = fullCaption.slice(-200);
+    if (tail.length > 18) promotePassiveHighlights(tail);
+    const sentencePattern = detectSentencePattern(tail);
+    if (sentencePattern && now - lastSentencePatternAtRef.current > 4500) {
+      lastSentencePatternAtRef.current = now;
+      bumpKtvScore("sentences", sentencePattern.delta, `Used a ${sentencePattern.label}`);
+    }
+
+    // Flow: reward sustained talking.
+    if (fullCaption.length > prevAnalysisLenRef.current + 12 && now - lastFlowBumpAtRef.current > 3000) {
+      lastFlowBumpAtRef.current = now;
+      bumpKtvScore("flow", 2, "Kept your idea going");
+    }
+    prevAnalysisLenRef.current = fullCaption.length;
+
+    // Story: reward connecting ideas.
+    if (now - lastStoryBumpAtRef.current > 5000 && /\b(because|so that|for example|for instance|this shows|this means|as a result|therefore|which means)\b/i.test(tail)) {
+      lastStoryBumpAtRef.current = now;
+      bumpKtvScore("story", 3, "Connected an idea");
+    }
+  }, [apiStatus, bumpKtvScore, promotePassiveHighlights]);
+
   const startLiveCaptions = useCallback(() => {
     const SpeechRecognitionCtor =
       (window as WindowWithSpeechRecognition).SpeechRecognition ||
       (window as WindowWithSpeechRecognition).webkitSpeechRecognition;
 
-    if (!SpeechRecognitionCtor) {
+    // ── Desktop path: SpeechRecognition (unchanged) ─────────────────────────
+    if (SpeechRecognitionCtor) {
+      stopLiveCaptions(false);
+      finalCaptionRef.current = "";
+      setInterimTranscript("");
+      shouldRestartRecognitionRef.current = true;
+
+      const recognition = new SpeechRecognitionCtor();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event) => {
+        const finalParts: string[] = [];
+        const interimParts: string[] = [];
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          const phrase = result?.[0]?.transcript?.trim();
+          if (!phrase) continue;
+          if (result.isFinal) finalParts.push(phrase);
+          else interimParts.push(phrase);
+        }
+
+        if (finalParts.length > 0) {
+          onTranscript(finalParts.join(" "), true);
+        }
+
+        const interimText = interimParts.join(" ").replace(/\s+/g, " ").trim();
+        if (interimText) {
+          onTranscript(interimText, false);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === "no-speech" || event.error === "aborted") return;
+        console.warn("Speech recognition error:", event.error);
+        setCaptionStatus("error");
+        setInterimTranscript("");
+        setAiState("Live captions paused");
+      };
+
+      recognition.onend = () => {
+        if (!shouldRestartRecognitionRef.current || !isStartedRef.current) return;
+        window.setTimeout(() => {
+          if (!shouldRestartRecognitionRef.current || !recognitionRef.current) return;
+          try {
+            recognitionRef.current.start();
+            setCaptionStatus("listening");
+          } catch {
+            setCaptionStatus("error");
+          }
+        }, 250);
+      };
+
+      recognitionRef.current = recognition;
+      try {
+        recognition.start();
+        setCaptionStatus("listening");
+        setAiState("Live captions on");
+      } catch (error) {
+        console.warn("Speech recognition start failed:", error);
+        setCaptionStatus("error");
+        setAiState("Live captions paused");
+      }
+      return;
+    }
+
+    // ── Mobile fallback: Deepgram Nova-2 via WebSocket ──────────────────────
+    const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY as string | undefined;
+    if (!apiKey) {
+      console.warn("[PracticeRoom] VITE_DEEPGRAM_API_KEY not set — cloud STT unavailable.");
       setCaptionStatus("unsupported");
-      setAiState("Live captions need Chrome or Edge");
+      setAiState("Live captions unavailable");
       return;
     }
 
     stopLiveCaptions(false);
     finalCaptionRef.current = "";
     setInterimTranscript("");
-    shouldRestartRecognitionRef.current = true;
 
-    const recognition = new SpeechRecognitionCtor();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
+    const stt = createCloudSTT(apiKey, {
+      onTranscript(text, isFinal) {
+        onTranscript(text, isFinal);
+      },
+      onError(err) {
+        console.error("[PracticeRoom] Deepgram STT error:", err);
+        setCaptionStatus("error");
+        setAiState("Cloud captions paused");
+      },
+    });
+    cloudSttRef.current = stt;
 
-    recognition.onresult = (event) => {
-      const finalParts: string[] = [];
-      const interimParts: string[] = [];
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        const phrase = result?.[0]?.transcript?.trim();
-        if (!phrase) continue;
-        if (result.isFinal) finalParts.push(phrase);
-        else interimParts.push(phrase);
+    // Use the existing mic stream to also feed Deepgram via MediaRecorder.
+    const stream = streamRef.current;
+    if (stream) {
+      try {
+        const recorder = new MediaRecorder(stream, {
+          mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+            ? "audio/webm;codecs=opus"
+            : undefined,
+        });
+        recorder.ondataavailable = (e: BlobEvent) => {
+          if (e.data.size > 0) {
+            stt.send(e.data);
+          }
+        };
+        recorder.start(500); // 500ms chunks — low enough latency for real-time STT
+        mediaRecorderRef.current = recorder;
+      } catch (err) {
+        console.error("[PracticeRoom] MediaRecorder start failed:", err);
       }
-
-      if (finalParts.length > 0) {
-        finalCaptionRef.current = [finalCaptionRef.current, ...finalParts]
-          .filter(Boolean)
-          .join(" ")
-          .replace(/\s+/g, " ")
-          .trim();
-        transcriptRef.current = finalCaptionRef.current;
-        setTranscript(finalCaptionRef.current);
-      }
-
-      // Fast path: captions update on every event, no heavy work here.
-      const interimText = interimParts.join(" ").replace(/\s+/g, " ").trim();
-      setInterimTranscript(interimText);
-      setCaptionStatus("listening");
-      if (apiStatus === "ready") setAiState("Live captions on");
-
-      // Slow path: throttle analysis (>=700ms or on a final) and only scan the
-      // recent tail, so fast continuous speech doesn't choke the main thread.
-      const now = Date.now();
-      if (!(finalParts.length > 0) && now - lastCaptionAnalysisAtRef.current < 700) return;
-      lastCaptionAnalysisAtRef.current = now;
-
-      const fullCaption = [finalCaptionRef.current, interimText].filter(Boolean).join(" ");
-      const tail = fullCaption.slice(-200);
-      if (tail.length > 18) promotePassiveHighlights(tail);
-      const sentencePattern = detectSentencePattern(tail);
-      if (sentencePattern && now - lastSentencePatternAtRef.current > 4500) {
-        lastSentencePatternAtRef.current = now;
-        bumpKtvScore("sentences", sentencePattern.delta, `Used a ${sentencePattern.label}`);
-      }
-
-      // Flow: reward sustained talking (transcript kept growing).
-      if (fullCaption.length > prevAnalysisLenRef.current + 12 && now - lastFlowBumpAtRef.current > 3000) {
-        lastFlowBumpAtRef.current = now;
-        bumpKtvScore("flow", 2, "Kept your idea going");
-      }
-      prevAnalysisLenRef.current = fullCaption.length;
-
-      // Story: reward connecting ideas (cause / example / consequence).
-      if (now - lastStoryBumpAtRef.current > 5000 && /\b(because|so that|for example|for instance|this shows|this means|as a result|therefore|which means)\b/i.test(tail)) {
-        lastStoryBumpAtRef.current = now;
-        bumpKtvScore("story", 3, "Connected an idea");
-      }
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error === "no-speech" || event.error === "aborted") return;
-      console.warn("Speech recognition error:", event.error);
-      setCaptionStatus("error");
-      setInterimTranscript("");
-      setAiState("Live captions paused");
-    };
-
-    recognition.onend = () => {
-      if (!shouldRestartRecognitionRef.current || !isStartedRef.current) return;
-      window.setTimeout(() => {
-        if (!shouldRestartRecognitionRef.current || !recognitionRef.current) return;
-        try {
-          recognitionRef.current.start();
-          setCaptionStatus("listening");
-        } catch {
-          setCaptionStatus("error");
-        }
-      }, 250);
-    };
-
-    recognitionRef.current = recognition;
-    try {
-      recognition.start();
-      setCaptionStatus("listening");
-      setAiState("Live captions on");
-    } catch (error) {
-      console.warn("Speech recognition start failed:", error);
-      setCaptionStatus("error");
-      setAiState("Live captions paused");
     }
-  }, [apiStatus, bumpKtvScore, promotePassiveHighlights, stopLiveCaptions]);
+
+    setCaptionStatus("listening");
+    setAiState("Cloud captions on");
+  }, [apiStatus, bumpKtvScore, onTranscript, promotePassiveHighlights, stopLiveCaptions]);
 
   // ── Proxy-ready status ────────────────────────────────────────────────────
   useEffect(() => {

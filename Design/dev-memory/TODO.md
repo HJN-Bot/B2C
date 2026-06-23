@@ -222,3 +222,21 @@
 | [Session 数据库持久化](../specs/2026-06-23-session-db-persistence.md) | 🟢 P2a | ⬜ 待实施 |
 
 执行顺序：P0(STT) → P1(Auth) → P2a(DB)。Auth 是 P2a 的前置依赖。
+
+---
+
+## 2026-06-23 Owner Day 1 进展
+
+### 已完成
+- [x] P0 移动端云端 STT 代码实施（cloud-stt.ts + PracticeRoom 双路适配）
+- [x] EdgeOne Pages 国内部署（https://speakspark-0zgkikod.edgeone.cool）
+- [x] Wiki 重组为 3 核心文档 + 3 蒸馏书
+- [x] User Guidance PDF 导出
+- [x] P0+P1+P2a 三份 tech spec 入库
+- [x] 秒哒评估 → 不适用，改 EdgeOne
+
+### 待 Jianan 操作
+- [ ] 注册 Deepgram → 获取 API key → 加 .env
+- [ ] EdgeOne 控制台设项目公开访问
+- [ ] Infra 决策：Supabase 接管 vs 重建
+- [ ] 申请自己的 Gemini API key

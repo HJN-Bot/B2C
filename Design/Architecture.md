@@ -99,3 +99,25 @@ npx supabase functions deploy get-gemini-api-key --project-ref jyofoabobuwfowpct
 ### Infra 归属
 - Supabase + Gemini key 待迁移到 Jianan 个人账户
 - 详见 [基础设施决策文档](https://my.feishu.cn/wiki/OwcEwuBWsiTBfykY6o3cD2jinUb)（已删除，新文档在 [待决策专区](https://my.feishu.cn/wiki/LSsLwt1U6i2d7NkfebccHiu7nMh)）
+
+---
+
+## 2026-06-23 晚间更新
+
+### 部署
+- **Vercel（海外）：** https://speakspark.vercel.app
+- **EdgeOne Pages（国内）：** https://speakspark-0zgkikod.edgeone.cool
+- EdgeOne 部署通过 CLI (`edgeone makers deploy`)，Project ID: makers-uefwmvwbhogy
+
+### 技术决策汇总
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 移动端 STT | Deepgram Nova-2 | 实时 WebSocket、免费 200h/月 |
+| 国内部署 | 腾讯云 EdgeOne Pages | 接 GitHub、国内 CDN、免费额度 |
+| Auth | Supabase Auth Magic Link | 无密码、最低摩擦 |
+| Session 存储 | Supabase PostgreSQL + RLS | 替换 localStorage |
+
+### 书籍参考
+- Crossing the Chasm — beachhead strategy
+- Inside the Tornado — bowling alley + tornado phases
+- Who Says Elephants Can't Dance — owner mindset + culture change
