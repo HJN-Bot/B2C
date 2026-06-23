@@ -27,6 +27,13 @@
     font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
   h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.012em;line-height:1.12}
   .wrap{max-width:1040px;margin:0 auto;padding:0 24px 110px}
+  .lang-switch{position:fixed;right:18px;top:18px;z-index:20;display:flex;align-items:center;gap:6px;
+    padding:5px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(14,27,46,.72);
+    box-shadow:0 14px 34px -22px rgba(15,30,60,.45);backdrop-filter:blur(12px)}
+  .lang-switch button{appearance:none;border:0;border-radius:999px;padding:6px 10px;background:transparent;color:#c3d2e8;
+    font:inherit;font-size:12px;font-weight:800;line-height:1;cursor:pointer}
+  .lang-switch button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+  .lang-switch .hint{color:#9db4d8;font-size:11px;font-weight:700;padding:0 6px 0 3px}
 
   /* ── Cover (mirrors PDF page 1) ── */
   .cover{margin:0 -24px 4px;padding:0 24px;background:
@@ -136,16 +143,37 @@
   }
   @media (max-width:440px){ .phones{grid-template-columns:1fr} }
   @media print{
+    @page{size:A4;margin:10mm}
     body{background:#fff;font-size:10.5pt}
     .wrap{max-width:none;padding:0}
-    .cover{margin:0 0 18pt}
+    .lang-switch{display:none}
+    .cover{margin:0 0 18pt;break-after:page}
+    .cover .in{padding:42pt 0 36pt}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .page,.fb,.notice,.phone,.row{break-inside:avoid}
+    .page{margin:0;break-before:page}
+    .legend + .page{break-before:avoid}
+    .phones{gap:14pt;margin-bottom:13pt}
+    .phone{padding:10pt 10pt 12pt;border-radius:12pt}
+    .phone img{max-width:230px}
+    .ph-cap{max-width:230px;font-size:8.2pt}
+    .row{padding:7pt 0;gap:8pt}
+    .pin{width:18pt;height:18pt;font-size:9pt}
+    .row .t b{font-size:10.2pt}
+    .row .was{font-size:8.8pt}
+    .row .now{font-size:9.2pt}
+    .chip{font-size:8.5pt;padding:3pt 7pt}
+    .sec-divider{break-before:page}
     .page-head,.sec-divider{break-after:avoid}
   }
 </style>
 </head>
 <body>
+  <div class="lang-switch" aria-label="Language switch">
+    <button type="button" data-set-lang="zh" aria-pressed="true">中文</button>
+    <button type="button" data-set-lang="en" aria-pressed="false">EN</button>
+    <span class="hint">右键切换</span>
+  </div>
 
   <header class="cover">
     <div class="in">
@@ -323,12 +351,16 @@
     <!-- ───── C. Feature list ───── -->
     <div class="sec-divider"><span class="n">C</span><h2>V2 已具备的功能（一览）</h2></div>
     <p class="page-sub">这一阶段已落地、可演示的功能（后台已恢复，AI 相关均出真实内容）。</p>
+    <div class="notice">
+      <h3>⚠️ 体验诚实说明：停顿卡片仍有轻微延迟</h3>
+      <p>线上真实 AI 已可用，但缓存未命中或网络较慢时，暂停后的追问卡片会慢半拍；当前用预生成 + 本地兜底保证不中断，V3 继续优化响应速度。</p>
+    </div>
     <div class="feat">
       <div>练习页提词器字幕：当前句锁中间、旧句上滚淡出、固定高度</div>
       <div>话题条 + 冷启动关键词（讲到自动变绿）</div>
       <div>猫猫教练 + 单一固定状态槽（去音浪/去冗余）</div>
       <div>KTV 四指标：未得分弱化、得分上色、刚加分高亮</div>
-      <div>停顿即接（预生成缓冲，优先真 AI，本地兜底；通用兜底问题库已扩充）</div>
+      <div>停顿即接（预生成缓冲，优先真 AI，本地兜底；缓存未命中时线上仍会有轻微等待）</div>
       <div>Captured words 固定单行横向滚动，新词从右侧进入，旧词自然滑出</div>
       <div>Takeaway 新顺序：精简鼓励 → Level up → 详情 → Coach</div>
       <div>Takeaway 合并 Change + Next time：一个改进点直接接升级句式、复用词和 trying point</div>
@@ -343,7 +375,7 @@
       <div>首页 Last Highlight 接真实历史 + 首次空状态（去掉写死假数据）</div>
       <div>练习页开练前 faint 占位框（coach 卡 + Transcript，不像空页）</div>
       <div>麦克风关 / 不支持 / 断网 兜底文案友好可操作</div>
-      <div>AI 延迟：实时调用关 thinking 提速（Takeaway 保留思考保质量）</div>
+      <div>AI 延迟：实时调用关 thinking 提速（Takeaway 保留思考保质量；暂停卡片仍继续优化）</div>
     </div>
 
     <!-- ───── D. Backend & storage plan + decisions ───── -->
@@ -392,9 +424,301 @@
       <li><span class="box"></span><span>🟡 <b>移动端语音识别</b>：浏览器 STT 不支持移动 Safari → 走服务端 STT（仓库已有 <code>analyze-voice</code> 雏形）或接第三方（Deepgram/Whisper）。</span></li>
       <li><span class="box"></span><span>🟡 <b>KTV 计分校准</b>：现为本地启发式（IELTS/TOEFL 维度方向对、分数未校准）→ 真人录音校准 或 改 AI 评分。</span></li>
       <li><span class="box"></span><span>🟡 <b>部署 <code>gemini-proxy</code></b>：让"实时调用关 thinking 提速"真正生效（代码已就绪）。</span></li>
+      <li><span class="box"></span><span>🟡 <b>暂停卡片延迟优化</b>：继续提高预生成命中率、缩短 prompt、并行请求或流式返回，让停顿后的追问更快出现。</span></li>
       <li><span class="box"></span><span>🟢 <b>埋点 / 分析</b>：后台记录行为事件看漏斗/留存；用真实证据做正向反馈，不用压力型 streak。</span></li>
     </ul>
 
   </div>
+  <script>
+    (() => {
+      const titleByLang = {
+        zh: "SpeakSpark · 设计走查回应与进展 · 2026-06-19",
+        en: "SpeakSpark · UI Review Response and Progress · 2026-06-19"
+      };
+      const en = {
+        "SpeakSpark · 设计走查回应与进展": "SpeakSpark · Design Review Response and Progress",
+        "这份报告回应 7 页 UI / 产品逻辑走查：逐页对照原稿红点，说明我们如何把 SpeakSpark 调整成更像私人练习教练的体验；另列出新增的 Navigator 引导、Trying Point 闭环和历史日历视角。": "This report responds to a 7-page UI / product logic review. Each page compares the original red-dot feedback with the updated interface, explains how SpeakSpark now feels more like a private practice coach, and separately calls out newly added Navigator guidance, the Trying Point loop, and the calendar history view.",
+        "报告日期": "Report date",
+        "对应原件": "Source review",
+        "立场": "Positioning",
+        "私人练习教练，不是评分工具": "Private practice coach, not a scoring tool",
+        "已上线": "Shipped",
+        "部分 / 待做": "Partial / Todo",
+        "依赖后端（现已恢复，AI 跑通）": "Backend-dependent (restored; AI working)",
+        "首屏友好，但分数/streak 会带来练习压力。": "The first screen is friendly, but scores and streaks can create practice pressure.",
+        "反馈方原稿": "Reviewer original",
+        "现在（本阶段）": "Current version",
+        "首页 V2（trying point + 模式 + 今日话题 + 去 streak/分数）·": "Home V2 (trying point + modes + daily starter + no streak/score) ·",
+        "我们的回应 · OUR RESPONSE": "Our Response",
+        "（编号对应上方手机红点）": "(Numbers match the red dots above)",
+        "Streak 制造压力": "Streak creates pressure",
+        "原建议：用 \"5 practices this week\" 代替 streak。": "Original suggestion: use \"5 practices this week\" instead of a streak.",
+        "✅ 改为": "✅ Changed to",
+        "，去掉 streak 压力。": ", removing streak pressure.",
+        "\"92 pts\" 像分数": "\"92 pts\" feels like a score",
+        "原建议：换 \"2 phrases saved / 1 coach note\"。": "Original suggestion: replace with \"2 phrases saved / 1 coach note\".",
+        "✅ 去掉裸分，改为": "✅ Removed the raw score and changed it to",
+        "证据。": "as evidence.",
+        "CTA 偏比赛": "CTA leans toward competition",
+        "原建议：测 \"Start Practice\"。": "Original suggestion: test \"Start Practice\".",
+        "（首页 + 练习页）。": " (Home + Practice).",
+        "新增：首页 Navigator 引导": "Added: Home Navigator guidance",
+        "新用户弹 3 步引导（模式/话题/Start），只出一次。": "New users see a 3-step guide (mode / topic / Start), shown only once.",
+        "说话当下，界面应像冷静的教练，不是实时评分表。": "While the student is speaking, the interface should feel like a calm coach, not a live scorecard.",
+        "练习页 V2（KTV 未得分弱化 + 信任标签）·": "Practice V2 (muted unscored KTV metrics + trust label) ·",
+        "\"AI moments\" 模糊像分数": "\"AI moments\" feels vague and score-like",
+        "原建议：改 \"coach notes\" 或移除。": "Original suggestion: change to \"coach notes\" or remove.",
+        "✅ 删掉模糊计数，换成顶部": "✅ Removed the vague count and replaced it with the top",
+        "🎯 话题/模式": "🎯 topic / mode",
+        "指标像实时评判": "Metrics feel like live judgment",
+        "原建议：说话中隐藏指标，结束后作 private evidence。": "Original suggestion: hide metrics during speaking, then use them as private evidence after the run.",
+        "✅ 定调": "✅ Reframed them to",
+        "保留作鼓励框架": "serve as an encouragement frame",
+        "，但未得分的指标弱化/灰掉、得分的上色、刚加分的高亮——注意力跟着分走。": ": unscored metrics are muted, scored ones gain color, and fresh gains highlight so attention follows progress.",
+        "\"AI is listening\" 监控感": "\"AI is listening\" feels like surveillance",
+        "原建议：改 \"Coach is following your idea\"。": "Original suggestion: change to \"Coach is following your idea\".",
+        "+ 猫状态。": "+ the cat state.",
+        "Loading 阻塞练习": "Loading blocks practice",
+        "原建议：允许先录后生成。": "Original suggestion: allow recording first, generate later.",
+        "✅ 预生成缓冲 + 多层 fallback；": "✅ Added pre-generated buffers and layered fallbacks;",
+        "停顿卡优先真 AI": "pause cards prefer real AI",
+        "（有缓冲秒弹，无则猫 thinking，断网才本地）。后台已恢复，真 AI 跑通。": "(instant when buffered; otherwise the cat thinks; local fallback only when offline). Backend is restored and real AI is working.",
+        "⚠️ 体验诚实说明：停顿卡片仍有轻微延迟": "⚠️ Honest experience note: pause cards still have slight latency",
+        "优化中": "Improving",
+        "线上真实 AI 已可用，但缓存未命中或网络较慢时，暂停后的追问卡片会慢半拍；当前用预生成 + 本地兜底保证不中断，V3 继续优化响应速度。": "Real AI is now available online, but when the buffer misses or the network is slow, the follow-up card after a pause can still feel half a beat late. The current version uses pre-generation plus local fallback to avoid interruption; V3 will continue improving response speed.",
+        "结束页第一屏应该是教练计划，不是成绩单。": "The first screen after a run should be a coach plan, not a score sheet.",
+        "真实 AI": "real AI",
+        "奖杯像夺冠/排名": "Trophy implies winning or ranking",
+        "原建议：notebook/check + \"Practice complete\"。": "Original suggestion: notebook/check + \"Practice complete\".",
+        "，无奖杯无排名。": ", with no trophy or ranking.",
+        "stats 像成绩单": "Stats feel like a report card",
+        "原建议：先一句人话再谈数据。": "Original suggestion: start with a human sentence before data.",
+        "✅ 先": "✅ Start with a",
+        "人话 headline": "human headline",
+        "Next Run Plan 应是 hero": "Next Run Plan should be the hero",
+        "原建议：提为置顶 hero card。": "Original suggestion: promote it into the top hero card.",
+        "✅ Next Run Plan 已提前到第一屏的": "✅ Next Run Plan now appears in the first-screen",
+        "，不再像结束后的附属建议。": ", so it no longer feels like an afterthought.",
+        "红色 AI 失败像出错": "Red AI failure looks like an error",
+        "原建议：中性文案。": "Original suggestion: use neutral copy.",
+        "中性诚实琥珀提示": "neutral, honest amber notice",
+        "（正是靠它定位到后台失效）。": "(this is what helped locate the backend failure).",
+        "新增：Takeaway V2 信息架构": "Added: Takeaway V2 information architecture",
+        "结束页重排为 ① 精简鼓励 → ② Level up → ③ 详情 → ④ Coach；Level up 合并 Amplify + Change/Next time，直接告诉用户改什么、怎么说、复用哪些词、下一次 trying point 是什么。": "The end page is reordered as ① concise encouragement → ② Level up → ③ details → ④ Coach. Level up combines Amplify + Change/Next time and directly tells the student what to change, how to say it, which words to reuse, and what the next trying point is.",
+        "新增：真实 AI 的具体化反馈": "Added: concrete feedback from real AI",
+        "Takeaway 基于本次原文生成，不再说最低分；输出具体句式、词汇升级和可复用表达。": "Takeaway is generated from the actual transcript. It no longer talks about the lowest score; it outputs specific sentence frames, vocabulary upgrades, and reusable expressions.",
+        "Chatbox 很强大，所以它的边界要在上线前明确可见。": "The chatbox is powerful, so its boundaries need to be visible before launch.",
+        "块④ Coach（": "Block ④ Coach (",
+        "真实 AI 回复": "real AI reply",
+        "）：基于本次的开场语 + \"Ask me one question\" 等 presets（避免代答）+ Practice Again。": "): based on this run's opening line + presets such as \"Ask me one question\" (to avoid writing answers for the student) + Practice Again.",
+        "Prompt 易生成完整答案": "Prompts can easily generate full answers",
+        "原建议：\"Go deeper\" → \"Ask me one question\"。": "Original suggestion: \"Go deeper\" → \"Ask me one question\".",
+        "✅ presets 改为": "✅ Presets now use",
+        "等，不替你作答。": "and similar prompts, so the coach does not answer for the student.",
+        "progress map 回到分数": "Progress map falls back into scores",
+        "原建议：用文字趋势，数字次要/隐藏。": "Original suggestion: use text trends; make numbers secondary or hidden.",
+        "✅ 改": "✅ Changed to",
+        "文字趋势": "text trends",
+        "（Strong/Growing/Just starting + 成长描述）。": "(Strong / Growing / Just starting + growth descriptions).",
+        "Practice again CTA 很好": "Practice Again CTA is strong",
+        "已保留": "Kept",
+        "✅ 保留核心循环；另加 coach-mode 持久信任标签。": "✅ Kept the core loop and added a persistent coach-mode trust label.",
+        "成长页框架是对的，但 \"Ability Portrait\" 仍像评估。": "The growth page structure is right, but \"Ability Portrait\" still feels evaluative.",
+        "My V2 上半（Trying Point + Practice growth）·": "My V2 upper section (Trying Point + Practice growth) ·",
+        "growth map 框架正确": "Growth map structure is right",
+        "✅ 保留个人成长语言，不做公开排名。": "✅ Kept the personal growth language and avoided public ranking.",
+        "\"Trying Point\" 很出色": "\"Trying Point\" works well",
+        "原建议：保留并强化这个个人成长语言。": "Original suggestion: keep and strengthen this personal-growth language.",
+        "✅ My 页继续把 Trying Point 放在成长页第一屏，用作下一次练习的可见目标。": "✅ My keeps Trying Point on the first screen as a visible goal for the next run.",
+        "\"Ability Portrait\" 像计分卡": "\"Ability Portrait\" feels like a scorecard",
+        "原建议：改名 \"Practice growth\"。": "Original suggestion: rename it \"Practice growth\".",
+        "✅ 已改名": "✅ Renamed to",
+        "新增：Trying Point 跨页闭环": "Added: cross-page Trying Point loop",
+        "新增共享源：首页本周 trying point 卡（点击进练习）+ My 列表 + Takeaway 的 \"Your next trying point\"，让下一次练习目标形成闭环。": "Added a shared source: this week's trying point card on Home (tap into Practice) + My list + Takeaway's \"Your next trying point\", so the next-run goal becomes a loop.",
+        "设置页应让\"内容安全边界\"对家长/老师/学生都好理解。": "Settings should make the content-safety boundary clear to parents, teachers, and students.",
+        "My V2 下半：回应原红点 ①②③；另新增 calendar 历史视角、固定高度滚动、真实短语库与可编辑 Coaching prompt ·": "My V2 lower section: responds to original red dots ①②③, plus added calendar history view, fixed-height scrolling, real phrase bank, and editable Coaching prompt ·",
+        "practice history 是有用证据": "Practice history is useful evidence",
+        "✅ 保留 Practice history，让历史练习成为学生自己的成长证据，而不是公开排名或分数墙。": "✅ Kept Practice history so past sessions become the student's own growth evidence, not a public ranking or score wall.",
+        "\"User management\" 太内部": "\"User management\" is too internal",
+        "原建议：改名 \"Settings\"。": "Original suggestion: rename it \"Settings\".",
+        "coach mode 应更明确": "Coach mode should be clearer",
+        "原建议：\"Gentle prompts\" → \"Practice feedback only\"。": "Original suggestion: \"Gentle prompts\" → \"Practice feedback only\".",
+        "；信任标签也推广到练习页 + My 头部。": "; the trust label was also extended to Practice and the My header.",
+        "新增：Calendar 历史视角": "Added: Calendar history view",
+        "右上角打开 calendar；有练习的日期带蓝点，点某一天后，下方固定高度列表只显示当天 sessions，不再把页面无限拉长。": "The calendar opens from the top right; practice days have blue dots, and selecting a day filters the fixed-height list below to that day's sessions so the page no longer grows endlessly.",
+        "本次更新": "This update",
+        "新增：Settings 真实化": "Added: real Settings",
+        "Settings 不再只是占位：Coach mode 是信息行，Saved phrase bank 读取真实历史短语，Coaching prompt 可以编辑并注入 AI 教练。": "Settings is no longer a placeholder: Coach mode is an information row, Saved phrase bank reads real historical phrases, and Coaching prompt can be edited and injected into the AI coach.",
+        "附录": "Appendix",
+        "另外 5 条文字反馈（#1–#5）": "Five Additional Text Feedback Items (#1-#5)",
+        "走查 PDF 之外的试用文字反馈，多数落在练习页/首页，已与上面联动实现。": "Additional trial feedback outside the review PDF, mostly about Practice and Home, has been implemented alongside the page updates above.",
+        "字幕单行 Karaoke + End 固定": "Single-line Karaoke captions + fixed End button",
+        "原问题": "Original issue",
+        "多行字幕信息过载；噪音环境 End 按钮被挤无法点。": "Multi-line captions overloaded the screen; in noisy environments the End button could be pushed out of reach.",
+        "我们怎么改": "What we changed",
+        "提词器式字幕：当前句锁中间、旧句上滚淡出、固定高度；End 固定顶栏不随字幕移动。": "Teleprompter-style captions: current sentence locked in the middle, older text fades upward, fixed height; End stays fixed in the top bar.",
+        "去掉音浪等冗余动效": "Removed redundant waveform motion",
+        "音浪+字幕+气泡+KTV+卡片，动态元素太多分心。": "Waveform + captions + bubbles + KTV + cards created too many moving elements.",
+        "砍掉 40 柱音浪大动效；猫只画猫；重复 listening 文案合并到单一固定槽位。": "Removed the 40-bar waveform animation; the cat is just the cat; repeated listening copy is consolidated into one fixed status slot.",
+        "话题提示 + 冷启动关键词": "Topic reminder + cold-start keywords",
+        "冷启动忘话题、说着说着断线，科学话题本就不熟。": "Students can forget the topic at cold start or lose the thread, especially on unfamiliar science topics.",
+        "顶部常驻 🎯 话题/模式；冷启动关键词标签，讲到哪个自动变绿。": "Persistent top 🎯 topic / mode; cold-start keyword chips turn green when mentioned.",
+        "Takeaway 自上而下 + 原文引用": "Top-down Takeaway + transcript quotes",
+        "已上线（真 AI 跑通）": "Shipped (real AI working)",
+        "建议和实际说的内容脱节，看不到\"因为我说了 X 所以建议 Y\"。": "Advice felt disconnected from what was actually said; users could not see \"because I said X, I should try Y\".",
+        "先\"讲了什么\"→ 再建议；每条带 \"You said: …\" 引用。重构为 3 大块长页；最新版本把 Change + Next time 合并，并要求具体句式/词/例子，不讲\"最低分\"。": "Start with \"what you said\" before advice; each item includes a \"You said: ...\" quote. The page was rebuilt into three major long-form blocks; the latest version merges Change + Next time and requires concrete frames, words, and examples without mentioning the lowest score.",
+        "首页主题化口语活动": "Themed speaking activity on Home",
+        "已合并（去冗余）": "Merged (deduplicated)",
+        "首页是仪表盘，缺\"接下来该练什么\"的引导。": "Home felt like a dashboard and lacked guidance on what to practice next.",
+        "用": "Use",
+        "练习模式选择": "practice mode selection",
+        "今日话题 Starter": "today's topic starter",
+        "覆盖\"练什么\"。曾加的独立\"主题活动卡片区\"与这两者重复，": "to answer \"what should I practice?\" The previously added standalone themed activity card duplicated those two controls, so it was",
+        "已移除避免冗余": "removed to avoid redundancy",
+        "。如需独立主题入口可再单开。": ". A separate theme entry can be added later if needed.",
+        "V2 已具备的功能（一览）": "V2 Feature Set at a Glance",
+        "这一阶段已落地、可演示的功能（后台已恢复，AI 相关均出真实内容）。": "Features shipped and demo-ready in this phase (backend restored; AI outputs real content).",
+        "练习页提词器字幕：当前句锁中间、旧句上滚淡出、固定高度": "Practice teleprompter captions: current sentence locked center, older text fades upward, fixed height",
+        "话题条 + 冷启动关键词（讲到自动变绿）": "Topic bar + cold-start keywords (turn green when spoken)",
+        "猫猫教练 + 单一固定状态槽（去音浪/去冗余）": "Cat coach + one fixed status slot (removed waveform / redundant motion)",
+        "KTV 四指标：未得分弱化、得分上色、刚加分高亮": "KTV four metrics: unscored states muted, scored states colored, fresh gains highlighted",
+        "停顿即接（预生成缓冲，优先真 AI，本地兜底；缓存未命中时线上仍会有轻微等待）": "Pause response (pre-generated buffer, real AI first, local fallback; online still has a slight wait when the buffer misses)",
+        "Captured words 固定单行横向滚动，新词从右侧进入，旧词自然滑出": "Captured words fixed to one horizontal scrolling row; new chips enter from the right and older ones slide out",
+        "Takeaway 新顺序：精简鼓励 → Level up → 详情 → Coach": "New Takeaway order: concise encouragement → Level up → Details → Coach",
+        "Takeaway 合并 Change + Next time：一个改进点直接接升级句式、复用词和 trying point": "Takeaway merges Change + Next time: one improvement point directly connects to an upgraded sentence frame, reusable words, and trying point",
+        "建议带原文引用「You said: …」+ AI 失败时诚实兜底": "Advice includes transcript quotes (\"You said: ...\") + honest fallback when AI fails",
+        "首页：去 streak/分数压力、trying point、今日话题": "Home: removes streak / score pressure, adds trying point and daily topic",
+        "Navigator 首用引导（首页 + 练习页两段）": "Navigator first-use guidance (Home + two Practice tours)",
+        "My：Practice growth / Settings 改名、真实短语库、历史列表固定高度滚动 + calendar 日期视角": "My: renamed Practice growth / Settings, real phrase bank, fixed-height history list + calendar date view",
+        "Trying Point 闭环（首页 → Takeaway → My）": "Trying Point loop (Home → Takeaway → My)",
+        "可编辑 Coaching prompt（注入 AI）+ 历史按 calendar 日期查看": "Editable Coaching prompt (injected into AI) + history by calendar date",
+        "coach-mode 信任标签「Practice feedback only」推广全 app": "Coach-mode trust label \"Practice feedback only\" extended across the app",
+        "四页底部导航打通（含修复首页缺失的导航栏）": "Bottom navigation across four pages (including the missing Home bottom nav fix)",
+        "首页 Last Highlight 接真实历史 + 首次空状态（去掉写死假数据）": "Home Last Highlight uses real history + first-time empty state (no hardcoded fake data)",
+        "练习页开练前 faint 占位框（coach 卡 + Transcript，不像空页）": "Practice pre-start faint placeholder frames (coach card + Transcript, so the page does not feel empty)",
+        "麦克风关 / 不支持 / 断网 兜底文案友好可操作": "Friendly, actionable fallback copy for mic off / unsupported browser / offline states",
+        "AI 延迟：实时调用关 thinking 提速（Takeaway 保留思考保质量；暂停卡片仍继续优化）": "AI latency: real-time calls disable thinking for speed (Takeaway keeps thinking for quality; pause cards still need optimization)",
+        "后端与存储规划 + 决策项": "Backend and Storage Plan + Decisions",
+        "现状：": "Current state:",
+        "没有登录系统": "No login system",
+        "（\"Alex\" 是写死的 mock），历史 / 短语 / prompt 偏好都只存在": "(\"Alex\" is a hardcoded mock); history, phrases, and prompt preferences only live in",
+        "本机 localStorage": "local localStorage",
+        "（换设备、清缓存即丢，且不绑定到任何用户）。要做\"和用户绑定 + 跨设备 + 录音回放\"，需要后端。": "(lost on device switch or cache clear, and not tied to a user). To support user binding, cross-device continuity, and audio replay, backend storage is needed.",
+        "要存什么（按用户 / 按 session）": "What to store (by user / by session)",
+        "数据": "Data",
+        "现在": "Now",
+        "是否需要后端": "Backend needed?",
+        "用户账号": "User account",
+        "需 Auth 登录 — 一切的锚点": "Requires Auth login - the anchor for everything",
+        "练习 session": "Practice session",
+        "（时间/模式/时长/分数）": "(time / mode / duration / score)",
+        "localStorage，单设备": "localStorage, single device",
+        "需": "Requires",
+        "表（按 user）": " table (by user)",
+        "（你说了什么）": "(what the student said)",
+        "存在 session 里（本机）": "Stored inside the local session",
+        "随 session 存后端": "Store with the session in backend",
+        "音频录音": "Audio recording",
+        "不录、不存": "Not recorded or stored",
+        "需录音 + Supabase Storage（音频桶），关联 session": "Requires recording + Supabase Storage (audio bucket), linked to session",
+        "历史 coach": "Coach history",
+        "（每次的 AI 问答 / takeaway）": "(AI Q&A / takeaway from each run)",
+        "每次重生成、不保存": "Regenerated each time; not saved",
+        "按 session 存，才能回看": "Store by session to enable review",
+        "短语库 / trying point / prompt 偏好": "Phrase bank / trying point / prompt preferences",
+        "本机推导/存储": "Derived / stored locally",
+        "按 user 存（跨设备）": "Store by user (cross-device)",
+        "前端界面 / 交互": "Frontend UI / interaction",
+        "已完成": "Completed",
+        "不需后端": "No backend needed",
+        "用户 admin 与多 session 怎么分": "How user admin and multiple sessions split",
+        "一切以": "Everything is rooted in",
+        "（来自登录）为根：每个用户只看到自己的数据（行级权限 RLS）。每次练习 = 一条": "(from login): each user only sees their own data (row-level security / RLS). Each practice run = one",
+        "行（id · user_id · 时间 · 模式 · 时长 · 分数 · transcript · audio_path），其下挂": "row (id · user_id · time · mode · duration · score · transcript · audio_path), with child",
+        "（外键 session_id）。所谓\"用户 admin\" = 现在缺失的登录/账号层。": "(foreign key: session_id). \"User admin\" means the missing login/account layer.",
+        "决策项（请团队拍板）": "Decision items (team to decide)",
+        "是否现在做真正的登录 / 账号（auth）？": "Should we implement real login / accounts (auth) now?",
+        "这是\"绑定用户 + 跨设备 + 录音\"的前提。不做就维持单设备 localStorage（够 demo）。": "This is required for user binding, cross-device use, and audio. If not, keep single-device localStorage (enough for demo).",
+        "音频要不要录 + 存？": "Should we record and store audio?",
+        "面向 11–15 岁未成年人，涉及隐私 / 同意 / 存储成本。或先只存 transcript、不做回放。": "For 11-15 year-old minors, this involves privacy, consent, and storage cost. Alternatively, store only transcript first and skip replay.",
+        "后端用哪个：": "Which backend should we use:",
+        "恢复旧 Supabase 项目，还是新建？需建 Postgres 表（sessions/highlights/coach_messages）+ Storage 桶 + RLS。": "restore the old Supabase project or create a new one? Requires Postgres tables (sessions/highlights/coach_messages) + Storage bucket + RLS.",
+        "数据保留 / 隐私：": "Data retention / privacy:",
+        "未成年人数据（尤其音频）的留存期、同意、删除机制。": "Retention period, consent, and deletion mechanism for minors' data, especially audio.",
+        "额度 / 成本：": "Quota / cost:",
+        "Gemini 调用与存储的配额、谁承担、限额策略。": "Gemini call and storage quota, who pays, and limit strategy.",
+        "✅ 后台状态：已恢复": "✅ Backend status: restored",
+        "Supabase 后台已恢复，AI（实时教练 / takeaway 总结 / Coach 问答）": "Supabase backend is restored, and AI (real-time coach / takeaway summary / Coach Q&A)",
+        "已跑通可演示": "is working and demo-ready",
+        "。上面的存储 / 账号 / 录音项是\"要不要更进一步绑定用户、做跨设备\"的决策，与当前可用性无关。详细操作见单独的": ". The storage / account / recording items above are decisions about whether to go further into user binding and cross-device use; they are separate from current availability. See the separate",
+        "下一步 / V3 路线图": "Next Steps / V3 Roadmap",
+        "持续迭代中。按优先级排，逐步推进。": "Ongoing iteration, ordered by priority.",
+        "真账号体系（auth）+ 落库": "Real account system (auth) + database persistence",
+        "入库（替 localStorage）。一切跨设备/绑定用户的前提。": "into the database (replacing localStorage). This is the prerequisite for cross-device use and user binding.",
+        "录音 + 未成年人合规": "Recording + minors compliance",
+        "：是否录/存音频（Storage）、同意/留存/删除——先决定再做。": ": decide whether to record/store audio (Storage), plus consent / retention / deletion before building.",
+        "移动端语音识别": "Mobile speech recognition",
+        "：浏览器 STT 不支持移动 Safari → 走服务端 STT（仓库已有": ": browser STT does not support mobile Safari → use server-side STT (repo already has",
+        "雏形）或接第三方（Deepgram/Whisper）。": "as a starting point) or integrate a third party (Deepgram / Whisper).",
+        "KTV 计分校准": "KTV scoring calibration",
+        "：现为本地启发式（IELTS/TOEFL 维度方向对、分数未校准）→ 真人录音校准 或 改 AI 评分。": ": currently local heuristics (IELTS/TOEFL dimensions are directionally right, scores are uncalibrated) → calibrate with real recordings or switch to AI scoring.",
+        "部署": "Deploy",
+        "：让\"实时调用关 thinking 提速\"真正生效（代码已就绪）。": ": make \"disable thinking for real-time calls\" effective in production (code is ready).",
+        "暂停卡片延迟优化": "Pause-card latency optimization",
+        "：继续提高预生成命中率、缩短 prompt、并行请求或流式返回，让停顿后的追问更快出现。": ": keep improving pre-generation hit rate, shorten prompts, parallelize requests, or stream responses so follow-up prompts appear faster after a pause.",
+        "埋点 / 分析": "Analytics / instrumentation",
+        "：后台记录行为事件看漏斗/留存；用真实证据做正向反馈，不用压力型 streak。": ": record behavior events in backend to understand funnel/retention; use real evidence for positive feedback instead of pressure-based streaks.",
+        "右键切换": "Right-click toggles"
+      };
+
+      const buttons = [...document.querySelectorAll("[data-set-lang]")];
+      const textNodes = [];
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent || parent.closest("script,style")) return NodeFilter.FILTER_REJECT;
+          return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        }
+      });
+      let node;
+      while ((node = walker.nextNode())) {
+        node.zhText = node.nodeValue;
+        textNodes.push(node);
+      }
+
+      function preserveWhitespace(original, translated) {
+        const leading = original.match(/^\s*/)[0];
+        const trailing = original.match(/\s*$/)[0];
+        return leading + translated + trailing;
+      }
+
+      function setLang(lang, persist = true) {
+        const target = lang === "en" ? "en" : "zh";
+        document.documentElement.lang = target === "en" ? "en" : "zh-CN";
+        document.title = titleByLang[target];
+        textNodes.forEach((textNode) => {
+          const zhText = textNode.zhText;
+          const key = zhText.replace(/\s+/g, " ").trim();
+          textNode.nodeValue = target === "en" && en[key] ? preserveWhitespace(zhText, en[key]) : zhText;
+        });
+        buttons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.setLang === target)));
+        if (persist) localStorage.setItem("speakspark.reportLang", target);
+        window.__speakSparkReportLang = target;
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => setLang(button.dataset.setLang));
+      });
+      document.addEventListener("contextmenu", (event) => {
+        if (event.target.closest("a,button,input,textarea,select,code")) return;
+        event.preventDefault();
+        setLang(window.__speakSparkReportLang === "en" ? "zh" : "en");
+      });
+
+      const queryLang = new URLSearchParams(location.search).get("lang");
+      const savedLang = localStorage.getItem("speakspark.reportLang");
+      setLang(queryLang || savedLang || "zh", !queryLang);
+    })();
+  </script>
 </body>
 </html>

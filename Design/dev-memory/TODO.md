@@ -210,3 +210,15 @@
 - AI 怎样灵活实时跟上：3s 内返回就用模型，不行就多做 use case 用本地仿出问答感。
 - Practice 版面问题大，怎样效率最好？（用 Grill Me / 竞对参考）
 - **Grill 已定**：A 字幕 5 行·当前句居中·固定上滚；B 预生成缓冲；C 停顿 3s；D 竖排·猫居中·一张精简反馈卡（左右两列移动端不划算）。
+
+---
+
+## 🆕 owner-validation specs（2026-06-23）
+
+| Spec | 优先级 | 状态 |
+|------|--------|------|
+| [移动端云端 STT](../specs/2026-06-23-mobile-cloud-stt.md) | 🔴 P0 | ⬜ 待实施 |
+| [Supabase Auth](../specs/2026-06-23-supabase-auth.md) | 🟡 P1 | ⬜ 待实施 |
+| [Session 数据库持久化](../specs/2026-06-23-session-db-persistence.md) | 🟢 P2a | ⬜ 待实施 |
+
+执行顺序：P0(STT) → P1(Auth) → P2a(DB)。Auth 是 P2a 的前置依赖。

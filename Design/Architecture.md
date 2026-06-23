@@ -76,3 +76,26 @@ npx supabase functions deploy get-gemini-api-key --project-ref jyofoabobuwfowpct
 ```
 
 4. 如果还要保留旧 `analyze-voice` 线上可用，再确认远端有 `OPENAI_API_KEY`。
+
+---
+
+## 2026-06-23 更新：Owner Transition 决策
+
+### P0 — 移动端云端 STT
+- **决策：Deepgram Nova-2**（WebSocket 实时 STT）
+- 桌面端保留 SpeechRecognition，移动端 fallback 到 Deepgram
+- 详见 [spec](specs/2026-06-23-mobile-cloud-stt.md)
+
+### P1 — Supabase Auth
+- **决策：Supabase Auth Magic Link**（邮箱无密码登录）
+- 新建 AuthProvider + SignIn 页 + 路由守卫
+- 详见 [spec](specs/2026-06-23-supabase-auth.md)
+
+### P2a — Session 落库
+- **决策：Supabase PostgreSQL sessions 表 + RLS**
+- localStorage 保留为本地缓存，Supabase 为 source of truth
+- 详见 [spec](specs/2026-06-23-session-db-persistence.md)
+
+### Infra 归属
+- Supabase + Gemini key 待迁移到 Jianan 个人账户
+- 详见 [基础设施决策文档](https://my.feishu.cn/wiki/OwcEwuBWsiTBfykY6o3cD2jinUb)（已删除，新文档在 [待决策专区](https://my.feishu.cn/wiki/LSsLwt1U6i2d7NkfebccHiu7nMh)）
