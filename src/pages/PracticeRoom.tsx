@@ -389,6 +389,33 @@ function localPauseReply(transcript: string, words: string[]): { follow_up: stri
   return { kind: "question", feedback: "Let's keep it going.", follow_up: UNIVERSAL_PAUSE[Math.floor(Math.random() * UNIVERSAL_PAUSE.length)] };
 }
 
+// Always hand back >=2 distinct "what to say next" prompts so the pause card is
+// never blank (the #1 reason a tester stopped after one run). The best reply
+// (a pre-buffered/AI one, else a content-aware local one) leads, then we top up
+// from the universal bank — no trigger conditions, no empty state.
+function buildPauseSuggestions(
+  transcript: string,
+  words: string[],
+  primary?: { follow_up: string; feedback: string; kind: "question" | "nudge" } | null,
+): { chips: { text: string; kind: "question" | "nudge" }[]; feedback: string; kind: "question" | "nudge" } {
+  const chips: { text: string; kind: "question" | "nudge" }[] = [];
+  const seen = new Set<string>();
+  const push = (text: string, kind: "question" | "nudge") => {
+    const t = (text || "").trim();
+    const key = t.toLowerCase();
+    if (!t || seen.has(key)) return;
+    seen.add(key);
+    chips.push({ text: t, kind });
+  };
+  const lead = primary ?? localPauseReply(transcript, words);
+  push(lead.follow_up, lead.kind);
+  for (const q of [...UNIVERSAL_PAUSE].sort(() => Math.random() - 0.5)) {
+    if (chips.length >= 3) break;
+    push(q, "question");
+  }
+  return { chips, feedback: lead.feedback, kind: lead.kind };
+}
+
 // ─── Helper: highlight vocab in transcript text ───────────────────────────────
 
 function applyHighlights(text: string, words: string[]) {
@@ -540,6 +567,7 @@ export default function PracticeRoom() {
 
   // State
   const [started, setStarted]               = useState(false);
+  const [ending, setEnding]                 = useState(false);
   const [timer, setTimer]                   = useState(0);
   const [highlightCount, setHighlightCount] = useState(0);
   const [ktvScore, setKtvScore]             = useState<KTVScore>({ flow: 0, words: 0, sentences: 0, story: 0 });
@@ -559,6 +587,7 @@ export default function PracticeRoom() {
   const [showBottleneck, setShowBottleneck] = useState(false);
   const [bottleneckPhase, setBottleneckPhase] = useState<"thinking" | "reply">("thinking");
   const [followUpQ, setFollowUpQ]           = useState("");
+  const [followUpChips, setFollowUpChips]   = useState<{ text: string; kind: "question" | "nudge" }[]>([]);
   const [followUpKind, setFollowUpKind]     = useState<"question" | "nudge">("question");
   const [followUpFeedback, setFollowUpFeedback] = useState("");
   const [thinkingAck, setThinkingAck]       = useState("");
@@ -665,12 +694,20 @@ export default function PracticeRoom() {
   // student already resumed speaking or the card was dismissed.
   const enterReply = useCallback((question: string, feedback: string, kind: "question" | "nudge") => {
     if (!question.trim() || !showBottleneckRef.current || speakingRef.current) return;
-    setFollowUpQ(question.trim());
-    setFollowUpKind(kind);
-    setFollowUpFeedback(feedback.trim());
+    // Expand the single best reply into >=2 tappable prompts (lead + bank), so
+    // the card is never a dead end.
+    const { chips, feedback: fb, kind: k } = buildPauseSuggestions(
+      transcriptRef.current,
+      highlightWordsRef.current,
+      { follow_up: question, feedback, kind },
+    );
+    setFollowUpChips(chips);
+    setFollowUpQ(chips[0]?.text || question.trim());
+    setFollowUpKind(k);
+    setFollowUpFeedback(fb.trim());
     setBottleneckPhase("reply");
     setMood("coaching");
-    setBubble(feedback.trim() || "Here's a thought.");
+    setBubble(fb.trim() || "Here's a thought.");
     setAiState("Coach has a suggestion");
   }, []);
 
@@ -1055,9 +1092,10 @@ export default function PracticeRoom() {
       enterReply(buffered.follow_up, buffered.feedback, buffered.kind);
       return;
     }
-    // No buffer yet (e.g. very first pause) → prefer a live AI reply.
-    setBottleneckPhase("thinking");
-    setThinkingAck(THINKING_ACKS[Math.floor(Math.random() * THINKING_ACKS.length)]);
+    // No buffer yet → show local + bank prompts INSTANTLY (never blank), then
+    // quietly upgrade the lead with a live AI reply if it arrives in time.
+    const local = localPauseReply(transcriptRef.current, highlightWordsRef.current);
+    enterReply(local.follow_up, local.feedback, local.kind);
     void resolvePauseReply();
   }, [enterReply, resolvePauseReply]);
 
@@ -1331,6 +1369,7 @@ export default function PracticeRoom() {
     setHighlightWords([]);
     setPhraseSparks([]);
     setFollowUpQ("");
+    setFollowUpChips([]);
     setMiniCoachTip("");
     showBottleneckRef.current = false;
     setShowBottleneck(false);
@@ -1388,8 +1427,17 @@ export default function PracticeRoom() {
   // ── End session ────────────────────────────────────────────────────────────
   const endSession = async () => {
     if (!started) { navigate("/"); return; }
+    if (ending) return;
+    setEnding(true); // instant feedback — the tap must never look dead
     try {
-      if (phraseChunksRef.current.length > 0 || shortBufferRef.current) await processPhrase(true);
+      // Flush a pending phrase, but never let a slow/failed Gemini call freeze
+      // the End tap: the session summary is built from refs, not this result.
+      if (phraseChunksRef.current.length > 0 || shortBufferRef.current) {
+        await Promise.race([
+          processPhrase(true),
+          new Promise((resolve) => setTimeout(resolve, 800)),
+        ]);
+      }
     } catch { /* best-effort flush */ }
     isStartedRef.current = false;
     stopLiveCaptions();
@@ -1501,10 +1549,10 @@ export default function PracticeRoom() {
             {apiStatus === "error"   && <span className="shrink-0 text-xs text-red-400">· offline</span>}
             {micDenied              && <span className="shrink-0 text-xs text-amber-500">· mic off (demo)</span>}
           </div>
-          <button onClick={endSession}
-            className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-black text-white shadow-sm active:scale-95 transition-transform"
+          <button onClick={endSession} disabled={ending}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-black text-white shadow-sm active:scale-95 transition-transform disabled:opacity-70"
             style={{ background: "linear-gradient(135deg,#FF8A6B,#EF4444)" }}>
-            <StopCircle size={15} />End
+            <StopCircle size={15} />{ending ? "Ending…" : "End"}
           </button>
         </div>
 
@@ -1641,27 +1689,30 @@ export default function PracticeRoom() {
                 ) : showBottleneck ? (
                   <div className="practice-prompt-card" style={{ animation: "slide-up 0.3s cubic-bezier(0.16,1,0.3,1) forwards" }}>
                     <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-blue-500">
-                      {followUpKind === "nudge" ? "Try this next" : "Coach asks"}
+                      {followUpKind === "nudge" ? "Try one of these next" : "Not sure what to say? Pick one"}
                     </p>
                     {followUpFeedback && (
-                      <p className="mb-1.5 text-xs font-semibold italic text-gray-400">{followUpFeedback}</p>
+                      <p className="mb-2 text-xs font-semibold italic text-gray-400">{followUpFeedback}</p>
                     )}
-                    <p className="text-[15px] font-black leading-snug text-gray-900">{followUpQ}</p>
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={() => { collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); pauseHandledRef.current = false; setMood("listening"); }}
-                        className="flex-1 rounded-xl py-2 text-sm font-black text-white active:scale-95"
-                        style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)" }}
-                      >
-                        Use it
-                      </button>
-                      <button
-                        onClick={() => { showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); pauseHandledRef.current = false; setMood("listening"); }}
-                        className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-gray-500 active:scale-95"
-                      >
-                        Skip
-                      </button>
+                    {/* Always >=2 tappable prompts — pick one to keep going. */}
+                    <div className="space-y-1.5">
+                      {followUpChips.map((chip, i) => (
+                        <button
+                          key={`${chip.text}-${i}`}
+                          onClick={() => { followUpQRef.current = chip.text; setFollowUpQ(chip.text); collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); pauseHandledRef.current = false; setMood("listening"); }}
+                          className="flex w-full items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2 text-left text-[13px] font-bold leading-snug text-gray-800 active:scale-95"
+                        >
+                          <Sparkles size={12} className="mt-0.5 shrink-0 text-blue-500" />
+                          <span>{chip.text}</span>
+                        </button>
+                      ))}
                     </div>
+                    <button
+                      onClick={() => { showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); pauseHandledRef.current = false; setMood("listening"); }}
+                      className="mt-2 w-full rounded-xl bg-gray-100 py-2 text-sm font-bold text-gray-500 active:scale-95"
+                    >
+                      Skip
+                    </button>
                   </div>
                 ) : (
                   // Idle: the single coach status line (replaces the old cat bubble).
@@ -1711,12 +1762,14 @@ export default function PracticeRoom() {
             </>
           ) : (
             <>
-              {/* Pre-start: faint placeholders so the coach card + transcript
-                  positions are visible (reads as "ready", not an empty page). */}
-              <div className="practice-coach-slot relative z-[1] mt-1 flex items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white/30">
+              {/* Pre-start: keep a faint, blurred preview of the live layout
+                  behind, and float one focused "Ready" card on top. The Start
+                  action is the single obvious focal point and stays in view
+                  without any scrolling. */}
+              <div className="practice-coach-slot relative z-[1] mt-1 flex items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white/30 blur-[1.5px]">
                 <span className="text-xs font-semibold text-gray-300">A short coach tip appears here when you pause</span>
               </div>
-              <div className="practice-transcript-shell relative z-[1] mx-auto mt-2 flex w-full max-w-[330px] min-h-0 flex-1 flex-col justify-center">
+              <div className="practice-transcript-shell relative z-[1] mx-auto mt-2 flex w-full max-w-[330px] min-h-0 flex-1 flex-col justify-center blur-[1.5px]">
                 <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-300">
                   <MessageCircle size={11} />Transcript
                 </div>
@@ -1724,10 +1777,24 @@ export default function PracticeRoom() {
                   <span className="text-[14px] italic text-gray-300">Your words will appear here…</span>
                 </div>
               </div>
-              <div className="relative z-[1] mt-3 flex flex-col items-center gap-2 pb-1">
+
+              {/* Focused "Ready" overlay — frosted glass over the preview. */}
+              <div className="absolute inset-0 z-[3] flex flex-col items-center justify-center gap-4 rounded-[1.5rem] bg-white/55 px-6 text-center backdrop-blur-sm">
+                {/* Topic, highlighted — carried from Home's "Use this topic". */}
+                <div className="w-full max-w-[300px] rounded-2xl border border-blue-100 bg-white/90 px-4 py-3 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-500">{topic ? "Your topic" : "Free talk"}</p>
+                  <p className="mt-1 text-sm font-black leading-snug text-gray-800">🎯 {topic || practiceMode.label}</p>
+                </div>
+
+                {/* A calm beat before speaking — lowers the "afraid to start" pressure. */}
+                <div>
+                  <p className="text-lg font-black text-gray-900">Ready when you are</p>
+                  <p className="mt-1 text-xs font-semibold text-gray-400">Take a breath — tap to start, then just talk.</p>
+                </div>
+
                 <button ref={startBtnRef} onClick={startSession}
                   disabled={apiStatus === "loading"}
-                  className="rounded-2xl px-8 py-4 text-base font-black text-white shadow-md transition-transform active:scale-95 disabled:opacity-60"
+                  className="rounded-2xl px-10 py-4 text-lg font-black text-white shadow-md transition-transform active:scale-95 disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg,#58A9FF,#7ED957)", boxShadow: "0 6px 20px rgba(88,169,255,0.3)" }}>
                   {apiStatus === "loading" ? "Loading AI..." : "🎙️ Start Practice"}
                 </button>
