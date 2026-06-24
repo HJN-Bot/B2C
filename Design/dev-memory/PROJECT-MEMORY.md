@@ -17,10 +17,13 @@ SpeakSpark = 面向 6–9 年级（11–15 岁）中学生的**英文科普演�
 - Vite + React + TS + TailwindCSS + shadcn/ui，包管理见 `bun.lockb` / `package-lock.json`。
 - 路由：**HashRouter**（为 Vercel 静态托管，刷新子页不 404）。路由要带 `#`，如 `#/session-end`。
 - 没有单元 / E2E 测试。"跑测试" = `npx tsc --noEmit` + `npm run build` + `npm run dev` 手动验证。
-- 部署：Vercel，`vercel.json`（build=vite, output=dist, SPA rewrites）。
+- 部署：Vercel（海外，`vercel.json`），+ 腾讯云 EdgeOne Pages（国内，`edgeone makers deploy dist -n speakspark -t <token> -e production`，ProjectId `makers-uefwmvwbhogy`）。
+- ⚠️ **EdgeOne 默认域名 `*.edgeone.cool` 不能做公开分享链接**（2026-06-24 实测确认）：平台级反滥用机制给所有默认域名强制带 `eo_token/eo_time`，**链接仅 3 小时有效、不可关闭**，过期即 401。控制台**没有**访问控制开关，CLI 也无此命令。
+- **公开访问唯一解 = 绑自定义域名**：① 面向大陆 + 大陆加速 → **必须 ICP 备案**（周期以周计，得提前启动）；② 仅海外加速 → 通常免备案。无自定义域名时，临时可用 Vercel 链接兜底（海外，国内慢/可能不稳）。
 
 ## 后台（Supabase）
 - ✅ **2026-06-18：项目 `jyofoabobuwfowpctbfd` 已恢复**，`gemini-proxy` 实测返回真实内容、key 已配；AI（takeaway/coach/停顿追问）全部跑通。（曾 2026-06-14 失效 NXDOMAIN = 免费版不活动被暂停。）
+- ✅ **2026-06-24 复测仍通**：DNS 正常、`gemini-proxy` HTTP 200 真实返回。**移动端 STT**：Deepgram key 已写入本地 `.env`（`VITE_DEEPGRAM_API_KEY`，实测有效）。⚠️ VITE_ 是构建时注入且会进客户端 bundle → 线上要在 EdgeOne 构建环境配同名变量、并在 Deepgram 控制台域名白名单加 `*.edgeone.cool` 防滥用，重新部署后 iPhone 才生效。
 - ⚠️ **token 截断坑（已修，记牢）**：`gemini-2.5-flash` 的"思考"约吃 **700–800 token 且计入 `maxOutputTokens`**。Takeaway 大 JSON 在 `1600` 下被截断 → `normalizeTakeaway` 返 null → 退本地（界面 "unreadable takeaway format"）。已调 takeaway→**4000**、chat→2000。以后加复杂 JSON 输出务必留足 token，或在 edge function 加 `thinkingConfig:{thinkingBudget:0}`（需部署）。
 - 若再次失效：控制台 Restore；若被回收则新建项目改 `client.ts`+`config.toml`、部署函数(gemini-proxy/analyze-voice/get-gemini-api-key) + `supabase secrets set GEMINI_API_KEY`。本机无 supabase CLI。
 - project_id：**当前在用 `jyofoabobuwfowpctbfd`（创始团队旧项目，Gemini 可用）**。自有项目 `mgufxtpqbcjoyadqcxzg` 已建好但**暂缓迁移**（前端切回旧后端保 Gemini）；阶段二再切：部署 Edge Function（gemini-proxy/get-gemini-api-key/analyze-voice）+ `supabase secrets set GEMINI_API_KEY` 后才指向新项目。当前重点=国内 EdgeOne 链接直接可打开。

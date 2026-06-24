@@ -4,6 +4,24 @@
 
 ---
 
+## 📌 2026-06-24 — 用户测试#1 反馈 → P0/P1 落地（待浏览器/真机验证）
+- **反馈处理新流程**：原文+模板+追踪表在 `Design/user-feedback/`；分析用「信现象/疑药方」框架，区分现象 vs 决策，分 A/B/C 档。本次 A 档 4 项已做，C 档（⑤屏幕盲区/⑥动机）降级待验证。详见 [user-testing-1 分析](../user-feedback/submissions/2026-06-24-user-testing-1-analysis.md)。
+- **基建实测通过**：EdgeOne 站点 HTTP 200 公开可达；老 Supabase+Gemini `gemini-proxy` 实测真实返回；Deepgram key（用户提供）有效，写入本地 `.env`。
+- ✅🧪 **P0 一键开始**（`PracticeRoom.tsx`）：未开始改成毛玻璃模糊背景 + 中间 Ready 卡（高亮 Topic + 准备感 + 大 Start），不用滑、不自动录。[spec](../specs/2026-06-24-p0-one-tap-start.md)
+- ✅🧪 **P1 prompts 稳定**（`PracticeRoom.tsx`）：停顿卡恒给 2–3 个可点 chip（`buildPauseSuggestions`）+ 静态题库兜底，永不空；无缓冲立刻出本地 chip，AI 回来再升级。[spec](../specs/2026-06-24-p1-prompts-stable.md)
+- ✅🧪 **Takeaway 瘦身 + Say it like this**（`TakeawayPage.tsx`）：首屏无分（headline+best+level-up）；新明星模块默认展开（Steal these lines 精选金句库填词 / Power up words / Build out idea / trying point）；详情+Coach 折成 `<details>` 默认收起；KTV 数字保留在折叠详情。[spec](../specs/2026-06-24-takeaway-say-it-like-this.md)
+- tsc+build 全绿，**未浏览器验证**。审阅清单：[REVIEW-2026-06-24.md](./REVIEW-2026-06-24.md)。
+
+### 2026-06-24 晚 · 二轮微调（同 session，tsc+build 绿）
+- ✅🧪 **End 按钮卡顿修复**（`PracticeRoom.tsx`）：根因=`endSession` `await processPhrase(true)` 里有 Gemini 网络调用阻塞导航、按钮无反馈→像没反应。改：点击即 `setEnding(true)` 显示「Ending…」并禁用 + 用 `Promise.race(flush, 800ms)` 兜底，最多 0.8s 必跳转。
+- ✅🧪 **Takeaway 再瘦身 + IA 重排**（Owner 指示，`TakeawayPage.tsx`）：首屏合成**一个短 Hero**（庆祝一行 + ⭐ 最好的一句，删 phrases/words 行和单独 encouragement/level-up 卡）；明星模块从"Say it like this"改成 **Level up = 三张界限分明的色卡**（✨Words 绿 / 🧱Sentences 蓝 / 🎬Storytelling 紫，各带一句 purpose），make_stronger + trying point 并入 Storytelling 卡；In detail / Coach 仍折叠。
+- ✅🧪 **金句换自然口语版**（`SENTENCE_FRAMES`）：从教科书模板换成 YouTube/采访/TED 那种自然金句（"Here's the thing about…","What really blew my mind is…" 等）。⚠️ 仍是占位，**待换权威/有出处版本**（v2 spec 的金句库）。
+- ✅ **EdgeOne 已部署上线**（2026-06-24 晚，用 Jianan 给的 token `edgeone makers deploy dist -n speakspark -t <token> -e production`，Deployment ID `dpmobne7s650`）。实测线上 JS hash 与本地新构建一致、HTTP 200 → 今天全部改动已上线 https://speakspark-0zgkikod.edgeone.cool 。token 仅用于该次命令，未落任何文件。
+- ⚠️ **Deepgram 安全**：key 已进客户端 bundle（公开可见）→ 部署前/后尽快在 Deepgram 控制台域名白名单加 `*.edgeone.cool` + `localhost`。
+- ⏳ 仍未 git 提交（等用户发话）。
+
+---
+
 ## 📌 版本总结 · 2026-06-11（推远端前）
 
 ### 这一版改了什么
