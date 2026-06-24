@@ -11,6 +11,31 @@
 
 ---
 
+## 📍 最新状态 · 2026-06-24（开工先看这条）
+
+**今天 shipped**（已 commit + push 到 `origin/jianan/speakspark`，commits `2456a82`/`ee999bf`/`4a2b0cc`，tsc+build 绿、未浏览器验证）：
+- P0 练习页一键开始：未开始=毛玻璃 Ready 卡（高亮 topic + 大 Start，不滑、不自动录）。
+- P1 停顿提示词：恒给 ≥2 个可点 chip + 静态题库兜底，永不空。
+- **修 End 按钮卡顿**：点击即「Ending…」+ Gemini flush 限 0.8s，必跳转。
+- Takeaway 重排：首屏浓缩成「单条最好金句」→ Level up 三色卡（Words/Sentences/Storytelling）→ In detail / Coach 折叠；金句换自然口语版（占位，待权威库）。
+
+**已部署上线**（今天这版）：
+- Vercel 生产 **https://speakspark-one.vercel.app**（稳定可分享，海外，国内能开稍慢）。
+- EdgeOne 已传最新 dist，但默认域名 3h token 不可分享（见 §2 注 + [[speakspark-edgeone-domain]]）。
+
+**基建实测**：Supabase `jyofoabobuwfowpctbfd` + `gemini-proxy` 正常返回；Deepgram key 有效、已进本地 `.env`（gitignored）。
+
+**待 Owner 决策 / 操作**：
+1. 公开链接：买自定义域名 → 绑 EdgeOne **海外加速（免备案）**本周可用；要大陆好性能则启动 ICP 备案（长杆）。
+2. Deepgram 域名白名单加 `*.vercel.app` / `*.edgeone.cool` / `localhost`；若要 Vercel 上 iOS STT，在 Vercel 设 `VITE_DEEPGRAM_API_KEY`。
+3. **vet 金句库**（内容内核）：`Design/specs/2026-06-24-say-it-like-this-v2.md` 第 1 节。
+4. 定 **pin 功能**要不要做：`Design/specs/2026-06-24-pin-lines-to-practice.md`（探索性，含自我反驳）。
+
+**反馈处理流程**（新）：`Design/user-feedback/`（原文+模板+追踪表），分析用「信现象/疑药方 + A/B/C 档」框架，见 `submissions/2026-06-24-user-testing-1-analysis.md`。
+**本 session 审阅清单**：`Design/dev-memory/REVIEW-2026-06-24.md`。
+
+---
+
 ## 0. 这次交接的本质（必须先对齐）
 
 和创始团队聊完后，我的角色变了：**从「写功能的人」变成「这个产品的实际 owner」。**
@@ -43,8 +68,8 @@
 |----|------------|------|
 | **GitHub（主仓库）** | https://github.com/HJN-Bot/B2C.git （remote `origin`） | 当前活跃分支 `jianan/speakspark` |
 | GitHub（旧 remote） | https://github.com/dounan1/meaningfully.git （remote `meaningfully`） | 项目前身 meaningfully，保留备查 |
-| **部署（海外 · Vercel）** | https://speakspark.vercel.app（项目 `speakspark`，projectId `prj_2ClAaZSum8Rc4AC2QVML9vA3sJg3`） | 静态托管 dist，SPA rewrites |
-| **部署（国内 · 腾讯云 EdgeOne Pages）** | https://speakspark-0zgkikod.edgeone.cool（ProjectId `makers-uefwmvwbhogy`） | 国内 CDN，接 GitHub，`edgeone makers deploy`。**实测主用这个链接** |
+| **部署（海外 · Vercel）** | 生产别名 **https://speakspark-one.vercel.app**（项目 `speakspark`，projectId `prj_2ClAaZSum8Rc4AC2QVML9vA3sJg3`） | `vercel --prod --yes` 部署。**稳定、不过期、可分享**（海外节点，国内能开稍慢）。⚠️ iOS STT 需在 Vercel 设 `VITE_DEEPGRAM_API_KEY` |
+| **部署（国内 · 腾讯云 EdgeOne Pages）** | https://speakspark-0zgkikod.edgeone.cool（ProjectId `makers-uefwmvwbhogy`） | `edgeone makers deploy dist -n speakspark -t <token> -e production`。⚠️ **默认域名带 3h token、不可做公开分享链接**（过期 401）；公开访问要**绑自定义域名**（大陆加速需 ICP 备案，海外加速免备案）。详见 [[speakspark-edgeone-domain]] |
 | **后端（Supabase · 当前在用）** | 项目 ref `jyofoabobuwfowpctbfd`（创始团队，前端指向它） | Postgres + Edge Functions + Gemini key broker。**暂时沿用旧后端**（Gemini 可用，China→海外有延迟） |
 | 后端（自有 · 待迁） | 项目 ref `mgufxtpqbcjoyadqcxzg`（已建好，前端**未**指向） | 阶段二再迁：部署函数 + 设 GEMINI_API_KEY 后切过去。现在切过去 Gemini 会断 |
 | AI（教练） | Google Gemini（`gemini-2.5-flash`，走 Edge Function 代理） | key 存 Supabase，不暴露前端 |
