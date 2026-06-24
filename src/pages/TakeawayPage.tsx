@@ -126,6 +126,41 @@ function trendLevel(value: number): "strong" | "growing" | "start" {
   return "start";
 }
 
+// ── "Say it like this" — natural, spoken-English "golden lines", the way
+// engaging speakers actually talk in interviews / YouTube / TED, NOT textbook
+// templates. Placeholder set — swap for a sourced, authoritative library later.
+// {topic} fills with a word the student actually used when we have one.
+const SENTENCE_FRAMES = [
+  "Here's the thing about {topic}: ___.",
+  "What really blew my mind is ___.",
+  "Most people don't realize that ___.",
+  "And that's when it hit me — ___.",
+  "Now here's where it gets interesting: ___.",
+  "I used to think ___ — turns out, ___.",
+  "If there's one thing to remember, it's this: ___.",
+];
+
+// The thinking structure for stretching a thin point into a full beat.
+const BUILD_OUT_SKELETON = [
+  "Claim — say your main point in one clear line.",
+  "Example — back it with one real example or number.",
+  "Why it matters — connect it to real life.",
+  "So what — end with what you want them to remember.",
+];
+
+function fillFrame(template: string, topic: string): string {
+  return template.replace(/\{topic\}/g, topic || "this");
+}
+
+// reuse_words arrive as "their word → stronger upgrade"; split into a chip.
+function parsePowerWord(entry: string): { from?: string; to: string } {
+  const parts = entry.split(/\s*(?:→|->|»|=>)\s*/);
+  if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
+    return { from: parts[0].trim(), to: parts.slice(1).join(" → ").trim() };
+  }
+  return { to: entry.trim() };
+}
+
 function parseJson<T>(text: string): T | null {
   const cleaned = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
   try {
@@ -521,33 +556,31 @@ export default function TakeawayPage() {
   }, [hasSessionData, practiceMode, timer, wordCount, highlightWords, ktvScore, transcript]);
 
   const plan = takeaway?.next_run_plan;
+  // A word the student actually used, to fill the curated frames with.
+  const topicWord = highlightWords[0] || getUsefulWords(transcript, highlightWords)[0] || "";
 
   return (
     <div className="min-h-dvh bg-gray-50">
       <div className="flex min-h-dvh flex-col gap-4 overflow-y-auto px-4 pb-28 pt-6">
-        {/* ═══════════ BLOCK ① Summary & encouragement ═══════════ */}
-        <div className="flex items-center gap-2 px-1">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-xs font-black text-white">1</span>
-          <h2 className="text-lg font-black text-gray-900">Your run</h2>
-        </div>
-
+        {/* ═══════════ Hero — one short celebration + the single best line ═══════════ */}
         <section className="rounded-[1.5rem] border border-amber-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-widest text-amber-500">Practice complete</p>
-          <div className="mt-2 flex items-end justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-black leading-tight text-gray-900">
-                {celebrationHeadline(timer)}
-              </h1>
-              <p className="mt-2 text-sm font-semibold text-gray-400">
-                {(highlightWords.length || highlightCount) ? `${highlightWords.length || highlightCount} phrases saved` : "First steps saved"} · {wordCount || "some"} words spoken
-              </p>
+              <p className="text-xs font-black uppercase tracking-widest text-amber-500">Practice complete</p>
+              <h1 className="mt-1 text-xl font-black leading-tight text-gray-900">{celebrationHeadline(timer)}</h1>
             </div>
-            <div className="text-5xl">🎉</div>
+            <div className="text-4xl">🎉</div>
           </div>
-          {takeaway?.encouragement && (
-            <p className="mt-3 rounded-2xl bg-amber-50/70 px-3 py-2.5 text-sm font-bold leading-relaxed text-amber-700">
-              {takeaway.encouragement}
-            </p>
+          {takeaway && takeaway.what_worked.length > 0 && (
+            <div className="mt-3 rounded-2xl bg-amber-50/70 px-3 py-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">⭐ Your best line</p>
+              <p className="mt-1 text-sm font-bold leading-relaxed text-gray-800">{renderInline(takeaway.what_worked[0].point)}</p>
+              {takeaway.what_worked[0].quote && (
+                <p className="mt-1.5 rounded-lg border-l-2 border-amber-200 bg-white/70 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                  You said: “{takeaway.what_worked[0].quote}”
+                </p>
+              )}
+            </div>
           )}
         </section>
 
@@ -574,246 +607,249 @@ export default function TakeawayPage() {
           </div>
         )}
 
-        {/* One quick win up top — the full detail lives in block ③ below, so we
-            lead with affirmation but don't bury the Level-up plan. */}
-        {takeaway && takeaway.what_worked.length > 0 && (
-          <section className="rounded-[1.25rem] border border-blue-100 bg-blue-50/40 p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-widest text-blue-500">One thing you did well</p>
-            <p className="mt-2 text-sm font-bold leading-relaxed text-gray-800">{renderInline(takeaway.what_worked[0].point)}</p>
-            {takeaway.what_worked[0].quote && (
-              <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/70 px-2 py-1 text-xs font-semibold italic text-gray-500">
-                You said: “{takeaway.what_worked[0].quote}”
-              </p>
-            )}
-          </section>
-        )}
-
-        {/* ═══════════ BLOCK ② Level up — amplify + change + plan ═══════════ */}
-        <div className="flex items-center gap-2 px-1 pt-3">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-xs font-black text-white">2</span>
-          <h2 className="text-lg font-black text-gray-900">Level up</h2>
-        </div>
-
-        {/* When the AI failed we fell back to generic templates — don't dress
-            those up as real, personalized advice; show one honest card instead. */}
-        {takeawayError && takeawayStatus === "ready" ? (
-          <section className="rounded-[1.25rem] border border-amber-200 bg-amber-50/70 p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-sm font-black text-amber-700">
-              <AlertTriangle size={15} />
-              Personalized advice needs the coach AI
+        {/* Coach still writing (no takeaway yet) */}
+        {!takeaway && takeawayStatus === "thinking" && (
+          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-black text-gray-500">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+              Coach is writing your takeaway…
             </div>
-            <p className="mt-1.5 text-xs font-semibold leading-relaxed text-amber-600">
-              The AI didn't respond this run, so we're not inventing tips that don't match what you said. Your scores in "Your run in detail" below are real — tap to get the AI plan.
-            </p>
-            <button onClick={() => void generateTakeaway()} className="mt-3 rounded-xl bg-white px-4 py-2 text-xs font-black text-amber-700 shadow-sm active:scale-95">
-              Try again
-            </button>
-          </section>
-        ) : (
-        <>
-        {/* Amplify — a strength worth doing MORE of */}
-        {takeaway && takeaway.amplify.length > 0 && (
-          <section className="rounded-[1.25rem] border border-green-100 bg-green-50/40 p-4 shadow-sm">
-            <div className="flex items-center gap-2">
-              <ArrowUpRight size={16} className="text-green-600" />
-              <p className="text-xs font-black uppercase tracking-widest text-green-600">Amplify · do more of this</p>
-            </div>
-            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-              {takeaway.amplify.map((item) => (
-                <div key={item.point}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
-                  {item.quote && (
-                    <p className="mt-1 rounded-lg border-l-2 border-green-200 bg-green-50/70 px-2 py-1 text-xs font-semibold italic text-gray-500">
-                      You said: “{item.quote}”
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Change + how to say it next time — merged into one block to cut reading cost */}
-        <section className="rounded-[1.25rem] border border-orange-100 bg-orange-50/40 p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Wrench size={16} className="text-orange-500" />
-              <p className="text-xs font-black uppercase tracking-widest text-orange-500">Change · and how to say it next time</p>
-            </div>
-            <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-black text-orange-600">
-              {takeawayStatus === "thinking" ? "Thinking…" : takeawayStatus === "idle" ? "Practice first" : "From this run"}
-            </span>
-          </div>
-
-          {takeawayStatus === "idle" && (
-            <div className="rounded-2xl bg-blue-50 p-3">
-              <p className="text-sm font-bold leading-relaxed text-blue-700">Finish one practice run first. Then this becomes a real AI plan.</p>
-              <button onClick={() => navigate("/practice")} className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-black text-blue-600 shadow-sm">
-                Start practice
-              </button>
-            </div>
-          )}
-
-          {takeawayStatus === "thinking" && (
-            <div className="space-y-2">
+            <div className="mt-3 space-y-2">
               <div className="h-4 w-3/4 animate-pulse rounded-full bg-gray-100" />
               <div className="h-14 animate-pulse rounded-2xl bg-gray-100" />
-              <div className="h-4 w-1/2 animate-pulse rounded-full bg-gray-100" />
             </div>
-          )}
+          </section>
+        )}
 
-          {takeawayStatus === "error" && (
-            <div className="rounded-2xl bg-gray-50 p-3">
-              <p className="text-sm font-bold text-gray-700">Coach plan is ready from this run.</p>
-              <button onClick={() => void generateTakeaway()} className="mt-2 rounded-xl border border-gray-100 bg-white px-3 py-2 text-xs font-black text-gray-500 shadow-sm">
-                Refresh plan
-              </button>
+        {/* No run yet */}
+        {!takeaway && takeawayStatus === "idle" && (
+          <section className="rounded-[1.25rem] border border-blue-100 bg-blue-50/50 p-4 shadow-sm">
+            <p className="text-sm font-bold leading-relaxed text-blue-700">Finish one practice run, then your best line and "Say it like this" tips show up here.</p>
+            <button onClick={() => navigate("/practice")} className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-black text-blue-600 shadow-sm">
+              Start practice
+            </button>
+          </section>
+        )}
+
+        {/* ═══════════ LEVEL UP — three clear ways to say it better ═══════════ */}
+        {takeaway && (
+          <>
+            <div className="px-1 pt-2">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-blue-500" />
+                <h2 className="text-lg font-black text-gray-900">Level up</h2>
+              </div>
+              <p className="mt-0.5 text-xs font-semibold text-gray-400">Three ways to say it better — words, sentences, story.</p>
             </div>
-          )}
 
-          {plan && takeawayStatus === "ready" && (
-            <div className="space-y-3">
-              {/* the one thing to change, with the exact words it refers to */}
-              {takeaway?.make_stronger.map((item) => (
-                <div key={item.point}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
-                  {item.quote && (
-                    <p className="mt-1 rounded-lg border-l-2 border-orange-200 bg-orange-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
-                      You said: “{item.quote}”
-                    </p>
+            {/* ✨ WORDS — swap a word for a stronger one */}
+            <section className="rounded-[1.25rem] border-l-4 border-green-400 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-base">✨</span>
+                <p className="text-sm font-black text-gray-900">Words</p>
+              </div>
+              <p className="mt-0.5 text-xs font-semibold text-gray-400">Swap a word for a stronger one.</p>
+              {plan && plan.reuse_words.length > 0 ? (
+                <div className="mt-2 space-y-1.5">
+                  {plan.reuse_words.map((word) => {
+                    const { from, to } = parsePowerWord(word);
+                    return (
+                      <div key={word} className="flex flex-wrap items-center gap-2 text-sm font-bold">
+                        {from ? (
+                          <>
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-400 line-through">{from}</span>
+                            <ArrowUpRight size={14} className="shrink-0 text-green-500" />
+                            <span className="rounded-full bg-green-50 px-2 py-0.5 text-green-700">{to}</span>
+                          </>
+                        ) : (
+                          <span className="rounded-full bg-green-50 px-2 py-0.5 text-green-700">
+                            <Sparkles size={10} className="mr-1 inline" />{to}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm font-semibold text-gray-400">Speak a bit more next run and the coach will pick words to upgrade.</p>
+              )}
+            </section>
+
+            {/* 🧱 SENTENCES — steal a line and drop it into your talk */}
+            <section className="rounded-[1.25rem] border-l-4 border-blue-400 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🧱</span>
+                <p className="text-sm font-black text-gray-900">Sentences</p>
+              </div>
+              <p className="mt-0.5 text-xs font-semibold text-gray-400">Steal a line and drop it into your talk.</p>
+              {plan?.say_this && (
+                <div className="mt-2 rounded-2xl bg-blue-50 px-3 py-2.5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-500">Your line, leveled up</p>
+                  <p className="mt-1 text-sm font-black leading-relaxed text-gray-900">"{renderInline(plan.say_this)}"</p>
+                </div>
+              )}
+              <div className="mt-2 space-y-1.5">
+                {SENTENCE_FRAMES.slice(0, 3).map((frame) => (
+                  <div key={frame} className="rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2 text-sm font-bold leading-snug text-gray-700">
+                    {fillFrame(frame, topicWord)}
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* 🎬 STORYTELLING — shape your idea so it lands */}
+            <section className="rounded-[1.25rem] border-l-4 border-purple-400 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🎬</span>
+                <p className="text-sm font-black text-gray-900">Storytelling</p>
+              </div>
+              <p className="mt-0.5 text-xs font-semibold text-gray-400">Shape your idea so it lands.</p>
+              <div className="mt-2 space-y-1.5">
+                {BUILD_OUT_SKELETON.map((step, i) => (
+                  <div key={step} className="flex gap-2">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[11px] font-black text-purple-600">{i + 1}</span>
+                    <p className="text-sm font-bold leading-snug text-gray-700">{step}</p>
+                  </div>
+                ))}
+              </div>
+              {takeaway.make_stronger.length > 0 && (
+                <div className="mt-3 rounded-2xl bg-purple-50/70 px-3 py-2.5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-purple-600">This run's fix</p>
+                  <p className="mt-1 text-sm font-bold leading-relaxed text-gray-800">{renderInline(takeaway.make_stronger[0].point)}</p>
+                  {takeaway.make_stronger[0].quote && (
+                    <p className="mt-1 text-xs font-semibold italic text-gray-500">You said: “{takeaway.make_stronger[0].quote}”</p>
                   )}
                 </div>
-              ))}
-              <div className="rounded-2xl bg-green-50 px-3 py-3">
-                <p className="text-[11px] font-black uppercase tracking-widest text-green-600">Say this next time</p>
-                <div className="mt-1 max-h-24 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  <p className="text-sm font-black leading-relaxed text-gray-900">"{renderInline(plan.say_this)}"</p>
+              )}
+              {plan?.one_move && (
+                <div className="mt-2 rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2.5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">🎯 Your next trying point</p>
+                  <p className="mt-1 text-sm font-bold leading-relaxed text-gray-800">{renderInline(plan.one_move)}</p>
                 </div>
-              </div>
-              {plan.reuse_words.length > 0 && (
+              )}
+            </section>
+          </>
+        )}
+
+        {/* ═══════════ Your run in detail — collapsed by default ═══════════ */}
+        {takeaway && (
+          <details className="group rounded-[1.25rem] border border-gray-100 bg-white shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-black text-gray-700">
+              <span className="flex items-center gap-2"><Blocks size={15} className="text-gray-400" />Your run in detail</span>
+              <ChevronRight size={16} className="text-gray-300 transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="space-y-4 px-4 pb-4">
+
+              {/* what you talked about */}
+              {takeaway.summary.length > 0 && (
                 <div>
-                  <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-blue-500">Words to reuse</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {plan.reuse_words.map((word) => (
-                      <span key={word} className="rounded-full bg-blue-50 px-2 py-1 text-xs font-bold text-blue-600">
-                        <Sparkles size={10} className="mr-1 inline" />{word}
-                      </span>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">What you talked about</p>
+                  <div className="mt-2 space-y-1.5">
+                    {takeaway.summary.map((point) => (
+                      <div key={point} className="flex gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
+                        <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(point)}</p>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2.5">
-                <p className="text-[11px] font-black uppercase tracking-widest text-amber-600">🎯 Your next trying point</p>
-                <div className="mt-1 max-h-20 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(plan.one_move)}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-        </>
-        )}
 
-        {/* ═══════════ BLOCK ③ Your run in detail — moved below Level up ═══════════ */}
-        {/* Only show once there's a real run; otherwise it's an empty heading. */}
-        {takeaway && (
-        <div className="flex items-center gap-2 px-1 pt-3">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-xs font-black text-white">3</span>
-          <h2 className="text-lg font-black text-gray-900">Your run in detail</h2>
-        </div>
-        )}
-
-        {/* what you talked about */}
-        {takeaway && takeaway.summary.length > 0 && (
-          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">What you talked about</p>
-            <div className="mt-2 space-y-1.5">
-              {takeaway.summary.map((point) => (
-                <div key={point} className="flex gap-2">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(point)}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* the rest of what you did well (the first one is shown up top) */}
-        {takeaway && takeaway.what_worked.length > 1 && (
-          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-widest text-blue-500">More you did well</p>
-            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-              {takeaway.what_worked.slice(1).map((item) => (
-                <div key={item.point}>
-                  <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
-                  {item.quote && (
-                    <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
-                      You said: “{item.quote}”
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Your progress this run — scores + what moved */}
-        {takeaway && (
-          <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your progress this run</p>
-              <TrendingUp size={15} className="text-green-500" />
-            </div>
-            <div className="space-y-2.5">
-              {(["flow", "words", "sentences", "story"] as KTVMetric[]).map((metric) => {
-                const level = trendLevel(ktvScore[metric]);
-                const tag = level === "strong" ? "Strong" : level === "growing" ? "Growing" : "Just starting";
-                const tagStyle = level === "strong" ? "bg-green-50 text-green-600" : level === "growing" ? "bg-blue-50 text-blue-600" : "bg-gray-50 text-gray-400";
-                const { Icon, color } = KTV_META[metric];
-                return (
-                  <div key={metric} className="flex items-center gap-2">
-                    <Icon size={15} className="w-5 shrink-0" style={{ color }} />
-                    <span className="w-16 shrink-0 text-xs font-bold text-gray-500">{KTV_META[metric].label}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-                      <div className="h-full rounded-full" style={{ width: `${ktvScore[metric]}%`, backgroundColor: color }} />
-                    </div>
-                    <span className="w-7 text-right font-mono text-xs font-black" style={{ color }}>{Math.round(ktvScore[metric])}</span>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${tagStyle}`}>{tag}</span>
+              {/* a strength worth doing more of */}
+              {takeaway.amplify.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <ArrowUpRight size={14} className="text-green-600" />
+                    <p className="text-xs font-black uppercase tracking-widest text-green-600">Do more of this</p>
                   </div>
-                );
-              })}
-            </div>
-            {ktvEvents.length > 0 && (
-              <div className="mt-3 border-t border-gray-100 pt-2">
-                <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-gray-300">What moved</p>
-                <div className="space-y-1">
-                  {ktvEvents.slice(0, 4).map((e) => (
-                    <p key={e.id} className="text-xs font-semibold text-gray-500">
-                      <span className="font-black text-green-600">+{e.delta} {KTV_META[e.metric].label}</span> · {e.reason}
-                    </p>
-                  ))}
+                  <div className="mt-2 space-y-3">
+                    {takeaway.amplify.map((item) => (
+                      <div key={item.point}>
+                        <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
+                        {item.quote && (
+                          <p className="mt-1 rounded-lg border-l-2 border-green-200 bg-green-50/70 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                            You said: “{item.quote}”
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
+
+              {/* the rest of what they did well (the first is shown up top) */}
+              {takeaway.what_worked.length > 1 && (
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-blue-500">More you did well</p>
+                  <div className="mt-2 space-y-3">
+                    {takeaway.what_worked.slice(1).map((item) => (
+                      <div key={item.point}>
+                        <p className="text-sm font-bold leading-relaxed text-gray-800">{renderInline(item.point)}</p>
+                        {item.quote && (
+                          <p className="mt-1 rounded-lg border-l-2 border-blue-200 bg-blue-50/60 px-2 py-1 text-xs font-semibold italic text-gray-500">
+                            You said: “{item.quote}”
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* progress this run — the KTV numbers live here as private evidence */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your progress this run</p>
+                  <TrendingUp size={15} className="text-green-500" />
+                </div>
+                <div className="space-y-2.5">
+                  {(["flow", "words", "sentences", "story"] as KTVMetric[]).map((metric) => {
+                    const level = trendLevel(ktvScore[metric]);
+                    const tag = level === "strong" ? "Strong" : level === "growing" ? "Growing" : "Just starting";
+                    const tagStyle = level === "strong" ? "bg-green-50 text-green-600" : level === "growing" ? "bg-blue-50 text-blue-600" : "bg-gray-50 text-gray-400";
+                    const { Icon, color } = KTV_META[metric];
+                    return (
+                      <div key={metric} className="flex items-center gap-2">
+                        <Icon size={15} className="w-5 shrink-0" style={{ color }} />
+                        <span className="w-16 shrink-0 text-xs font-bold text-gray-500">{KTV_META[metric].label}</span>
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                          <div className="h-full rounded-full" style={{ width: `${ktvScore[metric]}%`, backgroundColor: color }} />
+                        </div>
+                        <span className="w-7 text-right font-mono text-xs font-black" style={{ color }}>{Math.round(ktvScore[metric])}</span>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${tagStyle}`}>{tag}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {ktvEvents.length > 0 && (
+                  <div className="mt-3 border-t border-gray-100 pt-2">
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-gray-300">What moved</p>
+                    <div className="space-y-1">
+                      {ktvEvents.slice(0, 4).map((e) => (
+                        <p key={e.id} className="text-xs font-semibold text-gray-500">
+                          <span className="font-black text-green-600">+{e.delta} {KTV_META[e.metric].label}</span> · {e.reason}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </section>
+            </div>
+          </details>
         )}
 
-        {/* ═══════════ BLOCK ④ Coach — chatbox + go again ═══════════ */}
-        <div className="flex items-center gap-2 px-1 pt-3">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs font-black text-white">{takeaway ? 4 : 3}</span>
-          <h2 className="text-lg font-black text-gray-900">Coach</h2>
-        </div>
-
-        <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageCircle size={16} className="text-blue-500" />
-              <p className="text-xs font-black uppercase tracking-widest text-gray-400">Coach chatbox</p>
-            </div>
-            <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-600">
-              {chatStatus === "thinking" ? "Coach thinking…" : hasSessionData ? "Coach ready" : "Practice first"}
+        {/* ═══════════ Coach — collapsed by default ═══════════ */}
+        <details className="group rounded-[1.25rem] border border-gray-100 bg-white shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-black text-gray-700">
+            <span className="flex items-center gap-2">
+              <MessageCircle size={15} className="text-blue-500" />Coach chatbox
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600">
+                {chatStatus === "thinking" ? "thinking…" : hasSessionData ? "ready" : "practice first"}
+              </span>
             </span>
-          </div>
+            <ChevronRight size={16} className="text-gray-300 transition-transform group-open:rotate-90" />
+          </summary>
+          <div className="px-4 pb-4">
 
           <div className="h-[240px] overflow-y-auto rounded-2xl bg-gray-50 p-3" style={{ scrollbarWidth: "thin" }}>
             <div className="space-y-3">
@@ -864,7 +900,8 @@ export default function TakeawayPage() {
               <Send size={15} />
             </button>
           </form>
-        </section>
+          </div>
+        </details>
 
         <div className="flex gap-3 pt-1">
           <button onClick={() => navigate("/practice")} className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 text-base font-black text-white shadow-md active:scale-95" style={{ background: "linear-gradient(135deg, #58A9FF, #7ED957)" }}>
