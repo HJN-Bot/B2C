@@ -19,6 +19,11 @@
 - ✅ **EdgeOne 已部署上线**（2026-06-24 晚，用 Jianan 给的 token `edgeone makers deploy dist -n speakspark -t <token> -e production`，Deployment ID `dpmobne7s650`）。实测线上 JS hash 与本地新构建一致、HTTP 200 → 今天全部改动已上线 https://speakspark-0zgkikod.edgeone.cool 。token 仅用于该次命令，未落任何文件。
 - ⚠️ **Deepgram 安全**：key 已进客户端 bundle（公开可见）→ 部署前/后尽快在 Deepgram 控制台域名白名单加 `*.edgeone.cool` + `localhost`。
 - ⏳ 仍未 git 提交（等用户发话）。
+- ✅ 已提交+推送+部署（Vercel `speakspark-one.vercel.app` + EdgeOne）。Words 卡改成「2–3 词上下文短语 + 弱词划掉换强词」(`3f19c7a`)。Vercel 已设 `VITE_DEEPGRAM_API_KEY`。
+- **决策（2026-06-25）**：Deepgram key 安全**暂不动**（验证期用免费额度，盯用量、异常轮换）；临时 token 改造押后。Deepgram **无域名白名单功能**（查证纠正）。
+- ⚠️ **国内可访问性卡点**：Vercel `*.vercel.app` 国内无 VPN 不可靠/常被挡；EdgeOne 默认域名 3h token 不可分享。**无 VPN 可在大陆稳定打开的链接 = 必须 ICP 备案的自定义域名（EdgeOne 大陆加速）**。
+- **决策（2026-06-25）路线 = web + 立刻启动 ICP 备案**（用户：微信+海外都有；海外用 Vercel，国内走备案）。小程序作为中期分发候选（微信渠道），暂不投。
+  - 备案清单（Owner 操作）：① 腾讯云/DNSPod 买 `.com` 并**域名实名**；② 腾讯云"备案"→ 个人主体 + 该域名 + **备案服务号**（⚠️ EdgeOne Pages 免费版能否给备案授权码待确认，可能需买个最便宜的腾讯云资源如轻量服务器拿服务号）；③ 管局审核 ~7–20 天；④ 通过后 EdgeOne 绑自定义域名（大陆加速）+ CNAME + 证书；⑤ 我复测大陆节点 + redeploy。备案期间大陆测试仍靠 VPN/Vercel。
 
 ---
 
