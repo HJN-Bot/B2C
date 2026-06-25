@@ -161,6 +161,20 @@ function parsePowerWord(entry: string): { from?: string; to: string } {
   return { to: entry.trim() };
 }
 
+// Pull a tiny 2–3 word context (one word before + one after) from the student's
+// own transcript so an upgraded word is remembered in the scene they said it.
+// Returns null for multi-word targets or when the word isn't found.
+function wordContext(transcript: string, word: string): { before: string; after: string } | null {
+  if (!transcript || !word || /\s/.test(word.trim())) return null;
+  const tokens = transcript.split(/\s+/);
+  const clean = (t?: string) => (t ? t.replace(/[^a-zA-Z'-]/g, "") : "");
+  const target = clean(word).toLowerCase();
+  if (!target) return null;
+  const idx = tokens.findIndex((t) => clean(t).toLowerCase() === target);
+  if (idx === -1) return null;
+  return { before: clean(tokens[idx - 1]), after: clean(tokens[idx + 1]) };
+}
+
 function parseJson<T>(text: string): T | null {
   const cleaned = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
   try {
@@ -648,21 +662,23 @@ export default function TakeawayPage() {
                 <span className="text-base">✨</span>
                 <p className="text-sm font-black text-gray-900">Words</p>
               </div>
-              <p className="mt-0.5 text-xs font-semibold text-gray-400">Swap a word for a stronger one.</p>
+              <p className="mt-0.5 text-xs font-semibold text-gray-400">Swap a word in your own phrase for a stronger one.</p>
               {plan && plan.reuse_words.length > 0 ? (
-                <div className="mt-2 space-y-1.5">
+                <div className="mt-2 space-y-2">
                   {plan.reuse_words.map((word) => {
                     const { from, to } = parsePowerWord(word);
+                    const ctx = from ? wordContext(transcript, from) : null;
                     return (
-                      <div key={word} className="flex flex-wrap items-center gap-2 text-sm font-bold">
+                      <div key={word} className="rounded-xl bg-gray-50/70 px-3 py-2 text-sm font-bold leading-relaxed text-gray-800">
                         {from ? (
-                          <>
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-400 line-through">{from}</span>
-                            <ArrowUpRight size={14} className="shrink-0 text-green-500" />
-                            <span className="rounded-full bg-green-50 px-2 py-0.5 text-green-700">{to}</span>
-                          </>
+                          <span>
+                            {ctx?.before && <span className="text-gray-500">{ctx.before} </span>}
+                            <span className="text-gray-400 line-through">{from}</span>{" "}
+                            <span className="rounded bg-green-100 px-1.5 py-0.5 text-green-700">{to}</span>
+                            {ctx?.after && <span className="text-gray-500"> {ctx.after}</span>}
+                          </span>
                         ) : (
-                          <span className="rounded-full bg-green-50 px-2 py-0.5 text-green-700">
+                          <span className="rounded bg-green-100 px-1.5 py-0.5 text-green-700">
                             <Sparkles size={10} className="mr-1 inline" />{to}
                           </span>
                         )}
