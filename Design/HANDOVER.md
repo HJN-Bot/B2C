@@ -27,7 +27,7 @@
 
 **待 Owner 决策 / 操作**：
 1. 公开链接：买自定义域名 → 绑 EdgeOne **海外加速（免备案）**本周可用；要大陆好性能则启动 ICP 备案（长杆）。
-2. Deepgram 域名白名单加 `*.vercel.app` / `*.edgeone.cool` / `localhost`；若要 Vercel 上 iOS STT，在 Vercel 设 `VITE_DEEPGRAM_API_KEY`。
+2. Deepgram key 安全：✅ `VITE_DEEPGRAM_API_KEY` 已设进 Vercel 生产环境（iOS STT 可用）。⚠️ **Deepgram 没有"域名白名单"功能**（2026-06-25 查证，之前文档写错了）——raw key 在公开 bundle 里裸奔。验证期就用（免费额度，盯用量、异常即轮换）；正式前改 **临时 token**（Supabase Edge Function 持真 key 发 30s JWT）或服务端代理。
 3. **vet 金句库**（内容内核）：`Design/specs/2026-06-24-say-it-like-this-v2.md` 第 1 节。
 4. 定 **pin 功能**要不要做：`Design/specs/2026-06-24-pin-lines-to-practice.md`（探索性，含自我反驳）。
 
