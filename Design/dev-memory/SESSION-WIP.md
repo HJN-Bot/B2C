@@ -4,6 +4,19 @@
 
 ---
 
+## 📌 2026-06-29 — 国内稳定公开链接方案（Claude Code 调研后落盘）
+- **结论**：SpeakSpark 当前不是缺动态部署能力，前端是静态 SPA + 远端 Supabase；真正缺的是一个稳定、可分享、国内可访问的入口。
+- **当前状态**：
+  - Vercel `https://speakspark-one.vercel.app`：稳定海外链接，国内可能慢/不稳。
+  - EdgeOne Pages 默认域名：已能部署最新 `dist`，但默认 `edgeone.cool` 链接有 3h `eo_token`，不能当公开长期链接。
+  - Supabase 仍沿用 `jyofoabobuwfowpctbfd`，本阶段不迁移。
+- **推荐路径**：先用 EdgeOne + 自定义域名 + 海外加速拿稳定链接；同时启动 ICP 备案，备案后切大陆加速。Cloudflare Pages 不解决大陆稳定访问问题，不作为主方案。
+- **需要 Owner 决策**：买/借哪个域名；是否同步启动 ICP；若备案需要服务号，是否买腾讯云低价轻量服务器；DNS/EdgeOne 控制权挂哪个账号。
+- **详见 spec**：[2026-06-29-china-public-link-options.md](../specs/2026-06-29-china-public-link-options.md)
+- **本地验证**：2026-06-29 07:18 `npm run build -- --mode production` 通过；仅 Vite large chunk warning。
+
+---
+
 ## 📌 2026-06-24 — 用户测试#1 反馈 → P0/P1 落地（待浏览器/真机验证）
 - **反馈处理新流程**：原文+模板+追踪表在 `Design/user-feedback/`；分析用「信现象/疑药方」框架，区分现象 vs 决策，分 A/B/C 档。本次 A 档 4 项已做，C 档（⑤屏幕盲区/⑥动机）降级待验证。详见 [user-testing-1 分析](../user-feedback/submissions/2026-06-24-user-testing-1-analysis.md)。
 - **基建实测通过**：EdgeOne 站点 HTTP 200 公开可达；老 Supabase+Gemini `gemini-proxy` 实测真实返回；Deepgram key（用户提供）有效，写入本地 `.env`。

@@ -11,6 +11,29 @@
 
 ---
 
+## 📍 最新状态 · 2026-06-29（国内稳定公开链接）
+
+**Claude Code / SAM 调研结论**：
+- SpeakSpark 当前前端是静态 SPA，后端继续用 Supabase `jyofoabobuwfowpctbfd`；本阶段不需要改成动态网页，也不迁移后端。
+- Vercel `https://speakspark-one.vercel.app` 是稳定海外链接，国内访问不稳定。
+- EdgeOne Pages 已能承载最新静态构建，但默认 `edgeone.cool` 链接带 3h `eo_token`，不能作为长期公开分享链接。
+- 真正缺口是：**一个自定义域名 + EdgeOne 绑定 + HTTPS + 后续可选 ICP 大陆加速**。
+
+**推荐路线**：
+1. 立即：EdgeOne Pages 绑定自定义域名，先走海外加速，拿稳定可分享链接。
+2. 同步：如果需要大陆原生速度，启动 ICP 备案；可能需要腾讯云低价资源获取备案服务号。
+3. 不推荐 Cloudflare 作为本次主方案：Cloudflare Pages 默认域名在大陆同样不稳，真正大陆加速门槛更高。
+
+**Owner 待决策**：
+1. 使用哪个域名：新买 `.com` / 活动域名 / 借已备案子域名。
+2. 是否现在启动 ICP。
+3. DNSPod / EdgeOne 控制台权限挂在哪个账号。
+4. 备案等待期是否需要借已备案子域名过桥。
+
+详细方案见 `Design/specs/2026-06-29-china-public-link-options.md`。
+
+---
+
 ## 📍 最新状态 · 2026-06-24（开工先看这条）
 
 **今天 shipped**（已 commit + push 到 `origin/jianan/speakspark`，commits `2456a82`/`ee999bf`/`4a2b0cc`，tsc+build 绿、未浏览器验证）：
