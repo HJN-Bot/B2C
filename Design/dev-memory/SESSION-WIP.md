@@ -4,6 +4,15 @@
 
 ---
 
+## 📌 2026-07-04 — Owner Pivot：后端 / AI / GTM 重新成一个问题
+- **触发**：Jianan 在 Feishu 明确说，SpeakSpark 不再只是“帮原创业伙伴做技术外包”，越来越像自己要 own 的项目。
+- **核心变化**：下一步不是单点修 Supabase 或买域名，而是把 owner-controlled backend、AI 成本/必要性、国内域名/ICP/腾讯云、小程序时机、GTM、个人收益动力串成一张决策图。
+- **已落文档**：[`Design/specs/2026-07-04-owner-pivot-backend-ai-gtm.md`](../specs/2026-07-04-owner-pivot-backend-ai-gtm.md)
+- **暂不动代码**：先做 ownership audit + 两个场景测试（prepared speech vs 随时说两句），再决定是否迁移到 Jianan-owned Supabase、是否推进小程序。
+- **当前建议**：不要一上来重建所有后端；先用 7 天验证“使用场景 + owner upside + 低成本技术路径”。
+
+---
+
 ## 📌 2026-06-29 — 国内稳定公开链接方案（Claude Code 调研后落盘）
 - **结论**：SpeakSpark 当前不是缺动态部署能力，前端是静态 SPA + 远端 Supabase；真正缺的是一个稳定、可分享、国内可访问的入口。
 - **当前状态**：
