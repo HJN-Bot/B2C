@@ -4,6 +4,16 @@
 
 ---
 
+## 📌 2026-07-04（晚）— Pivot 决策拍板 + 金句库 V0 落地
+- **场景定调**：验证期押 **场景 A（备考/演讲陪练）**。B（随时说两句）是 owner 个人偏好但付费方买 A，只测拉力不建代码/小程序。
+- **Upside 阶梯（owner 原话）**：小闭环 → 付费用户 → 用户量/口碑 → 清晰市场（核心=清晰市场/路径）。**近期使力点 = 1 个付费/愿付信号。**
+- **冻结项**（出现付费信号前不动）：Supabase 自建/迁移、ICP 备案、小程序；继续用现 Supabase（Guarded-Go）。别用基建决策逃避验证。
+- ✅🧪 **金句库 V0 落地**（`src/data/quoteLibrary.ts`，20 张真实毕业演讲/名人金句卡：勇气/好奇/逆境/未来各 5，含 sentence_pattern/meaning/prompt/来源；版权=只存短引用+Wikiquote 源，正式前换官方 transcript）。已接进 **Takeaway 的 🧱Sentences 卡**：把占位 SENTENCE_FRAMES 换成"Steal these lines from great speakers"（真句式 + 署名）——强化 A 场景家长感知的 premium/教育价值。tsc+build 绿。spec：[graduation-speech-quote-library](../specs/2026-06-27-graduation-speech-quote-library.md)。
+- **GTM**：熟人 1对1 试用（3–5 个有演讲任务的学生+家长），不做视频推广（押后）。金句库当试用包 wow 钩子。
+- 下一步候选：Start 页"每日金句" starter（`quoteOfTheDay()` 已备）；把金句库喂进 AI takeaway prompt 让它挑更贴题的句式。
+
+---
+
 ## 📌 2026-07-04 — Owner Pivot：后端 / AI / GTM 重新成一个问题
 - **触发**：Jianan 在 Feishu 明确说，SpeakSpark 不再只是“帮原创业伙伴做技术外包”，越来越像自己要 own 的项目。
 - **核心变化**：下一步不是单点修 Supabase 或买域名，而是把 owner-controlled backend、AI 成本/必要性、国内域名/ICP/腾讯云、小程序时机、GTM、个人收益动力串成一张决策图。

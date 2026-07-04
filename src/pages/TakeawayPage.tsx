@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowUpRight, Blocks, BookOpen, Brain, ChevronRight, MessageCircle, RotateCcw, Send, ShieldCheck, Sparkles, TrendingUp, Waves, Wrench, type LucideIcon } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
+import { pickStealLines } from "@/data/quoteLibrary";
 import { getPracticeMode } from "@/lib/practice-mode";
 import { getCustomPrompt } from "@/lib/coach-prefs";
 import { setNextTryingPoint } from "@/lib/trying-point";
@@ -571,7 +572,8 @@ export default function TakeawayPage() {
 
   const plan = takeaway?.next_run_plan;
   // A word the student actually used, to fill the curated frames with.
-  const topicWord = highlightWords[0] || getUsefulWords(transcript, highlightWords)[0] || "";
+  // Real "steal these lines" from famous speeches — picked once per takeaway.
+  const stealLines = useMemo(() => pickStealLines(3), []);
 
   return (
     <div className="min-h-dvh bg-gray-50">
@@ -704,10 +706,12 @@ export default function TakeawayPage() {
                   <p className="mt-1 text-sm font-black leading-relaxed text-gray-900">"{renderInline(plan.say_this)}"</p>
                 </div>
               )}
-              <div className="mt-2 space-y-1.5">
-                {SENTENCE_FRAMES.slice(0, 3).map((frame) => (
-                  <div key={frame} className="rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2 text-sm font-bold leading-snug text-gray-700">
-                    {fillFrame(frame, topicWord)}
+              <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Steal these lines from great speakers</p>
+              <div className="mt-1.5 space-y-1.5">
+                {stealLines.map(({ pattern, speaker }) => (
+                  <div key={pattern} className="rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2">
+                    <p className="text-sm font-bold leading-snug text-gray-700">{pattern}</p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-gray-400">— {speaker}</p>
                   </div>
                 ))}
               </div>
