@@ -17,6 +17,7 @@ function withOwnFocus(base: string): string {
 }
 import { getPracticeMode } from "@/lib/practice-mode";
 import { createCloudSTT, type CloudSTT } from "@/lib/cloud-stt";
+import { getSavedLines, removeLine, type SavedLine } from "@/lib/saved-lines";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -568,6 +569,8 @@ export default function PracticeRoom() {
   // State
   const [started, setStarted]               = useState(false);
   const [ending, setEnding]                 = useState(false);
+  // Golden lines the student pinned in a past Takeaway — shown before recording.
+  const [savedLines, setSavedLines]         = useState<SavedLine[]>(() => getSavedLines());
   const [timer, setTimer]                   = useState(0);
   const [highlightCount, setHighlightCount] = useState(0);
   const [ktvScore, setKtvScore]             = useState<KTVScore>({ flow: 0, words: 0, sentences: 0, story: 0 });
@@ -1801,6 +1804,25 @@ export default function PracticeRoom() {
                 <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-600">
                   <ShieldCheck size={11} /> Practice feedback only
                 </span>
+
+                {/* Lines to try — golden lines pinned from a past Takeaway. Shown
+                    only before recording (the screen is a blind spot once talking). */}
+                {savedLines.length > 0 && (
+                  <div className="w-full max-w-[300px] rounded-2xl border border-blue-100 bg-white/90 px-3 py-2.5 text-left">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-500">📌 Lines to try</p>
+                    <div className="mt-1.5 space-y-1">
+                      {savedLines.map((l) => (
+                        <div key={l.id} className="flex items-start gap-1.5">
+                          <span className="min-w-0 flex-1 text-xs font-bold leading-snug text-gray-700">
+                            {l.text}{l.by ? <span className="font-semibold text-gray-400"> — {l.by}</span> : null}
+                          </span>
+                          <button onClick={() => setSavedLines(removeLine(l.id))} aria-label="Remove line"
+                            className="shrink-0 px-1 text-sm font-black leading-none text-gray-300 active:scale-90">×</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}

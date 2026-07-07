@@ -4,6 +4,8 @@ import { AlertTriangle, ArrowUpRight, Blocks, BookOpen, Brain, ChevronRight, Mes
 import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { pickStealLines } from "@/data/quoteLibrary";
+import { toggleLine, isLineSaved } from "@/lib/saved-lines";
+import { Pin } from "lucide-react";
 import { getPracticeMode } from "@/lib/practice-mode";
 import { getCustomPrompt } from "@/lib/coach-prefs";
 import { setNextTryingPoint } from "@/lib/trying-point";
@@ -577,6 +579,8 @@ export default function TakeawayPage() {
   // A word the student actually used, to fill the curated frames with.
   // Real "steal these lines" from famous speeches — picked once per takeaway.
   const stealLines = useMemo(() => pickStealLines(3), []);
+  // Bumped when a line is pinned/unpinned, to re-read the saved state.
+  const [pinTick, setPinTick] = useState(0);
 
   return (
     <div className="min-h-dvh bg-gray-50">
@@ -709,14 +713,26 @@ export default function TakeawayPage() {
                   <p className="mt-1 text-sm font-black leading-relaxed text-gray-900">"{renderInline(plan.say_this)}"</p>
                 </div>
               )}
-              <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Steal these lines from great speakers</p>
-              <div className="mt-1.5 space-y-1.5">
-                {stealLines.map(({ pattern, speaker }) => (
-                  <div key={pattern} className="rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2">
-                    <p className="text-sm font-bold leading-snug text-gray-700">{pattern}</p>
-                    <p className="mt-0.5 text-[11px] font-semibold text-gray-400">— {speaker}</p>
-                  </div>
-                ))}
+              <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Steal these lines from great speakers · 📌 pin for next practice</p>
+              <div className="mt-1.5 space-y-1.5" key={pinTick}>
+                {stealLines.map(({ pattern, speaker }) => {
+                  const saved = isLineSaved(pattern);
+                  return (
+                    <div key={pattern} className="flex items-start gap-2 rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold leading-snug text-gray-700">{pattern}</p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-gray-400">— {speaker}</p>
+                      </div>
+                      <button
+                        onClick={() => { toggleLine(pattern, speaker); setPinTick((t) => t + 1); }}
+                        aria-label={saved ? "Unpin line" : "Pin line for next practice"}
+                        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition active:scale-90 ${saved ? "bg-blue-500 text-white" : "bg-white text-gray-300 shadow-sm"}`}
+                      >
+                        <Pin size={13} className={saved ? "fill-current" : ""} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
