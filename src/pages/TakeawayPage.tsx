@@ -5,7 +5,8 @@ import AppTabBar from "@/components/AppTabBar";
 import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { pickStealLines } from "@/data/quoteLibrary";
 import { toggleLine, isLineSaved } from "@/lib/saved-lines";
-import { Pin } from "lucide-react";
+import { toggleVocab, isVocabSaved } from "@/lib/vocab-bank";
+import { Pin, Bookmark } from "lucide-react";
 import { getPracticeMode } from "@/lib/practice-mode";
 import { getCustomPrompt } from "@/lib/coach-prefs";
 import { setNextTryingPoint } from "@/lib/trying-point";
@@ -672,13 +673,17 @@ export default function TakeawayPage() {
                 <p className="text-sm font-black text-gray-900">Words</p>
               </div>
               <p className="mt-0.5 text-xs font-semibold text-gray-400">Swap a word in your own phrase for a stronger one.</p>
+              <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400">🔖 save to your vocab bank</p>
               {plan && plan.reuse_words.length > 0 ? (
-                <div className="mt-2 space-y-2">
+                <div className="mt-1 space-y-2" key={pinTick}>
                   {plan.reuse_words.map((word) => {
                     const { from, to } = parsePowerWord(word);
                     const ctx = from ? wordContext(transcript, from) : null;
+                    const context = ctx ? [ctx.before, from, ctx.after].filter(Boolean).join(" ") : undefined;
+                    const saved = isVocabSaved(to);
                     return (
-                      <div key={word} className="rounded-xl bg-gray-50/70 px-3 py-2 text-sm font-bold leading-relaxed text-gray-800">
+                      <div key={word} className="flex items-start gap-2 rounded-xl bg-gray-50/70 px-3 py-2 text-sm font-bold leading-relaxed text-gray-800">
+                        <span className="min-w-0 flex-1">
                         {from ? (
                           <span>
                             {ctx?.before && <span className="text-gray-500">{ctx.before} </span>}
@@ -691,6 +696,14 @@ export default function TakeawayPage() {
                             <Sparkles size={10} className="mr-1 inline" />{to}
                           </span>
                         )}
+                        </span>
+                        <button
+                          onClick={() => { toggleVocab({ from, to, context }); setPinTick((t) => t + 1); }}
+                          aria-label={saved ? "Remove from vocab bank" : "Save to vocab bank"}
+                          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition active:scale-90 ${saved ? "bg-green-500 text-white" : "bg-white text-gray-300 shadow-sm"}`}
+                        >
+                          <Bookmark size={13} className={saved ? "fill-current" : ""} />
+                        </button>
                       </div>
                     );
                   })}

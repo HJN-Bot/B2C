@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Settings, ShieldCheck, Sparkles, TrendingUp, UserRound } from "lucide-react";
+import { Bookmark, CalendarDays, ChevronDown, ChevronRight, ClipboardList, Settings, ShieldCheck, Sparkles, TrendingUp, UserRound } from "lucide-react";
 import AppTabBar from "@/components/AppTabBar";
 import { Calendar } from "@/components/ui/calendar";
 import { getSessions, type SessionRecord } from "@/lib/session-history";
 import { TRYING_POINTS } from "@/lib/trying-point";
 import { getCustomPrompt, setCustomPrompt } from "@/lib/coach-prefs";
+import { getVocab, removeVocab, type VocabItem } from "@/lib/vocab-bank";
 
 const ability = [
   { label: "Flow", value: 64, change: "+12", color: "#58A9FF" },
@@ -44,6 +45,7 @@ export default function MyPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [promptOpen, setPromptOpen] = useState(false);
   const [customPrompt, setCustomPromptState] = useState<string>(() => getCustomPrompt());
+  const [vocab, setVocab] = useState<VocabItem[]>(() => getVocab());
   const settingsRef = useRef<HTMLDivElement>(null);
   useEffect(() => { setSessions(getSessions()); }, []);
 
@@ -128,6 +130,34 @@ export default function MyPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Vocab bank — the word upgrades you bookmarked in Takeaways, to review. */}
+        <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Vocab bank{vocab.length ? ` · ${vocab.length}` : ""}</p>
+            <Bookmark size={16} className="text-green-500" />
+          </div>
+          {vocab.length === 0 ? (
+            <p className="rounded-2xl bg-gray-50 px-3 py-4 text-center text-xs font-semibold text-gray-400">
+              No saved words yet — in a Takeaway, tap 🔖 on a word upgrade to save it here.
+            </p>
+          ) : (
+            <div className="max-h-[240px] space-y-1.5 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+              {vocab.map((v) => (
+                <div key={v.id} className="flex items-start gap-2 rounded-2xl bg-gray-50 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold leading-snug text-gray-800">
+                      {v.from && <span className="text-gray-400 line-through">{v.from} </span>}
+                      <span className="rounded bg-green-100 px-1.5 py-0.5 text-green-700">{v.to}</span>
+                    </p>
+                    {v.context && <p className="mt-0.5 text-[11px] font-semibold text-gray-400">in: “{v.context}”</p>}
+                  </div>
+                  <button onClick={() => setVocab(removeVocab(v.id))} aria-label="Remove word" className="shrink-0 px-1 text-sm font-black leading-none text-gray-300 active:scale-90">×</button>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
