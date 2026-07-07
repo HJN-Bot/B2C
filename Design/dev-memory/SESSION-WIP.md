@@ -12,8 +12,8 @@
 
 ### 三条待挖功能线（Owner 点名，2026-07-07）
 1. ✅ **金句 pin 回 practice** —— 已做（见上）。
-2. 🔲 **词汇功能** —— 现只有 Takeaway Words 卡（弱词→强词+上下文）+ 练习页高亮 chips。缺：长期"词汇库/复用银行" + My 页词汇复盘。待 Owner 选方向（见下轮）。
-3. 🟡 **Debate** —— starters/presets/Argument 已做；剩 P2：Live Drill 快速追问模式（调 BOTTLENECK + follow_up prompt，做成 mode 而非全局）、赛前 3 步 checklist 页。
+2. ✅ **词汇功能 = 词汇银行 + My 页复盘**（`a805694`，纯前端）：`src/lib/vocab-bank.ts`（localStorage，按强词去重，上限40）；Takeaway Words 卡每条加 🔖 保存（存 from→to+上下文）；My 页新增 "Vocab bank" 卡复盘（新→旧，可删）。
+3. 🟡 **Debate** —— starters/presets/Argument 已做；**P2（Live Drill / checklist 页）Owner 定：先不做**，先保证①②。剩记着：Live Drill=调 BOTTLENECK + follow_up prompt 做成 mode；赛前 3 步 checklist 页。
 
 ---
 
