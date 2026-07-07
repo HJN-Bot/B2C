@@ -56,7 +56,7 @@ const KTV_META: Record<KTVMetric, { label: string; Icon: LucideIcon; color: stri
   flow: { label: "Flow", Icon: Waves, color: "#58A9FF" },
   words: { label: "Words", Icon: BookOpen, color: "#16A34A" },
   sentences: { label: "Sentences", Icon: Blocks, color: "#D97706" },
-  story: { label: "Story", Icon: Brain, color: "#7C3AED" },
+  story: { label: "Argument", Icon: Brain, color: "#7C3AED" },
 };
 
 
@@ -66,6 +66,9 @@ const PRESETS = [
   { label: "Level up my words", prompt: "Give me 3 stronger words or phrases I can reuse next time, each with one short example sentence." },
   { label: "Make my story fun", prompt: "Give me one small idea to make my story more interesting next time, based on what I said." },
   { label: "Shape my story", prompt: "Help me shape my idea into claim, example, and why it matters — using my own words, not a full script." },
+  { label: "Counter my point", prompt: "Give me 3 strong counter-arguments against my main point, so I can prepare rebuttals. Keep each to one short sentence." },
+  { label: "My weakest logic", prompt: "Point out the single weakest link in my argument and one concrete way to fix it. Be specific, one short paragraph." },
+  { label: "Strong points + holes", prompt: "List my 3 strongest points, and 3 likely holes an opponent could attack. One short line each." },
 ];
 
 const STOP_WORDS = new Set([

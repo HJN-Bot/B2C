@@ -11,10 +11,12 @@ const MOCK_USER = { name: "Alex", streak: 5 };
 const HOME_TOUR = "speakspark.homeOnboarded";
 
 const TOPIC_STARTERS = [
-  "How is AI changing the way doctors diagnose diseases?",
-  "Why is renewable energy the key to our planet's future?",
-  "How do self-driving cars make decisions in real time?",
-  "What makes CRISPR a revolutionary tool in genetics?",
+  "This house believes AI will help students more than it harms them.",
+  "This house would ban homework in schools.",
+  "Resolved: Space exploration is worth the cost.",
+  "Should social media have a minimum age of 16?",
+  "This house believes zoos do more good than harm.",
+  "This house would make one science subject compulsory every year.",
 ];
 
 const HIGHLIGHT_WAVE = [3, 5, 8, 12, 9, 6, 14, 10, 7, 11, 8, 5, 9, 12, 7, 4, 10, 6, 8, 5];

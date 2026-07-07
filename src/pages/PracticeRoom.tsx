@@ -105,7 +105,7 @@ const KTV_META: Record<KTVMetric, { label: string; short: string; Icon: LucideIc
   flow: { label: "Flow", short: "Flow", Icon: Waves, color: "#58A9FF", purpose: "Keep talking" },
   words: { label: "Words", short: "Words", Icon: BookOpen, color: "#16A34A", purpose: "Strong phrases" },
   sentences: { label: "Sentences", short: "Syntax", Icon: Blocks, color: "#D97706", purpose: "Fuller sentences" },
-  story: { label: "Story", short: "Story", Icon: Brain, color: "#7C3AED", purpose: "Complete the point" },
+  story: { label: "Argument", short: "Argument", Icon: Brain, color: "#7C3AED", purpose: "Claim + evidence + why" },
 };
 
 const KTV_ITEMS: Array<{ key: KTVMetric; label: string; short: string; Icon: LucideIcon; color: string; purpose: string }> = [
