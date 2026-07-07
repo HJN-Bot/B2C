@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarCheck, Star, ChevronRight, Lightbulb, Target } from "lucide-react";
+import { CalendarCheck, Star, ChevronRight, Mic, RefreshCw, Target } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
 import { currentTryingPoint } from "@/lib/trying-point";
 import { getSessions } from "@/lib/session-history";
@@ -28,7 +28,13 @@ function snippet(text: string, max = 120): string {
 
 export default function Home() {
   const navigate = useNavigate();
-  const topic = TOPIC_STARTERS[Math.floor(Math.random() * TOPIC_STARTERS.length)];
+  const [topic, setTopic] = useState(() => TOPIC_STARTERS[Math.floor(Math.random() * TOPIC_STARTERS.length)]);
+  const shuffleTopic = () => setTopic((cur) => {
+    if (TOPIC_STARTERS.length < 2) return cur;
+    let next = cur;
+    while (next === cur) next = TOPIC_STARTERS[Math.floor(Math.random() * TOPIC_STARTERS.length)];
+    return next;
+  });
   const [modeId, setModeId] = useState<PracticeModeId>(() => getPracticeMode().id);
   const [lastSession] = useState(() => getSessions()[0] ?? null);
   const [showTour, setShowTour] = useState(() => !hasSeenTour(HOME_TOUR));
@@ -49,7 +55,7 @@ export default function Home() {
           onDone={() => setShowTour(false)}
           steps={[
             { ref: modeRef, title: "Pick how you practice", body: "Free Talk, Exam Prep, or Story — this sets the coach's style for your whole run. You can switch anytime." },
-            { ref: topicRef, title: "Need an idea?", body: "Stuck on what to say? Tap Use this topic to start with a science prompt, or My own to bring your own." },
+            { ref: topicRef, title: "Today's debate motion", body: "Stuck on what to say? Here's a debate motion — tap Another for a different one. Then hit Start Practice below." },
             { ref: startRef, title: "Start practice", body: "Tap here when you're ready. You'll get live captions, a cat coach, and a takeaway when you finish." },
           ]}
         />
@@ -103,30 +109,21 @@ export default function Home() {
           <p className="mt-1.5 text-xs font-semibold text-gray-400">{PRACTICE_MODES.find((m) => m.id === modeId)?.blurb}</p>
         </div>
 
-        {/* Topic starter card — solves "no inspiration" pain point */}
+        {/* Debate motion card — one hero prompt; the single Start button below uses it. */}
         <div ref={topicRef} className="bg-white rounded-2xl p-5 shadow-sm border border-blue-100">
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb size={15} className="text-blue-500" />
-            <span className="text-xs font-bold uppercase tracking-widest text-blue-500">Today's Starter</span>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Mic size={15} className="text-blue-500" />
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-500">Today's debate motion</span>
+            </div>
+            <button onClick={shuffleTopic} className="flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-500 active:scale-95">
+              <RefreshCw size={12} /> Another
+            </button>
           </div>
-          <p className="text-base font-semibold text-gray-800 leading-relaxed mb-4">
+          <p className="text-base font-semibold text-gray-800 leading-relaxed">
             "{topic}"
           </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate("/practice", { state: { topic } })}
-              className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #58A9FF, #7ED957)" }}
-            >
-              Use this topic 🎙️
-            </button>
-            <button
-              onClick={() => navigate("/practice")}
-              className="px-4 py-3 rounded-xl text-sm font-medium text-gray-500 bg-gray-100"
-            >
-              My own
-            </button>
-          </div>
+          <p className="mt-2 text-xs font-semibold text-gray-400">Tap Start Practice below to argue this — or just talk about your own.</p>
         </div>
 
         {/* Last highlight — real last run, or an encouraging empty state */}
@@ -177,10 +174,10 @@ export default function Home() {
 
         <div className="flex-1" />
 
-        {/* Single CTA */}
+        {/* Single CTA — the one entry to the practice room; carries the motion above. */}
         <button
           ref={startRef}
-          onClick={() => navigate("/practice")}
+          onClick={() => navigate("/practice", { state: { topic } })}
           className="w-full py-5 rounded-2xl text-lg font-black text-white flex items-center justify-center gap-3 active:scale-95 transition-transform"
           style={{
             background: "linear-gradient(135deg, #58A9FF, #7ED957)",
