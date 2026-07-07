@@ -4,6 +4,19 @@
 
 ---
 
+## 📌 2026-07-07 — 周末辩论赛冲刺 + 前端功能（AI 后端复活由 Owner 负责）
+- 🚨 **AI 全断**：两个 Supabase（`jyofoabobuwfowpctbfd` 创始团队 + `mgufxtpqbcjoyadqcxzg` 自有）**都 NXDOMAIN**。本机无 supabase CLI。**Owner 负责激活 Supabase**（Dounan Restore 旧项目 / 或自建部署 3 个 edge function + 配 GEMINI_API_KEY）。AI 复活前，AI 类功能走本地兜底（降级不崩）。
+- ⚠️ **周末 130 人辩论赛**：ICP 赶不上（1–3 周），别等。国内链接 = 借已备案子域名(最佳) / 买域名+EdgeOne 海外加速。Gemini 130 并发免费版会限流 → 建议开付费额度（限流不崩、降级本地）。
+- ✅🧪 **辩论前端适配已 ship**（`b0f26ad`，纯前端，Vercel 已上）：Home TOPIC_STARTERS→辩题；Takeaway 加 3 个反驳 Presets（Counter my point / My weakest logic / Strong points+holes，**需 AI 活才真用**）；KTV Story→**Argument**（claim+evidence+why）。
+- ✅🧪 **金句 pin 闭环**（`d7bb0d6`，纯前端）：`src/lib/saved-lines.ts`（localStorage，去重，上限6）；Takeaway "Steal these lines" 每条加 📌；Practice 开录前 Ready 卡显示 "Lines to try"（只读可删，只在录音前）。学到→复用闭环打通。
+
+### 三条待挖功能线（Owner 点名，2026-07-07）
+1. ✅ **金句 pin 回 practice** —— 已做（见上）。
+2. 🔲 **词汇功能** —— 现只有 Takeaway Words 卡（弱词→强词+上下文）+ 练习页高亮 chips。缺：长期"词汇库/复用银行" + My 页词汇复盘。待 Owner 选方向（见下轮）。
+3. 🟡 **Debate** —— starters/presets/Argument 已做；剩 P2：Live Drill 快速追问模式（调 BOTTLENECK + follow_up prompt，做成 mode 而非全局）、赛前 3 步 checklist 页。
+
+---
+
 ## 📌 2026-07-04（晚）— Pivot 决策拍板 + 金句库 V0 落地
 - **场景定调**：验证期押 **场景 A（备考/演讲陪练）**。B（随时说两句）是 owner 个人偏好但付费方买 A，只测拉力不建代码/小程序。
 - **Upside 阶梯（owner 原话）**：小闭环 → 付费用户 → 用户量/口碑 → 清晰市场（核心=清晰市场/路径）。**近期使力点 = 1 个付费/愿付信号。**
