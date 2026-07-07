@@ -47,10 +47,23 @@ export default function Home() {
           ]}
         />
       )}
-      <div className="flex-1 flex flex-col px-5 pt-6 pb-24 gap-4">
+      <div className="flex-1 flex flex-col px-5 pt-6 pb-24 gap-5">
 
-        {/* Greeting */}
-        <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name} 👋</h1>
+        {/* Greeting — the brand cat sits beside it, scaled down. */}
+        <div className="flex items-center gap-2">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-visible" aria-hidden>
+            <div
+              className="cat-motion-coach cat-motion-coach-listening"
+              style={{
+                transform: "scale(0.38)",
+                ["--cat-motion-sheet" as string]: "url('/assets/cat-coach/cat_listening_motion_alpha.png')",
+              }}
+            >
+              <span className="cat-motion-clip"><span className="cat-motion-frame" /></span>
+            </div>
+          </div>
+          <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name} 👋</h1>
+        </div>
 
         {/* Scenario picker — each scenario has its own topic library + coach style */}
         <div ref={sceneRef}>
@@ -73,8 +86,8 @@ export default function Home() {
           <p className="mt-1.5 text-xs font-semibold text-gray-400">{mode.blurb}</p>
         </div>
 
-        {/* Topic card — from the selected scenario's library */}
-        <div ref={topicRef} className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100">
+        {/* Topic card — fixed height so switching scenarios never shifts the page */}
+        <div ref={topicRef} className="min-h-[132px] bg-white rounded-2xl p-4 shadow-sm border border-blue-100">
           <div className="mb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mic size={15} className="text-blue-500" />
@@ -138,7 +151,7 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex-1" />
+        <div className="flex-1 min-h-10" />
 
         {/* Single CTA — carries the selected scenario (saved) + topic. */}
         <button
