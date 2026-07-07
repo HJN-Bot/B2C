@@ -150,7 +150,7 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex-1 min-h-10" />
+        <div className="h-1" />
 
         {/* Single CTA — carries the selected scenario (saved) + topic. */}
         <button
