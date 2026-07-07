@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, ChevronRight, Mic, RefreshCw } from "lucide-react";
+import { CalendarCheck, Star, ChevronRight, Mic, RefreshCw } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, pickTopic, type PracticeModeId } from "@/lib/practice-mode";
 import { getSessions } from "@/lib/session-history";
 import AppTabBar from "@/components/AppTabBar";
@@ -21,7 +21,12 @@ export default function Home() {
   const [modeId, setModeId] = useState<PracticeModeId>(() => getPracticeMode().id);
   const mode = PRACTICE_MODES.find((m) => m.id === modeId) ?? PRACTICE_MODES[0];
   const [topic, setTopic] = useState(() => pickTopic(mode));
-  const [lastSession] = useState(() => getSessions()[0] ?? null);
+  const [sessions] = useState(() => getSessions());
+  const lastSession = sessions[0] ?? null;
+  const weekCount = sessions.filter((s) => Date.now() - new Date(s.createdAt).getTime() < 7 * 86_400_000).length;
+  const weekLine = weekCount > 0
+    ? `${weekCount} ${weekCount === 1 ? "practice" : "practices"} this week · nice work`
+    : "Ready for your first challenge?";
   const [showTour, setShowTour] = useState(() => !hasSeenTour(HOME_TOUR));
   const sceneRef = useRef<HTMLDivElement>(null);
   const topicRef = useRef<HTMLDivElement>(null);
@@ -47,26 +52,14 @@ export default function Home() {
           ]}
         />
       )}
-      <div className="flex-1 flex flex-col px-5 pt-6 pb-24 gap-5">
+      <div className="flex-1 flex flex-col px-5 pt-10 pb-24 gap-5">
 
-        {/* Greeting — warm line, with a static brand cat on the right. */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name}</h1>
-            <p className="mt-1 text-sm font-semibold text-gray-400">Ready for today's challenge?</p>
-          </div>
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-visible" aria-hidden>
-            <div
-              className="cat-motion-coach"
-              style={{
-                transform: "scale(0.4)",
-                ["--cat-motion-sheet" as string]: "url('/assets/cat-coach/cat_listening_motion_alpha.png')",
-              }}
-            >
-              <span className="cat-motion-clip">
-                <span className="cat-motion-frame" style={{ animation: "none", backgroundPosition: "0 0" }} />
-              </span>
-            </div>
+        {/* Greeting — with a waving hand and this week's real practice count. */}
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name} <span className="wave-hand">👋</span></h1>
+          <div className="mt-1 flex items-center gap-1.5">
+            <CalendarCheck size={15} className="text-green-500" />
+            <span className="text-sm text-gray-500">{weekLine}</span>
           </div>
         </div>
 

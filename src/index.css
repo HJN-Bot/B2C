@@ -280,6 +280,19 @@
   .cat-motion-spark-one { left: 2px; top: 18px; }
   .cat-motion-spark-two { right: 0; top: 68px; transform: scale(0.82); }
 
+  /* Greeting hand wave. */
+  @keyframes hand-wave {
+    0%, 55%, 100% { transform: rotate(0deg); }
+    12%, 32% { transform: rotate(16deg); }
+    22% { transform: rotate(-10deg); }
+    42% { transform: rotate(12deg); }
+  }
+  .wave-hand {
+    display: inline-block;
+    transform-origin: 72% 78%;
+    animation: hand-wave 2.6s ease-in-out infinite;
+  }
+
   .cat-motion-coach-listening .cat-motion-frame {
     animation-name: cat-motion-breathe;
     animation-duration: 4.8s;
