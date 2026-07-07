@@ -43,12 +43,16 @@ export const PRACTICE_MODES: PracticeMode[] = [
 
 const STORAGE_KEY = "speakspark.practiceMode";
 
+// Default coach style when the student hasn't chosen one. Exam Prep suits the
+// structured speech / debate use case best. Switchable on the My page.
+const DEFAULT_MODE = PRACTICE_MODES.find((m) => m.id === "exam") ?? PRACTICE_MODES[0];
+
 export function getPracticeMode(): PracticeMode {
   try {
     const id = window.localStorage.getItem(STORAGE_KEY) as PracticeModeId | null;
-    return PRACTICE_MODES.find((mode) => mode.id === id) ?? PRACTICE_MODES[0];
+    return PRACTICE_MODES.find((mode) => mode.id === id) ?? DEFAULT_MODE;
   } catch {
-    return PRACTICE_MODES[0];
+    return DEFAULT_MODE;
   }
 }
 

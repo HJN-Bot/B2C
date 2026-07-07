@@ -6,6 +6,7 @@ import { getSessions, type SessionRecord } from "@/lib/session-history";
 import { TRYING_POINTS } from "@/lib/trying-point";
 import { getCustomPrompt, setCustomPrompt } from "@/lib/coach-prefs";
 import { getVocab, removeVocab, type VocabItem } from "@/lib/vocab-bank";
+import { PRACTICE_MODES, getPracticeMode, setPracticeMode, type PracticeModeId } from "@/lib/practice-mode";
 
 const ability = [
   { label: "Flow", value: 64, change: "+12", color: "#58A9FF" },
@@ -46,6 +47,7 @@ export default function MyPage() {
   const [promptOpen, setPromptOpen] = useState(false);
   const [customPrompt, setCustomPromptState] = useState<string>(() => getCustomPrompt());
   const [vocab, setVocab] = useState<VocabItem[]>(() => getVocab());
+  const [modeId, setModeId] = useState<PracticeModeId>(() => getPracticeMode().id);
   const settingsRef = useRef<HTMLDivElement>(null);
   useEffect(() => { setSessions(getSessions()); }, []);
 
@@ -242,6 +244,30 @@ export default function MyPage() {
               <ShieldCheck size={17} className="text-green-500" />
               <span className="flex-1 text-sm font-bold text-gray-800">Coach mode</span>
               <span className="text-xs font-semibold text-green-600">Practice feedback only</span>
+            </div>
+
+            {/* Coach style — the practice mode (default Exam Prep), switchable here. */}
+            <div className="rounded-2xl bg-gray-50 px-3 py-3">
+              <div className="flex items-center gap-3">
+                <Sparkles size={17} className="text-blue-500" />
+                <span className="flex-1 text-sm font-bold text-gray-800">Coach style</span>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {PRACTICE_MODES.map((m) => {
+                  const active = m.id === modeId;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => { setModeId(m.id); setPracticeMode(m.id); }}
+                      className={`rounded-xl border p-2 text-center transition active:scale-95 ${active ? "border-blue-300 bg-blue-50" : "border-gray-100 bg-white"}`}
+                    >
+                      <div className="text-base">{m.emoji}</div>
+                      <div className={`mt-0.5 text-[11px] font-black leading-tight ${active ? "text-blue-600" : "text-gray-600"}`}>{m.label.replace(" Mode", "")}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1.5 text-[11px] font-semibold text-gray-400">{PRACTICE_MODES.find((m) => m.id === modeId)?.blurb}</p>
             </div>
 
             {/* Saved phrase bank — real, aggregated from your practice history */}
