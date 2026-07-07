@@ -49,20 +49,25 @@ export default function Home() {
       )}
       <div className="flex-1 flex flex-col px-5 pt-6 pb-24 gap-5">
 
-        {/* Greeting — the brand cat sits beside it, scaled down. */}
-        <div className="flex items-center gap-2">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-visible" aria-hidden>
+        {/* Greeting — warm line, with a static brand cat on the right. */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name}</h1>
+            <p className="mt-1 text-sm font-semibold text-gray-400">Ready for today's challenge?</p>
+          </div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-visible" aria-hidden>
             <div
-              className="cat-motion-coach cat-motion-coach-listening"
+              className="cat-motion-coach"
               style={{
-                transform: "scale(0.38)",
+                transform: "scale(0.4)",
                 ["--cat-motion-sheet" as string]: "url('/assets/cat-coach/cat_listening_motion_alpha.png')",
               }}
             >
-              <span className="cat-motion-clip"><span className="cat-motion-frame" /></span>
+              <span className="cat-motion-clip">
+                <span className="cat-motion-frame" style={{ animation: "none", backgroundPosition: "0 0" }} />
+              </span>
             </div>
           </div>
-          <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name} 👋</h1>
         </div>
 
         {/* Scenario picker — each scenario has its own topic library + coach style */}
