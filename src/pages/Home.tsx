@@ -52,7 +52,7 @@ export default function Home() {
           ]}
         />
       )}
-      <div className="flex-1 flex flex-col px-5 pt-10 pb-24 gap-5">
+      <div className="flex-1 flex flex-col px-5 pt-10 pb-28 gap-5">
 
         {/* Greeting — with a waving hand and this week's real practice count. */}
         <div>
@@ -81,11 +81,12 @@ export default function Home() {
               );
             })}
           </div>
-          <p className="mt-1.5 text-xs font-semibold text-gray-400">{mode.blurb}</p>
+          <p className="mt-1.5 truncate text-xs font-semibold text-gray-400">{mode.blurb}</p>
         </div>
 
-        {/* Topic card — fixed height so switching scenarios never shifts the page */}
-        <div ref={topicRef} className="min-h-[132px] bg-white rounded-2xl p-4 shadow-sm border border-blue-100">
+        {/* Topic card — FIXED height + clamped text so switching scenarios never
+            changes its size or shifts the page. */}
+        <div ref={topicRef} className="h-[144px] flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-blue-100">
           <div className="mb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mic size={15} className="text-blue-500" />
@@ -99,7 +100,7 @@ export default function Home() {
           </div>
           {topic ? (
             <>
-              <p className="text-base font-semibold text-gray-800 leading-relaxed">"{topic}"</p>
+              <p className="text-base font-semibold text-gray-800 leading-relaxed line-clamp-2">"{topic}"</p>
               <p className="mt-2 text-xs font-semibold text-gray-400">Tap Start Practice below to speak on this — or just talk about your own.</p>
             </>
           ) : (

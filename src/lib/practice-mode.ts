@@ -23,7 +23,7 @@ export const PRACTICE_MODES: PracticeMode[] = [
     id: "debate",
     label: "Debate",
     emoji: "🗣️",
-    blurb: "Argue a motion — claim, evidence, rebuttal",
+    blurb: "Claim, evidence, rebuttal",
     coachStyle:
       "Mode: Debate. Coach argument structure — a clear claim, supporting evidence, and a rebuttal to the other side. Help them anticipate counter-arguments. Never write a full speech or assign a score.",
     topicNoun: "debate motion",
@@ -72,7 +72,7 @@ export const PRACTICE_MODES: PracticeMode[] = [
     id: "free",
     label: "Free Talk",
     emoji: "💬",
-    blurb: "Low-pressure — talk about anything",
+    blurb: "Talk about anything",
     coachStyle:
       "Mode: Free Talk. Keep it relaxed and low-pressure. Encourage the student to keep their idea going and build confidence and fluency. Do not grade; coach gently.",
     topicNoun: "topic",
