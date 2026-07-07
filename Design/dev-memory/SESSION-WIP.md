@@ -10,6 +10,11 @@
 - ✅🧪 **辩论前端适配已 ship**（`b0f26ad`，纯前端，Vercel 已上）：Home TOPIC_STARTERS→辩题；Takeaway 加 3 个反驳 Presets（Counter my point / My weakest logic / Strong points+holes，**需 AI 活才真用**）；KTV Story→**Argument**（claim+evidence+why）。
 - ✅🧪 **金句 pin 闭环**（`d7bb0d6`，纯前端）：`src/lib/saved-lines.ts`（localStorage，去重，上限6）；Takeaway "Steal these lines" 每条加 📌；Practice 开录前 Ready 卡显示 "Lines to try"（只读可删，只在录音前）。学到→复用闭环打通。
 
+### 首页重构（2026-07-07 晚，市场调研后）
+- Owner 反馈"一屏太空 + practice mode 没实质区别 + 每个话题库都套 debate 壳"。→ 调研 Praktika/ELSA/Duolingo 首页元素。
+- **模型厘清**：把"practice mode（只改语气）"升级成 **场景 = 专属话题库 + 专属教练风格**（`practice-mode.ts` 加 `topics`/`topicNoun`/`pickTopic`）。4 场景：🗣️Debate / 🔬Science Talk / 🎓Exam Prep / 💬Free Talk，默认 Debate。
+- 首页：**场景选择器 → 话题卡（题目来自所选场景库，Another 在库内换，Free Talk=自带）→ Last Highlight → 大 Start**。My 页去掉重复的 coach-style 选择器。`53af4fb`，Vercel 已上。
+
 ### 三条待挖功能线（Owner 点名，2026-07-07）
 1. ✅ **金句 pin 回 practice** —— 已做（见上）。
 2. ✅ **词汇功能 = 词汇银行 + My 页复盘**（`a805694`，纯前端）：`src/lib/vocab-bank.ts`（localStorage，按强词去重，上限40）；Takeaway Words 卡每条加 🔖 保存（存 from→to+上下文）；My 页新增 "Vocab bank" 卡复盘（新→旧，可删）。
