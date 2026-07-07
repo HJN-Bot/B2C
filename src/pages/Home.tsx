@@ -1,21 +1,13 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarCheck, Star, ChevronRight, Mic, RefreshCw } from "lucide-react";
+import { Star, ChevronRight, Mic, RefreshCw } from "lucide-react";
+import { PRACTICE_MODES, getPracticeMode, setPracticeMode, pickTopic, type PracticeModeId } from "@/lib/practice-mode";
 import { getSessions } from "@/lib/session-history";
 import AppTabBar from "@/components/AppTabBar";
 import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 
-const MOCK_USER = { name: "Alex", streak: 5 };
+const MOCK_USER = { name: "Alex" };
 const HOME_TOUR = "speakspark.homeOnboarded";
-
-const TOPIC_STARTERS = [
-  "This house believes AI will help students more than it harms them.",
-  "This house would ban homework in schools.",
-  "Resolved: Space exploration is worth the cost.",
-  "Should social media have a minimum age of 16?",
-  "This house believes zoos do more good than harm.",
-  "This house would make one science subject compulsory every year.",
-];
 
 const HIGHLIGHT_WAVE = [3, 5, 8, 12, 9, 6, 14, 10, 7, 11, 8, 5, 9, 12, 7, 4, 10, 6, 8, 5];
 
@@ -26,17 +18,21 @@ function snippet(text: string, max = 120): string {
 
 export default function Home() {
   const navigate = useNavigate();
-  const [topic, setTopic] = useState(() => TOPIC_STARTERS[Math.floor(Math.random() * TOPIC_STARTERS.length)]);
-  const shuffleTopic = () => setTopic((cur) => {
-    if (TOPIC_STARTERS.length < 2) return cur;
-    let next = cur;
-    while (next === cur) next = TOPIC_STARTERS[Math.floor(Math.random() * TOPIC_STARTERS.length)];
-    return next;
-  });
+  const [modeId, setModeId] = useState<PracticeModeId>(() => getPracticeMode().id);
+  const mode = PRACTICE_MODES.find((m) => m.id === modeId) ?? PRACTICE_MODES[0];
+  const [topic, setTopic] = useState(() => pickTopic(mode));
   const [lastSession] = useState(() => getSessions()[0] ?? null);
   const [showTour, setShowTour] = useState(() => !hasSeenTour(HOME_TOUR));
+  const sceneRef = useRef<HTMLDivElement>(null);
   const topicRef = useRef<HTMLDivElement>(null);
   const startRef = useRef<HTMLButtonElement>(null);
+
+  const chooseScene = (id: PracticeModeId) => {
+    setModeId(id);
+    setPracticeMode(id);
+    const next = PRACTICE_MODES.find((m) => m.id === id) ?? PRACTICE_MODES[0];
+    setTopic(pickTopic(next));
+  };
 
   return (
     <div className="min-h-dvh flex flex-col bg-gray-50">
@@ -45,7 +41,8 @@ export default function Home() {
           storageKey={HOME_TOUR}
           onDone={() => setShowTour(false)}
           steps={[
-            { ref: topicRef, title: "Today's debate motion", body: "Here's a motion to argue — tap Another for a different one, or just talk about your own." },
+            { ref: sceneRef, title: "Pick a scenario", body: "Debate, Science Talk, Exam Prep, or Free Talk — each gives you its own topics and coaches you a bit differently." },
+            { ref: topicRef, title: "Your topic", body: "Here's one to speak on — tap Another for a different one, or just bring your own." },
             { ref: startRef, title: "Start practice", body: "One tap to start. You'll get live captions, a cat coach, and a takeaway when you finish." },
           ]}
         />
@@ -53,29 +50,50 @@ export default function Home() {
       <div className="flex-1 flex flex-col px-5 pt-6 pb-24 gap-4">
 
         {/* Greeting */}
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name} 👋</h1>
-          <div className="flex items-center gap-1.5 mt-1">
-            <CalendarCheck size={15} className="text-green-500" />
-            <span className="text-sm text-gray-500">{MOCK_USER.streak} practices this week · nice work</span>
+        <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name} 👋</h1>
+
+        {/* Scenario picker — each scenario has its own topic library + coach style */}
+        <div ref={sceneRef}>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Practice scenario</span>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {PRACTICE_MODES.map((m) => {
+              const active = m.id === modeId;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => chooseScene(m.id)}
+                  className={`flex items-center gap-2 rounded-2xl border p-3 text-left transition active:scale-95 ${active ? "border-blue-300 bg-blue-50 shadow-sm" : "border-gray-100 bg-white"}`}
+                >
+                  <span className="text-lg">{m.emoji}</span>
+                  <span className={`text-sm font-black leading-tight ${active ? "text-blue-600" : "text-gray-700"}`}>{m.label}</span>
+                </button>
+              );
+            })}
           </div>
+          <p className="mt-1.5 text-xs font-semibold text-gray-400">{mode.blurb}</p>
         </div>
 
-        {/* Debate motion card — the one prompt; the single Start button below uses it. */}
+        {/* Topic card — from the selected scenario's library */}
         <div ref={topicRef} className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100">
           <div className="mb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mic size={15} className="text-blue-500" />
-              <span className="text-xs font-bold uppercase tracking-widest text-blue-500">Today's debate motion</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-500">Today's {mode.topicNoun}</span>
             </div>
-            <button onClick={shuffleTopic} className="flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-500 active:scale-95">
-              <RefreshCw size={12} /> Another
-            </button>
+            {topic && (
+              <button onClick={() => setTopic(pickTopic(mode, topic))} className="flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-500 active:scale-95">
+                <RefreshCw size={12} /> Another
+              </button>
+            )}
           </div>
-          <p className="text-base font-semibold text-gray-800 leading-relaxed">
-            "{topic}"
-          </p>
-          <p className="mt-2 text-xs font-semibold text-gray-400">Tap Start Practice below to argue this — or just talk about your own.</p>
+          {topic ? (
+            <>
+              <p className="text-base font-semibold text-gray-800 leading-relaxed">"{topic}"</p>
+              <p className="mt-2 text-xs font-semibold text-gray-400">Tap Start Practice below to speak on this — or just talk about your own.</p>
+            </>
+          ) : (
+            <p className="text-sm font-semibold text-gray-500 leading-relaxed">Talk about anything on your mind — the coach will follow your idea.</p>
+          )}
         </div>
 
         {/* Last highlight — real last run, or an encouraging empty state */}
@@ -122,7 +140,7 @@ export default function Home() {
 
         <div className="flex-1" />
 
-        {/* Single CTA — the one entry to the practice room; carries the motion above. */}
+        {/* Single CTA — carries the selected scenario (saved) + topic. */}
         <button
           ref={startRef}
           onClick={() => navigate("/practice", { state: { topic } })}
