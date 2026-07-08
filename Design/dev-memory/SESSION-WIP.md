@@ -4,6 +4,35 @@
 
 ---
 
+## 📌 2026-07-07 下半场 — 改名 SpeakPeak + 国内基建 + 后端 Plan A/B/C（session 收尾）
+
+### 前端已 ship（都 push 到 `origin/jianan/speakspark`，Vercel + EdgeOne 均最新）
+- **首页场景模块重构**：`practice-mode` 升级成"场景=专属话题库+专属教练风格"（`lib/practice-mode.ts` 加 topics/topicNoun/pickTopic）。4 场景：🗣️Debate/🔬Science Talk/🎓Exam Prep/💬Free Talk，默认 Debate。选场景→话题卡出对应库，Another 换题。
+- **首页打磨**：topic 卡**固定高度+题目 line-clamp-2 + blurb truncate**（切场景不抖）；问候 "Hey Alex 👋"（挥手动画，本周**真实**练习次数）；Start 按钮上移（去掉撑满 spacer）；My 页去掉重复的 mode 选择器。
+- **金句 pin 闭环**（`lib/saved-lines.ts`）：Takeaway 📌 → Practice 开录前 "Lines to try"。
+- **词汇银行**（`lib/vocab-bank.ts`）：Takeaway Words 卡 🔖 保存 → My 页 "Vocab bank" 复盘。
+- **辩论适配**：辩题 starters + Coach 反驳 Presets（需 AI 活）+ KTV Story→**Argument**。
+- **改名 SpeakPeak**：`index.html` title/meta 从旧 CommuniLingo → SpeakPeak。
+
+### 关键决策
+- **产品名 = SpeakPeak，域名 = speakpeak.cn**（SpeakSpark 已被占；.cn ¥33，搭配购买全不买）。品牌已统一。
+- **AI 换国内模型**：Gemini 国内不可用 → 推 **DeepSeek**（OpenAI 兼容、便宜、英文强）。待 owner 领 key。
+- **后端 Plan A/B/C**：A=自己的 Supabase `yltvsimosrjavbjyknmq`+国内 API（**主推**）；B=Dounan 的 `jyofoabobuwfowpctbfd`（他没回、仅应急兜底）；C=自建到腾讯云轻量（长期国内最优、以后做）。
+- **Supabase MCP**：已写 `.mcp.json`（project scope，指向 `yltvsimosrjavbjyknmq`）。**待 owner 在 IDE 授权 supabase MCP 并重启会话** → 之后可直接部署 edge function 到自有项目（本机无 supabase CLI）。
+- **ICP 备案**：卡在"云资源"——EdgeOne Pages 不算，**必须买一台大陆轻量服务器（3个月起、最低配、华南/华东）拿备案服务号**。这台也是 Plan C 的自建机器。个人主体+身份证+扫脸。管局 7–20 天。
+- **EdgeOne 绑 speakpeak.cn**：控制台操作（CLI 无绑定命令，owner 做）。**大陆加速需备案；海外加速免备案可先绑**拿到能开的链接。备案与绑定两条线并行。
+- **Vercel**：token 曾过期，owner 重新 `vercel login` 后已重新部署，`speakspark-one.vercel.app` = 最新 SpeakPeak。
+
+### 线上
+- Vercel（海外稳定可分享）：**https://speakspark-one.vercel.app** = 最新。
+- EdgeOne（国内 CDN）：最新 dist 已部署；默认域名 3h token 不可分享，等 speakpeak.cn 绑定。
+
+### 下一步开发（unblock 后）
+1. Supabase MCP 授权 + DeepSeek key → 把 edge function 从 Gemini 改成 DeepSeek → MCP 部署到 `yltvsimosrjavbjyknmq` → `client.ts` 指过去 → **Plan A 后端+AI 国内跑通**。
+2. Backlog：金句库喂进 AI takeaway prompt；辩论 P2（Live Drill / 赛前 checklist 页）。
+
+---
+
 ## 📌 2026-07-07 — 周末辩论赛冲刺 + 前端功能（AI 后端复活由 Owner 负责）
 - 🚨 **AI 全断**：两个 Supabase（`jyofoabobuwfowpctbfd` 创始团队 + `mgufxtpqbcjoyadqcxzg` 自有）**都 NXDOMAIN**。本机无 supabase CLI。**Owner 负责激活 Supabase**（Dounan Restore 旧项目 / 或自建部署 3 个 edge function + 配 GEMINI_API_KEY）。AI 复活前，AI 类功能走本地兜底（降级不崩）。
 - ⚠️ **周末 130 人辩论赛**：ICP 赶不上（1–3 周），别等。国内链接 = 借已备案子域名(最佳) / 买域名+EdgeOne 海外加速。Gemini 130 并发免费版会限流 → 建议开付费额度（限流不崩、降级本地）。
