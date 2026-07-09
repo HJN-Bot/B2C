@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CalendarCheck, Star, ChevronRight, Mic, RefreshCw } from "lucide-react";
 import { PRACTICE_MODES, getPracticeMode, setPracticeMode, pickTopic, type PracticeModeId } from "@/lib/practice-mode";
 import { getSessions } from "@/lib/session-history";
+import { useI18n } from "@/lib/i18n";
 import AppTabBar from "@/components/AppTabBar";
 import CoachmarkTour, { hasSeenTour } from "@/components/CoachmarkTour";
 
@@ -18,6 +19,7 @@ function snippet(text: string, max = 120): string {
 
 export default function Home() {
   const navigate = useNavigate();
+  const { t, lang } = useI18n();
   const [modeId, setModeId] = useState<PracticeModeId>(() => getPracticeMode().id);
   const mode = PRACTICE_MODES.find((m) => m.id === modeId) ?? PRACTICE_MODES[0];
   const [topic, setTopic] = useState(() => pickTopic(mode));
@@ -25,8 +27,10 @@ export default function Home() {
   const lastSession = sessions[0] ?? null;
   const weekCount = sessions.filter((s) => Date.now() - new Date(s.createdAt).getTime() < 7 * 86_400_000).length;
   const weekLine = weekCount > 0
-    ? `${weekCount} ${weekCount === 1 ? "practice" : "practices"} this week · nice work`
-    : "Ready for your first challenge?";
+    ? (lang === "zh"
+        ? `本周练习 ${weekCount} 次 · 干得好`
+        : `${weekCount} ${weekCount === 1 ? "practice" : "practices"} this week · nice work`)
+    : t("home.readyFirst");
   const [showTour, setShowTour] = useState(() => !hasSeenTour(HOME_TOUR));
   const sceneRef = useRef<HTMLDivElement>(null);
   const topicRef = useRef<HTMLDivElement>(null);
@@ -56,7 +60,7 @@ export default function Home() {
 
         {/* Greeting — with a waving hand and this week's real practice count. */}
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Hey {MOCK_USER.name} <span className="wave-hand">👋</span></h1>
+          <h1 className="text-2xl font-black text-gray-900">{t("home.hey")} {MOCK_USER.name} <span className="wave-hand">👋</span></h1>
           <div className="mt-1 flex items-center gap-1.5">
             <CalendarCheck size={15} className="text-green-500" />
             <span className="text-sm text-gray-500">{weekLine}</span>
@@ -65,7 +69,7 @@ export default function Home() {
 
         {/* Scenario picker — each scenario has its own topic library + coach style */}
         <div ref={sceneRef}>
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Practice scenario</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">{t("home.scenario")}</span>
           <div className="mt-2 grid grid-cols-2 gap-2">
             {PRACTICE_MODES.map((m) => {
               const active = m.id === modeId;
@@ -76,12 +80,12 @@ export default function Home() {
                   className={`flex items-center gap-2 rounded-2xl border p-3 text-left transition active:scale-95 ${active ? "border-blue-300 bg-blue-50 shadow-sm" : "border-gray-100 bg-white"}`}
                 >
                   <span className="text-lg">{m.emoji}</span>
-                  <span className={`text-sm font-black leading-tight ${active ? "text-blue-600" : "text-gray-700"}`}>{m.label}</span>
+                  <span className={`text-sm font-black leading-tight ${active ? "text-blue-600" : "text-gray-700"}`}>{t(`scenario.${m.id}`)}</span>
                 </button>
               );
             })}
           </div>
-          <p className="mt-1.5 truncate text-xs font-semibold text-gray-400">{mode.blurb}</p>
+          <p className="mt-1.5 truncate text-xs font-semibold text-gray-400">{t(`blurb.${modeId}`)}</p>
         </div>
 
         {/* Topic card — FIXED height + clamped text so switching scenarios never
@@ -90,30 +94,30 @@ export default function Home() {
           <div className="mb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mic size={15} className="text-blue-500" />
-              <span className="text-xs font-bold uppercase tracking-widest text-blue-500">Today's {mode.topicNoun}</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-500">{t(`today.${modeId}`)}</span>
             </div>
             {topic && (
               <button onClick={() => setTopic(pickTopic(mode, topic))} className="flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-500 active:scale-95">
-                <RefreshCw size={12} /> Another
+                <RefreshCw size={12} /> {t("home.another")}
               </button>
             )}
           </div>
           {topic ? (
             <>
               <p className="text-base font-semibold text-gray-800 leading-snug line-clamp-3">"{topic}"</p>
-              <p className="mt-2 text-xs font-semibold text-gray-400 line-clamp-1">Speak on this — or just talk about your own.</p>
+              <p className="mt-2 text-xs font-semibold text-gray-400 line-clamp-1">{t("home.topicHint")}</p>
             </>
           ) : (
-            <p className="text-sm font-semibold text-gray-500 leading-relaxed">Talk about anything on your mind — the coach will follow your idea.</p>
+            <p className="text-sm font-semibold text-gray-500 leading-relaxed">{t("home.freeHint")}</p>
           )}
         </div>
 
         {/* Last highlight — real last run, or an encouraging empty state */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Last Highlight ✨</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">{t("home.lastHighlight")} ✨</span>
             <button onClick={() => navigate("/my")} className="flex items-center gap-1 text-xs font-medium text-blue-500">
-              Library <ChevronRight size={13} />
+              {t("home.library")} <ChevronRight size={13} />
             </button>
           </div>
 
@@ -135,7 +139,9 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <Star size={13} className="text-amber-400" />
                   <span className="text-sm font-bold text-amber-500">
-                    {lastSession.highlightWords.length ? `${lastSession.highlightWords.length} phrases saved` : "Run saved"}
+                    {lastSession.highlightWords.length
+                      ? (lang === "zh" ? `已存 ${lastSession.highlightWords.length} 句` : `${lastSession.highlightWords.length} phrases saved`)
+                      : t("home.runSaved")}
                   </span>
                   <span className="text-xs text-gray-400">· {lastSession.mode}</span>
                 </div>
@@ -144,8 +150,8 @@ export default function Home() {
             </button>
           ) : (
             <div className="w-full text-left bg-white rounded-2xl p-4 shadow-sm border border-dashed border-amber-200">
-              <p className="text-sm font-bold text-gray-700">No highlights yet ✨</p>
-              <p className="mt-1 text-xs font-semibold text-gray-400">Finish your first practice and your best phrases show up here.</p>
+              <p className="text-sm font-bold text-gray-700">{t("home.noHighlights")} ✨</p>
+              <p className="mt-1 text-xs font-semibold text-gray-400">{t("home.noHighlightsSub")}</p>
             </div>
           )}
         </div>
@@ -163,7 +169,7 @@ export default function Home() {
           }}
         >
           <span className="text-2xl">🎙️</span>
-          Start Practice
+          {t("home.start")}
         </button>
 
       </div>

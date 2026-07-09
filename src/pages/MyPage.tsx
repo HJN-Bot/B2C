@@ -6,6 +6,7 @@ import { getSessions, type SessionRecord } from "@/lib/session-history";
 import { TRYING_POINTS } from "@/lib/trying-point";
 import { getCustomPrompt, setCustomPrompt } from "@/lib/coach-prefs";
 import { getVocab, removeVocab, type VocabItem } from "@/lib/vocab-bank";
+import { useI18n } from "@/lib/i18n";
 
 const ability = [
   { label: "Flow", value: 64, change: "+12", color: "#58A9FF" },
@@ -39,6 +40,7 @@ function sessionTitle(s: SessionRecord): string {
 }
 
 export default function MyPage() {
+  const { t, lang, setLang } = useI18n();
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -62,7 +64,7 @@ export default function MyPage() {
     : sessions;
   const historyLabel = selectedDate
     ? selectedDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-    : "All days";
+    : t("my.allDays");
 
   return (
     <div className="min-h-dvh bg-gray-50">
@@ -73,10 +75,10 @@ export default function MyPage() {
               <UserRound size={28} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-black uppercase tracking-widest text-blue-500">My Page</p>
-              <h1 className="text-2xl font-black text-gray-900">Alex's growth map</h1>
+              <p className="text-xs font-black uppercase tracking-widest text-blue-500">{t("my.title")}</p>
+              <h1 className="text-2xl font-black text-gray-900">{lang === "zh" ? "Alex 的成长地图" : "Alex's growth map"}</h1>
               <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-bold text-green-600">
-                <ShieldCheck size={11} /> Practice feedback only
+                <ShieldCheck size={11} /> {t("my.feedbackOnly")}
               </span>
             </div>
             <button
@@ -92,8 +94,8 @@ export default function MyPage() {
         <section className="rounded-[1.25rem] border border-green-100 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-widest text-green-500">Trying Point</p>
-              <h2 className="mt-1 text-lg font-black text-gray-900">This week's visible upgrade</h2>
+              <p className="text-xs font-black uppercase tracking-widest text-green-500">{t("my.tryingPoint")}</p>
+              <h2 className="mt-1 text-lg font-black text-gray-900">{t("my.tryingPointSub")}</h2>
             </div>
             <Sparkles size={18} className="text-green-500" />
           </div>
@@ -111,7 +113,7 @@ export default function MyPage() {
 
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Practice growth</p>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t("my.growth")}</p>
             <TrendingUp size={16} className="text-blue-500" />
           </div>
           <div className="space-y-3">
@@ -135,12 +137,12 @@ export default function MyPage() {
         {/* Vocab bank — the word upgrades you bookmarked in Takeaways, to review. */}
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Vocab bank{vocab.length ? ` · ${vocab.length}` : ""}</p>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t("my.vocabBank")}{vocab.length ? ` · ${vocab.length}` : ""}</p>
             <Bookmark size={16} className="text-green-500" />
           </div>
           {vocab.length === 0 ? (
             <p className="rounded-2xl bg-gray-50 px-3 py-4 text-center text-xs font-semibold text-gray-400">
-              No saved words yet — in a Takeaway, tap 🔖 on a word upgrade to save it here.
+              {t("my.vocabEmpty")}
             </p>
           ) : (
             <div className="max-h-[240px] space-y-1.5 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
@@ -162,7 +164,7 @@ export default function MyPage() {
 
         <section className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Practice history{visibleSessions.length > 3 ? ` · ${visibleSessions.length}` : ""}</p>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t("my.history")}{visibleSessions.length > 3 ? ` · ${visibleSessions.length}` : ""}</p>
             <button
               onClick={() => setCalendarOpen((open) => !open)}
               className="flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-bold text-gray-500 active:scale-95"
@@ -194,14 +196,14 @@ export default function MyPage() {
               />
               <div className="mt-1 flex items-center justify-between px-2 pb-1">
                 <span className="text-[11px] font-semibold text-gray-400">
-                  Blue dots mean practice days.
+                  {t("my.blueDots")}
                 </span>
                 {selectedDate && (
                   <button
                     onClick={() => setSelectedDate(undefined)}
                     className="rounded-full bg-white px-2 py-1 text-[11px] font-black text-blue-500 shadow-sm active:scale-95"
                   >
-                    Clear
+                    {t("my.clear")}
                   </button>
                 )}
               </div>
@@ -211,10 +213,10 @@ export default function MyPage() {
             {visibleSessions.length === 0 && (
               <p className="rounded-2xl bg-gray-50 px-3 py-4 text-center text-xs font-semibold text-gray-400">
                 {sessions.length === 0
-                  ? "No practice runs saved yet. Finish a practice and it shows up here."
+                  ? t("my.noRunsYet")
                   : selectedDate
-                    ? "No runs on this date. Pick a day with a blue dot, or clear the date."
-                    : "No practice runs found."}
+                    ? t("my.noRunsDate")
+                    : t("my.noRunsYet")}
               </p>
             )}
             {visibleSessions.map((item) => (
@@ -235,13 +237,30 @@ export default function MyPage() {
         </section>
 
         <section ref={settingsRef} className="rounded-[1.25rem] border border-gray-100 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-xs font-black uppercase tracking-widest text-gray-400">Settings</p>
+          <p className="mb-3 text-xs font-black uppercase tracking-widest text-gray-400">{t("my.settings")}</p>
           <div className="space-y-2">
+            {/* Language — switch the UI between English and 中文 (content stays English). */}
+            <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3">
+              <span className="text-base">🌐</span>
+              <span className="flex-1 text-sm font-bold text-gray-800">{t("my.language")}</span>
+              <div className="flex gap-1 rounded-full bg-white p-0.5 shadow-sm">
+                {(["en", "zh"] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`rounded-full px-3 py-1 text-xs font-black transition ${lang === l ? "bg-blue-500 text-white" : "text-gray-500"}`}
+                  >
+                    {l === "en" ? "EN" : "中文"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Coach mode — a fixed trust boundary, shown as info (not a toggle) */}
             <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3">
               <ShieldCheck size={17} className="text-green-500" />
-              <span className="flex-1 text-sm font-bold text-gray-800">Coach mode</span>
-              <span className="text-xs font-semibold text-green-600">Practice feedback only</span>
+              <span className="flex-1 text-sm font-bold text-gray-800">{t("my.coachMode")}</span>
+              <span className="text-xs font-semibold text-green-600">{t("my.feedbackOnly")}</span>
             </div>
 
             {/* Saved phrase bank — real, aggregated from your practice history */}
@@ -250,14 +269,14 @@ export default function MyPage() {
               className="flex w-full items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-left active:scale-[0.99]"
             >
               <Sparkles size={17} className="text-blue-500" />
-              <span className="flex-1 text-sm font-bold text-gray-800">Saved phrase bank</span>
-              <span className="text-xs font-semibold text-gray-400">{savedPhrases.length} {savedPhrases.length === 1 ? "phrase" : "phrases"}</span>
+              <span className="flex-1 text-sm font-bold text-gray-800">{t("my.savedPhraseBank")}</span>
+              <span className="text-xs font-semibold text-gray-400">{savedPhrases.length} {t(savedPhrases.length === 1 ? "my.phrase" : "my.phrases")}</span>
               <ChevronDown size={15} className="text-gray-300 transition-transform" style={{ transform: phrasesOpen ? "rotate(180deg)" : "none" }} />
             </button>
             {phrasesOpen && (
               <div className="rounded-2xl bg-blue-50/50 px-3 py-3">
                 {savedPhrases.length === 0 ? (
-                  <p className="text-xs font-semibold text-gray-400">No saved phrases yet — finish a practice and your highlighted words show up here.</p>
+                  <p className="text-xs font-semibold text-gray-400">{t("my.savedPhraseEmpty")}</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {savedPhrases.map((p) => (
@@ -274,8 +293,8 @@ export default function MyPage() {
               className="flex w-full items-center gap-3 rounded-2xl bg-gray-50 px-3 py-3 text-left active:scale-[0.99]"
             >
               <Settings size={17} className="text-blue-500" />
-              <span className="flex-1 text-sm font-bold text-gray-800">Coaching prompt</span>
-              <span className="text-xs font-semibold text-gray-400">{customPrompt ? "Custom" : "Default"}</span>
+              <span className="flex-1 text-sm font-bold text-gray-800">{t("my.coachingPrompt")}</span>
+              <span className="text-xs font-semibold text-gray-400">{customPrompt ? t("my.custom") : t("my.default")}</span>
               <ChevronDown size={15} className="text-gray-300 transition-transform" style={{ transform: promptOpen ? "rotate(180deg)" : "none" }} />
             </button>
             {promptOpen && (

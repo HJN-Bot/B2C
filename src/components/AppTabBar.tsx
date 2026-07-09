@@ -1,20 +1,22 @@
 import { Home, Mic, Sparkles, UserRound } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useI18n } from "@/lib/i18n";
 
 const TABS = [
-  { label: "Start", path: "/", icon: Home },
-  { label: "Practice", path: "/practice", icon: Mic },
-  { label: "Takeaway", path: "/session-end", icon: Sparkles },
-  { label: "My", path: "/my", icon: UserRound },
+  { key: "start", path: "/", icon: Home },
+  { key: "practice", path: "/practice", icon: Mic },
+  { key: "takeaway", path: "/session-end", icon: Sparkles },
+  { key: "my", path: "/my", icon: UserRound },
 ];
 
 export default function AppTabBar() {
   const location = useLocation();
+  const { t } = useI18n();
 
   return (
     <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 px-3 pb-3">
       <div className="grid grid-cols-4 rounded-[1.4rem] border border-gray-100 bg-white/95 p-1.5 shadow-[0_-8px_28px_rgba(31,41,55,0.08)] backdrop-blur">
-        {TABS.map(({ label, path, icon: Icon }) => {
+        {TABS.map(({ key, path, icon: Icon }) => {
           const active = path === "/"
             ? location.pathname === "/"
             : location.pathname === path;
@@ -31,7 +33,7 @@ export default function AppTabBar() {
               aria-current={active ? "page" : undefined}
             >
               <Icon size={18} strokeWidth={active ? 2.8 : 2.2} />
-              <span className="max-w-full truncate text-[10px] font-black">{label}</span>
+              <span className="max-w-full truncate text-[10px] font-black">{t(`nav.${key}`)}</span>
             </Link>
           );
         })}
