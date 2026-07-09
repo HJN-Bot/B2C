@@ -28,7 +28,7 @@ const TARGET_SAMPLE_RATE     = 16000;
 const BUFFER_SIZE            = 1024;
 const MIN_PHRASE_SECONDS     = 0.9;
 const MAX_PHRASE_SECONDS     = 3.0;
-const BOTTLENECK_SILENCE_MS  = 2500;
+const BOTTLENECK_SILENCE_MS  = 2000;
 const PASSIVE_HIGHLIGHT_COOLDOWN_MS = 2600;
 const MAX_SESSION_HIGHLIGHT_WORDS = 8;
 
@@ -714,15 +714,13 @@ export default function PracticeRoom() {
     setAiState("Coach has a suggestion");
   }, []);
 
+  // Pin the picked prompt as a visible "answer this" card. It stays until the
+  // next pause card pops (beginPauseCoaching clears it) — no auto-hide timer.
   const collapseFollowUpToTag = useCallback(() => {
     const tip = followUpQRef.current.trim();
     if (!tip) return;
-    if (miniCoachTipTimerRef.current) clearTimeout(miniCoachTipTimerRef.current);
+    if (miniCoachTipTimerRef.current) { clearTimeout(miniCoachTipTimerRef.current); miniCoachTipTimerRef.current = null; }
     setMiniCoachTip(tip);
-    miniCoachTipTimerRef.current = window.setTimeout(() => {
-      setMiniCoachTip("");
-      miniCoachTipTimerRef.current = null;
-    }, 9000);
   }, []);
 
   // ── Timer ──────────────────────────────────────────────────────────────────
@@ -1095,12 +1093,12 @@ export default function PracticeRoom() {
       enterReply(buffered.follow_up, buffered.feedback, buffered.kind);
       return;
     }
-    // No buffer yet → show local + bank prompts INSTANTLY (never blank), then
-    // quietly upgrade the lead with a live AI reply if it arrives in time.
+    // No buffer yet → show local + bank prompts INSTANTLY as the final content.
+    // (We no longer swap them for a live AI reply after showing — that caused
+    // the card to visibly jump. Pre-buffered AI, when available, is used above.)
     const local = localPauseReply(transcriptRef.current, highlightWordsRef.current);
     enterReply(local.follow_up, local.feedback, local.kind);
-    void resolvePauseReply();
-  }, [enterReply, resolvePauseReply]);
+  }, [enterReply]);
 
   useEffect(() => {
     if (!started) return;
@@ -1284,7 +1282,7 @@ export default function PracticeRoom() {
 
         // Bottleneck timer (4.8s total silence → ask follow-up)
         const canAskFollowUp = Date.now() - lastFollowUpAtRef.current > BOTTLENECK_SILENCE_MS + 2500;
-        if (allChunksRef.current.length > 0 && silenceMs > BOTTLENECK_SILENCE_MS && canAskFollowUp && !bottleneckTimerRef.current && !showBottleneckRef.current) {
+        if (allChunksRef.current.length > 0 && silenceMs > BOTTLENECK_SILENCE_MS && canAskFollowUp && !bottleneckTimerRef.current && !showBottleneckRef.current && !pauseHandledRef.current) {
           bottleneckTimerRef.current = setTimeout(() => {
             if (!processingRef.current && phraseChunksRef.current.length > 0) processPhrase(false);
             else if (!processingRef.current) beginPauseCoaching();
@@ -1702,7 +1700,7 @@ export default function PracticeRoom() {
                       {followUpChips.map((chip, i) => (
                         <button
                           key={`${chip.text}-${i}`}
-                          onClick={() => { followUpQRef.current = chip.text; setFollowUpQ(chip.text); collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); pauseHandledRef.current = false; setMood("listening"); }}
+                          onClick={() => { followUpQRef.current = chip.text; setFollowUpQ(chip.text); collapseFollowUpToTag(); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); }}
                           className="flex w-full items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2 text-left text-[13px] font-bold leading-snug text-gray-800 active:scale-95"
                         >
                           <Sparkles size={12} className="mt-0.5 shrink-0 text-blue-500" />
@@ -1711,11 +1709,17 @@ export default function PracticeRoom() {
                       ))}
                     </div>
                     <button
-                      onClick={() => { showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); pauseHandledRef.current = false; setMood("listening"); }}
+                      onClick={() => { setMiniCoachTip(""); showBottleneckRef.current = false; setShowBottleneck(false); setBottleneckPhase("thinking"); setMood("listening"); }}
                       className="mt-2 w-full rounded-xl bg-gray-100 py-2 text-sm font-bold text-gray-500 active:scale-95"
                     >
                       Skip
                     </button>
+                  </div>
+                ) : miniCoachTip ? (
+                  // A prompt you picked — pinned here (until the next pause card).
+                  <div className="practice-prompt-card" style={{ animation: "slide-up 0.3s cubic-bezier(0.16,1,0.3,1) forwards" }}>
+                    <p className="mb-1 text-[11px] font-black uppercase tracking-widest text-blue-500">📌 Answer this</p>
+                    <p className="text-[15px] font-black leading-snug text-gray-900">{miniCoachTip}</p>
                   </div>
                 ) : (
                   // Idle: the single coach status line (replaces the old cat bubble).
