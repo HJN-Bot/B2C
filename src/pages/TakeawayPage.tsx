@@ -6,7 +6,7 @@ import { callGeminiProxy } from "@/lib/gemini-proxy";
 import { pickStealLines } from "@/data/quoteLibrary";
 import { toggleLine, isLineSaved } from "@/lib/saved-lines";
 import { toggleVocab, isVocabSaved } from "@/lib/vocab-bank";
-import { Pin, Bookmark } from "lucide-react";
+import { Pin, Bookmark, RefreshCw } from "lucide-react";
 import { getPracticeMode } from "@/lib/practice-mode";
 import { getCustomPrompt } from "@/lib/coach-prefs";
 import { setNextTryingPoint } from "@/lib/trying-point";
@@ -64,14 +64,12 @@ const KTV_META: Record<KTVMetric, { label: string; Icon: LucideIcon; color: stri
 
 
 const PRESETS = [
-  { label: "Ask me one question", prompt: "Ask me ONE short question about my topic so I can practice answering it next time. Do not answer it for me." },
-  { label: "My highlight", prompt: "What was the single best moment in what I just said, and why did it work?" },
-  { label: "Level up my words", prompt: "Give me 3 stronger words or phrases I can reuse next time, each with one short example sentence." },
-  { label: "Make my story fun", prompt: "Give me one small idea to make my story more interesting next time, based on what I said." },
-  { label: "Shape my story", prompt: "Help me shape my idea into claim, example, and why it matters — using my own words, not a full script." },
-  { label: "Counter my point", prompt: "Give me 3 strong counter-arguments against my main point, so I can prepare rebuttals. Keep each to one short sentence." },
-  { label: "My weakest logic", prompt: "Point out the single weakest link in my argument and one concrete way to fix it. Be specific, one short paragraph." },
-  { label: "Strong points + holes", prompt: "List my 3 strongest points, and 3 likely holes an opponent could attack. One short line each." },
+  { label: "Ask me a question", prompt: "Ask me ONE short question about my topic to practice answering next time. Don't answer it for me." },
+  { label: "My best line", prompt: "What was the single strongest thing I said, and why did it work?" },
+  { label: "Stronger words", prompt: "Give me 3 stronger words or phrases I can reuse next time, each with one short example." },
+  { label: "Expand my point", prompt: "Take my thinnest point and show me how to develop it: claim, example, and why it matters — using my own idea, not a full script." },
+  { label: "Counter my point", prompt: "Give me 3 strong counter-arguments against my main point so I can prepare rebuttals. One short sentence each." },
+  { label: "My weakest link", prompt: "Point out the weakest part of my argument and one concrete way to fix it." },
 ];
 
 const STOP_WORDS = new Set([
@@ -577,10 +575,17 @@ export default function TakeawayPage() {
   }, [hasSessionData, practiceMode, timer, wordCount, highlightWords, ktvScore, transcript]);
 
   const plan = takeaway?.next_run_plan;
-  // A word the student actually used, to fill the curated frames with.
-  // Real "steal these lines" from famous speeches — picked once per takeaway.
-  const stealLines = useMemo(() => pickStealLines(3), []);
-  // Bumped when a line is pinned/unpinned, to re-read the saved state.
+  // Real, complete golden lines from famous speeches (not blank templates).
+  // "Shuffle" re-picks a fresh pair so the student can cycle through variety.
+  const [stealLines, setStealLines] = useState(() => pickStealLines(2));
+  // Word upgrades: show up to 3 from the coach's pool; shuffle re-picks a set.
+  const [wordShuffleTick, setWordShuffleTick] = useState(0);
+  const shownWords = useMemo(() => {
+    const pool = plan?.reuse_words ?? [];
+    return [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, wordShuffleTick]);
+  // Bumped when a line/word is pinned/saved, to re-read the saved state.
   const [pinTick, setPinTick] = useState(0);
 
   return (
@@ -668,15 +673,22 @@ export default function TakeawayPage() {
 
             {/* ✨ WORDS — swap a word for a stronger one */}
             <section className="rounded-[1.25rem] border-l-4 border-green-400 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-base">✨</span>
-                <p className="text-sm font-black text-gray-900">Words</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">✨</span>
+                  <p className="text-sm font-black text-gray-900">Words</p>
+                </div>
+                {plan && plan.reuse_words.length > 3 && (
+                  <button onClick={() => setWordShuffleTick((t) => t + 1)} className="flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-500 active:scale-95">
+                    <RefreshCw size={12} /> Shuffle
+                  </button>
+                )}
               </div>
               <p className="mt-0.5 text-xs font-semibold text-gray-400">Swap a word in your own phrase for a stronger one.</p>
               <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400">🔖 save to your vocab bank</p>
-              {plan && plan.reuse_words.length > 0 ? (
-                <div className="mt-1 space-y-2" key={pinTick}>
-                  {plan.reuse_words.map((word) => {
+              {shownWords.length > 0 ? (
+                <div className="mt-1 space-y-2" key={`${pinTick}-${wordShuffleTick}`}>
+                  {shownWords.map((word) => {
                     const { from, to } = parsePowerWord(word);
                     const ctx = from ? wordContext(transcript, from) : null;
                     const context = ctx ? [ctx.before, from, ctx.after].filter(Boolean).join(" ") : undefined;
@@ -713,11 +725,16 @@ export default function TakeawayPage() {
               )}
             </section>
 
-            {/* 🧱 SENTENCES — steal a line and drop it into your talk */}
+            {/* 🧱 SENTENCES — steal a real line and drop it into your talk */}
             <section className="rounded-[1.25rem] border-l-4 border-blue-400 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🧱</span>
-                <p className="text-sm font-black text-gray-900">Sentences</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🧱</span>
+                  <p className="text-sm font-black text-gray-900">Sentences</p>
+                </div>
+                <button onClick={() => setStealLines(pickStealLines(2))} className="flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-500 active:scale-95">
+                  <RefreshCw size={12} /> Shuffle
+                </button>
               </div>
               <p className="mt-0.5 text-xs font-semibold text-gray-400">Steal a line and drop it into your talk.</p>
               {plan?.say_this && (
@@ -726,18 +743,18 @@ export default function TakeawayPage() {
                   <p className="mt-1 text-sm font-black leading-relaxed text-gray-900">"{renderInline(plan.say_this)}"</p>
                 </div>
               )}
-              <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Steal these lines from great speakers · 📌 pin for next practice</p>
+              <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Lines from great speakers · 📌 pin for next practice</p>
               <div className="mt-1.5 space-y-1.5" key={pinTick}>
-                {stealLines.map(({ pattern, speaker }) => {
-                  const saved = isLineSaved(pattern);
+                {stealLines.map(({ quote, speaker }) => {
+                  const saved = isLineSaved(quote);
                   return (
-                    <div key={pattern} className="flex items-start gap-2 rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2">
+                    <div key={quote} className="flex items-start gap-2 rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold leading-snug text-gray-700">{pattern}</p>
+                        <p className="text-sm font-bold leading-snug text-gray-700">"{quote}"</p>
                         <p className="mt-0.5 text-[11px] font-semibold text-gray-400">— {speaker}</p>
                       </div>
                       <button
-                        onClick={() => { toggleLine(pattern, speaker); setPinTick((t) => t + 1); }}
+                        onClick={() => { toggleLine(quote, speaker); setPinTick((t) => t + 1); }}
                         aria-label={saved ? "Unpin line" : "Pin line for next practice"}
                         className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition active:scale-90 ${saved ? "bg-blue-500 text-white" : "bg-white text-gray-300 shadow-sm"}`}
                       >
