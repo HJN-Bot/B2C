@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>SpeakPeak · 使用指南</title>
+<meta name="description" content="SpeakPeak —— 面向中学生的英文演讲 / 辩论实时陪练教练。开口练，登上你的表达巅峰。" />
+<style>
+  :root{
+    --blue:#58A9FF; --green:#7ED957; --ink:#1F2937; --sub:#6B7280;
+    --line:#EAEFF5; --card:#FFFFFF; --bg:#F5F8FB;
+    --grad:linear-gradient(135deg,#58A9FF,#7ED957);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Segoe UI,Roboto,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:600px;margin:0 auto;padding:0 20px 64px}
+
+  /* ── Hero ── */
+  .hero{
+    position:relative; text-align:center;
+    padding:56px 24px 44px; margin:0 -20px 8px;
+    background:radial-gradient(120% 80% at 50% 0%,rgba(88,169,255,.14),rgba(126,217,87,.10) 55%,transparent 80%);
+  }
+  .cat{
+    width:112px;height:112px;margin:0 auto 18px;border-radius:32px;overflow:hidden;
+    background:#fff; box-shadow:0 16px 34px rgba(31,41,55,.14);
+    display:grid;place-items:center;
+  }
+  .cat > i{
+    display:block;width:100%;height:100%;
+    background-image:url("/assets/cat-coach/cat_speaking_coach_sprite_sheet_transparent.png");
+    background-repeat:no-repeat; background-size:200% 200%;
+    background-position:0% 100%; /* excited frame (bottom-left) */
+  }
+  .brand{font-size:40px;font-weight:900;letter-spacing:-.5px;margin:0}
+  .brand b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .slogan{margin:10px 0 4px;font-size:17px;font-weight:800;color:var(--ink)}
+  .slogan span{color:var(--blue)}
+  .tag{margin:2px 0 0;font-size:14px;color:var(--sub)}
+
+  /* ── URL cards ── */
+  .urls{display:grid;gap:12px;margin:26px 0 6px}
+  .url{
+    display:flex;align-items:center;gap:14px;background:var(--card);
+    border:1px solid var(--line);border-radius:18px;padding:14px 16px;
+    box-shadow:0 6px 18px rgba(31,41,55,.05);text-decoration:none;color:inherit;
+  }
+  .url .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .url .live{background:var(--green);box-shadow:0 0 0 4px rgba(126,217,87,.18)}
+  .url .soon{background:#F5A623;box-shadow:0 0 0 4px rgba(245,166,35,.16)}
+  .url .txt{min-width:0}
+  .url .k{font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--sub);text-transform:uppercase}
+  .url .v{font-size:16px;font-weight:800;color:var(--ink);word-break:break-all}
+  .url .note{font-size:12px;color:var(--sub)}
+
+  /* ── What it does ── */
+  .lead{
+    margin:30px 0 8px;background:var(--card);border:1px solid var(--line);
+    border-radius:20px;padding:20px 20px 6px;box-shadow:0 6px 18px rgba(31,41,55,.05);
+  }
+  .lead h2{margin:0 0 12px;font-size:17px;font-weight:900}
+  .lead ul{list-style:none;margin:0;padding:0}
+  .lead li{display:flex;gap:12px;padding:0 0 14px}
+  .lead li .e{font-size:19px;line-height:1.4;flex:none}
+  .lead li b{font-weight:800}
+  .lead li p{margin:2px 0 0;color:var(--sub);font-size:14px}
+
+  /* ── Page sections ── */
+  .sec{margin:38px 0 0}
+  .sec .head{display:flex;align-items:center;gap:12px;margin:0 0 6px}
+  .sec .badge{
+    width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;
+    font-size:22px;background:#fff;border:1px solid var(--line);box-shadow:0 4px 12px rgba(31,41,55,.06)
+  }
+  .sec .head .t{font-size:20px;font-weight:900;margin:0}
+  .sec .head .s{font-size:13px;color:var(--sub);margin:1px 0 0;font-weight:700}
+  .sec .grid{display:grid;grid-template-columns:220px 1fr;gap:22px;align-items:start;margin-top:14px}
+  @media(max-width:560px){.sec .grid{grid-template-columns:1fr;gap:16px}}
+  .shot{
+    border-radius:26px;overflow:hidden;border:1px solid var(--line);
+    background:#fff;box-shadow:0 14px 34px rgba(31,41,55,.12);
+  }
+  .shot img{display:block;width:100%;height:auto}
+  .feat{list-style:none;margin:2px 0 0;padding:0}
+  .feat li{position:relative;padding:0 0 14px 22px;font-size:15px}
+  .feat li:before{
+    content:"";position:absolute;left:0;top:8px;width:9px;height:9px;border-radius:50%;
+    background:var(--grad);
+  }
+  .feat li b{font-weight:800}
+  .feat li span{color:var(--sub)}
+
+  /* ── Footer ── */
+  .foot{
+    text-align:center;margin:52px -20px 0;padding:40px 24px 8px;
+    background:radial-gradient(120% 90% at 50% 100%,rgba(88,169,255,.12),transparent 70%);
+  }
+  .foot .big{font-size:22px;font-weight:900}
+  .foot .big span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .foot .cta{
+    display:inline-block;margin-top:16px;padding:14px 30px;border-radius:16px;
+    background:var(--grad);color:#fff;font-weight:900;font-size:16px;text-decoration:none;
+    box-shadow:0 10px 24px rgba(88,169,255,.32)
+  }
+  .foot .mini{margin-top:18px;font-size:12px;color:var(--sub)}
+
+  @media print {
+    @page { size: A4 portrait; margin: 18mm; }
+    html, body {
+      width: 100%;
+      min-height: auto;
+      background: #fff !important;
+      color: #111 !important;
+      color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body { box-shadow: none; }
+    .wrap { max-width: 100%; margin: 0; padding: 16px; }
+    .hero, .lead, .sec, .foot, .url, .shot, .head, .feat, .lead ul, .lead li, .url .txt {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .sec .grid { display: block; grid-template-columns: none; gap: 0; margin-top: 14px; }
+    .shot { overflow: visible; width: 100%; margin-bottom: 18px; }
+    .shot img { display: block; width: 100%; height: auto !important; }
+    .lead, .url, .foot { box-shadow: none; border-color: #ddd; }
+    .hero { margin: 0 0 16px; }
+    .foot { margin: 32px 0 0; padding: 32px 0 8px; }
+    .url { page-break-inside: avoid; }
+    .badge { width: 40px; height: 40px; }
+    .brand { font-size: 34px; line-height: 1.05; }
+    .slogan, .tag, .head .t, .head .s, .feat li { color: #222; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== Welcome ===== -->
+  <header class="hero">
+    <div class="cat"><i></i></div>
+    <h1 class="brand">Speak<b>Peak</b></h1>
+    <p class="slogan">Speak up, <span>reach your peak.</span></p>
+    <p class="tag">开口练，登上你的表达巅峰 · 中学生英文演讲 / 辩论实时陪练</p>
+
+    <div class="urls">
+      <a class="url" href="https://speakpeak.vercel.app" target="_blank" rel="noopener">
+        <span class="dot live"></span>
+        <span class="txt">
+          <span class="k">现在就能用</span>
+          <div class="v">speakpeak.vercel.app</div>
+          <span class="note">手机 / 电脑打开即用，苹果手机也支持</span>
+        </span>
+      </a>
+      <div class="url">
+        <span class="dot soon"></span>
+        <span class="txt">
+          <span class="k">国内直达 · 即将上线</span>
+          <div class="v">speakpeak.cn</div>
+          <span class="note">备案中 —— 备案通过后国内访问更快更稳</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== What it does ===== -->
+  <section class="lead">
+    <h2>它能帮你做什么</h2>
+    <ul>
+      <li><span class="e">🎯</span><div><b>选个场景，开口就练</b><p>辩论、科普演讲、考试口语、自由说 —— 每个场景有自己的话题库和教练风格。</p></div></li>
+      <li><span class="e">🐱</span><div><b>猫猫教练实时听</b><p>边说边出字幕，从流畅度、用词、句子、论证四个维度即时反馈。</p></div></li>
+      <li><span class="e">✨</span><div><b>练完给你复盘</b><p>挑出你最好的一句，教你换更强的词、偷名人金句、把观点讲得更完整。</p></div></li>
+      <li><span class="e">📌</span><div><b>金句和好词攒起来</b><p>喜欢的表达一键收藏，下次练习自动带回，看得见自己的进步。</p></div></li>
+    </ul>
+  </section>
+
+  <!-- ===== Start ===== -->
+  <section class="sec">
+    <div class="head">
+      <div class="badge">🏠</div>
+      <div><p class="t">开始 · Start</p><p class="s">选场景 → 出话题 → 一键开练</p></div>
+    </div>
+    <div class="grid">
+      <div class="shot"><img src="./guide/home.png" alt="Start 首页" /></div>
+      <ul class="feat">
+        <li><b>四个练习场景</b><br><span>辩论 / 科普演讲 / 考试备考 / 自由说，点一下切换，风格各不同。</span></li>
+        <li><b>今日话题卡</b><br><span>每个场景给你一个可以直接开口的题目，不想说这个就点「换一个」。</span></li>
+        <li><b>上次高光</b><br><span>一眼看到上一次练习最好的表达和已收藏的句子。</span></li>
+        <li><b>一个大按钮开始</b><br><span>不用纠结设置，点「Start Practice」就进练习房。</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice ===== -->
+  <section class="sec">
+    <div class="head">
+      <div class="badge">🎤</div>
+      <div><p class="t">练习房 · Practice</p><p class="s">边说边被听见，实时给反馈</p></div>
+    </div>
+    <div class="grid">
+      <div class="shot"><img src="./guide/practice.png" alt="Practice 练习房" /></div>
+      <ul class="feat">
+        <li><b>准备好再开口</b><br><span>「Ready when you are」，深呼吸，点一下就开始，别有压力。</span></li>
+        <li><b>四维实时评分</b><br><span>Flow 流畅 / Words 用词 / Sentences 句子 / Argument 论证，说得好当场加分。</span></li>
+        <li><b>猫猫教练陪练</b><br><span>它会听你说，卡住时轻轻提示「接下来可以说什么」。</span></li>
+        <li><b>想试的金句</b><br><span>收藏过的名人金句会出现在这里，练习时照着说、用上它。</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Takeaway ===== -->
+  <section class="sec">
+    <div class="head">
+      <div class="badge">✨</div>
+      <div><p class="t">复盘 · Takeaway</p><p class="s">练完这一页，帮你说得更漂亮</p></div>
+    </div>
+    <div class="grid">
+      <div class="shot"><img src="./guide/takeaway.png" alt="Takeaway 复盘" /></div>
+      <ul class="feat">
+        <li><b>你最好的一句</b><br><span>先肯定 —— 挑出这次说得最亮的那句话。</span></li>
+        <li><b>Level up 三件套</b><br><span>换更强的词（Words）、偷名人金句（Sentences）、把观点展开讲（Storytelling）。</span></li>
+        <li><b>这次的小修 + 下个尝试点</b><br><span>只给一个最该改的地方，和下次可以试的一小步。</span></li>
+        <li><b>Coach 追问</b><br><span>还想深入？直接问教练，帮你把弱点补上。</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== My ===== -->
+  <section class="sec">
+    <div class="head">
+      <div class="badge">👤</div>
+      <div><p class="t">我的 · My</p><p class="s">你的成长地图都在这</p></div>
+    </div>
+    <div class="grid">
+      <div class="shot"><img src="./guide/my.png" alt="My 我的" /></div>
+      <ul class="feat">
+        <li><b>本周尝试点</b><br><span>三个看得见的小目标，这周照着练。</span></li>
+        <li><b>成长曲线</b><br><span>流畅 / 用词 / 句子 / 故事，四条线看进步。</span></li>
+        <li><b>词汇库 & 金句库</b><br><span>攒下的好词和收藏的句子，随时翻出来复习。</span></li>
+        <li><b>设置里可切中英文</b><br><span>界面文字支持 EN / 中文；练习内容始终是英文（这是英文口语教练）。</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="foot">
+    <p class="big">现在就开口 —— <span>reach your peak.</span></p>
+    <a class="cta" href="https://speakpeak.vercel.app" target="_blank" rel="noopener">打开 SpeakPeak</a>
+    <p class="mini">SpeakPeak · 中学生英文演讲 / 辩论陪练 · speakpeak.cn（即将）</p>
+  </footer>
+
+</div>
+</body>
+</html>

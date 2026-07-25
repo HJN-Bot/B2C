@@ -3,5 +3,9 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": "vite",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/guide.html", "destination": "/guide.html" },
+    { "source": "/guide/:path*", "destination": "/guide/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
