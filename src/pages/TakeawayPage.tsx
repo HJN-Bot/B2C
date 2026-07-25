@@ -14,6 +14,37 @@ import { saveSession } from "@/lib/session-history";
 
 const MODEL_NAME = "gemini-2.5-flash";
 const LAST_SESSION_CACHE = "meaningfully.lastSession";
+// Persist the generated takeaway + chat for THIS run, so navigating away (e.g. to
+// My) and back doesn't burn a fresh AI call and wipe the conversation.
+const TAKEAWAY_CACHE = "meaningfully.takeawayCache";
+
+interface TakeawayCache {
+  sig: string;
+  takeaway: AiTakeaway;
+  chatMessages: CoachMessage[];
+  chatHistory: { role: "user" | "model"; parts: [{ text: string }] }[];
+}
+
+// Cheap stable signature of a run — same run => same string => cache hit.
+function sessionSignature(timer: number, wordCount: number, transcript: string) {
+  return `${timer}|${wordCount}|${transcript.slice(0, 120)}`;
+}
+
+function readTakeawayCache(): TakeawayCache | null {
+  try {
+    return JSON.parse(window.sessionStorage.getItem(TAKEAWAY_CACHE) || "null") as TakeawayCache | null;
+  } catch {
+    return null;
+  }
+}
+
+function writeTakeawayCache(cache: TakeawayCache) {
+  try {
+    window.sessionStorage.setItem(TAKEAWAY_CACHE, JSON.stringify(cache));
+  } catch {
+    /* storage full / unavailable — non-fatal */
+  }
+}
 
 interface KTVScore { flow: number; words: number; sentences: number; story: number }
 type KTVMetric = keyof KTVScore;
@@ -47,6 +78,9 @@ interface AiTakeaway {
   what_worked: Evidence[];     // block 1: done well (credit)
   amplify: Evidence[];         // block 2: a strength worth doing MORE of
   make_stronger: Evidence[];   // block 2: one thing to change/fix
+  base_sentence: string;       // ONE real sentence the student said, being upgraded
+  sentence_rewrites: string[]; // 3 upgraded versions of base_sentence (savable)
+  follow_up_questions: string[]; // 3 specific coach questions grounded in THIS talk
 }
 
 interface CoachMessage {
@@ -196,10 +230,10 @@ function parseJson<T>(text: string): T | null {
   }
 }
 
-function normalizeList(value: unknown, fallback: string[]) {
+function normalizeList(value: unknown, fallback: string[], max = 4) {
   if (!Array.isArray(value)) return fallback;
   const list = value.map((item) => String(item || "").trim()).filter(Boolean);
-  return list.length ? list.slice(0, 4) : fallback;
+  return list.length ? list.slice(0, max) : fallback;
 }
 
 // Accepts either plain strings or { point/advice, quote } objects from the model.
@@ -229,12 +263,17 @@ function normalizeTakeaway(value: Partial<AiTakeaway> | null): AiTakeaway | null
     next_run_plan: {
       focus: String(plan.focus).trim(),
       say_this: String(plan.say_this).trim(),
-      reuse_words: normalizeList(plan.reuse_words, []),
+      reuse_words: normalizeList(plan.reuse_words, [], 10),
       one_move: String(plan.one_move).trim(),
     },
     what_worked: normalizeEvidence(value?.what_worked, [{ point: "You gave the coach real content to build from." }]),
     amplify: normalizeEvidence(value?.amplify, [{ point: "Keep developing your strongest idea further." }]),
     make_stronger: normalizeEvidence(value?.make_stronger, [{ point: String(plan.one_move) }]),
+    base_sentence: String(value?.base_sentence || "").trim(),
+    // Rewrites: prefer the model's; fall back to the single say_this so the block
+    // always has at least one real upgrade of the student's own line.
+    sentence_rewrites: normalizeList(value?.sentence_rewrites, [String(plan.say_this).trim()].filter(Boolean), 3),
+    follow_up_questions: normalizeList(value?.follow_up_questions, [], 3),
   };
 }
 
@@ -312,6 +351,19 @@ function createLocalTakeaway(session: {
       { point: "Add one concrete example after your main point.", quote: mainWord },
       { point: "Use because, for example, and this matters to connect the idea." },
     ],
+    // Fallback rewrites/questions when the AI is unreachable — kept generic and
+    // honestly frame-based, since we can't tailor them to the real transcript.
+    base_sentence: (session.transcript.split(/(?<=[.!?])\s+/)[0] || "").trim(),
+    sentence_rewrites: [
+      "My main point is that ___, because ___.",
+      "One striking example of this is ___, which shows ___.",
+      "This matters because ___ — and that's why ___.",
+    ],
+    follow_up_questions: [
+      "What is one real example that backs up your main point?",
+      "Why does this matter in everyday life?",
+      "What would someone who disagrees say, and how would you answer?",
+    ],
   };
 }
 
@@ -364,8 +416,11 @@ Rules:
 - Use ONLY ideas supported by the transcript, highlights, and score events. Never invent a topic. If the transcript is too thin to tell the topic, say so plainly instead of guessing.
 - "summary": 1-2 COMPLETE SENTENCES naming the actual topic and the point they were making (e.g. "You explained how renewable energy could replace coal, and gave wind power as an example."). NEVER output a list of disconnected words.
 - The "encouragement" should be warm and a little playful, not a score.
-- "reuse_words": 3-5 SYNONYM UPGRADES — for words the student actually used, give a stronger/more precise alternative fitting their topic. Format each as "their word → upgrade" (e.g. "good → remarkable", "a lot of → a vast amount of"). Pick words they really said.
+- "reuse_words": 6-10 SYNONYM UPGRADES — for words the student actually used, give a stronger/more precise alternative fitting their topic. Format each as "their word → upgrade" (e.g. "good → remarkable", "a lot of → a vast amount of"). Pick words they really said; give as many distinct ones as the transcript supports (aim for 6+).
 - "say_this": rewrite ONE real sentence the student said into a higher-level version of THE SAME point — keep their meaning, upgrade the structure/connectors (e.g. "X is significant because…", "One striking example is…"). It must read as a coherent sentence about their topic, never echo a single keyword.
+- "base_sentence": copy, close to verbatim, the ONE real sentence from the transcript that you are upgrading in "sentence_rewrites" (so the student sees their own line). If the transcript is too thin, use "".
+- "sentence_rewrites": 3 DIFFERENT upgraded versions of that same base_sentence — same meaning and topic, but each takes a distinct angle (e.g. one adds a connector like "because", one leads with a striking example, one ends on why it matters). Each is a complete, natural spoken sentence a teen could actually say. NEVER generic templates with blanks, NEVER famous quotes.
+- "follow_up_questions": 3 SHORT, SPECIFIC questions about what the student actually said (name their real topic/claim), the kind a debate coach asks to push their thinking (e.g. "You said social media hurts sleep — what evidence backs that up?"). Not generic ("what is your topic"). Each under 16 words.
 - Pick the biggest GROWTH AREA from "ktv_score" (their weakest of flow/words/sentences/story) and aim "say_this", "one_move" and "make_stronger" at it. Do NOT mention raw scores or say "your X score is the lowest / highest" — frame it warmly (e.g. "A great next step is to finish your point with why it matters"). flow=keep one idea going, words=stronger/precise words, sentences=fuller complete sentences, story=claim+example+why.
 - "amplify": the skill they did BEST, with a CONCRETE way to do more of it — give a specific example or sentence frame, not vague praise.
 - BE CONCRETE, never vague: each "amplify"/"make_stronger" point includes a usable example, a sentence frame, or exact words — not "do more of this".
@@ -378,12 +433,15 @@ Return ONLY valid JSON:
   "next_run_plan": {
     "focus": "one specific growth focus (no score talk)",
     "say_this": "their own sentence upgraded — same point, stronger structure (not a repeat, not a keyword)",
-    "reuse_words": ["3-5 'their word → stronger synonym' upgrades, drawn from words they used"],
+    "reuse_words": ["6-10 'their word → stronger synonym' upgrades, drawn from words they used"],
     "one_move": "one tiny concrete action for the next run, with a specific example"
   },
   "what_worked": [{ "point": "what they did well (concrete)", "quote": "exact short phrase they said, or empty" }],
   "amplify": [{ "point": "best skill + a concrete way/example to do more", "quote": "the phrase it builds on, or empty" }],
-  "make_stronger": [{ "point": "one concrete change with an example/frame (no score talk)", "quote": "the phrase this refers to, or empty" }]
+  "make_stronger": [{ "point": "one concrete change with an example/frame (no score talk)", "quote": "the phrase this refers to, or empty" }],
+  "base_sentence": "the one real sentence from the transcript you are upgrading (near-verbatim), or empty",
+  "sentence_rewrites": ["3 distinct upgraded versions of base_sentence — same point, different angle, complete natural sentences"],
+  "follow_up_questions": ["3 short specific questions about their real topic/claim"]
 }
 
 Session:
@@ -430,6 +488,8 @@ export default function TakeawayPage() {
   const wordCount = transcript ? transcript.split(/\s+/).length : 0;
   const hasSessionData = Boolean(timer || highlightCount || transcript || highlightWords.length || ktvEvents.length);
 
+  const sessionSig = useMemo(() => sessionSignature(timer, wordCount, transcript), [timer, wordCount, transcript]);
+
   const sessionContext = useMemo(() => JSON.stringify({
     duration: formatTime(timer),
     timer_seconds: timer,
@@ -462,6 +522,17 @@ export default function TakeawayPage() {
     if (!hasSessionData) {
       setTakeawayStatus("idle");
       setChatMessages([{ id: makeId(), role: "system", text: "Finish one practice run first. Then I can build a real AI plan from your words." }]);
+      return;
+    }
+
+    // Cache hit: same run we already coached — restore it instead of re-calling AI.
+    const cached = readTakeawayCache();
+    if (cached && cached.sig === sessionSig && cached.takeaway) {
+      setTakeaway(cached.takeaway);
+      setChatMessages(cached.chatMessages || []);
+      chatHistoryRef.current = cached.chatHistory || [];
+      setTakeawayStatus("ready");
+      setChatStatus("idle");
       return;
     }
 

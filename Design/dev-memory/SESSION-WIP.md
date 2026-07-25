@@ -1,6 +1,8 @@
 # SESSION WIP — 当前进行中
 
 > 这次 session "做到哪了"。每次开工先看这里。稳定事实放 [PROJECT-MEMORY.md](./PROJECT-MEMORY.md)，完整待办放 [TODO.md](./TODO.md)。
+>
+> **🆕 交接（换 agent 继续）先读 → [HANDOFF-2026-07-25.md](./HANDOFF-2026-07-25.md)**：含运行/部署/密钥、线上地址、以及 Takeaway 复盘页 4 项修复的「已做/待做」精确断点。
 
 ---
 
